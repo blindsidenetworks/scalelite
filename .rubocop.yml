@@ -1,0 +1,50 @@
+inherit_mode:
+  merge:
+    - Exclude
+require:
+  - rubocop-rails
+AllCops:
+  Exclude:
+    - bin/puma
+    - bin/pumactl
+    - bin/setup
+    - bin/rainbows
+    - bin/unicorn
+    - bin/unicorn_rails
+    - bin/update
+    - bin/yarn
+    - vendor/bundle/**/*
+  TargetRubyVersion: 2.6
+Layout/HashAlignment:
+  EnforcedHashRocketStyle: [ key, table ]
+  EnforcedColonStyle: [ key, table ]
+Layout/LineLength:
+  Max: 128
+Metrics:
+  Enabled: false
+Rails:
+  Enabled: true
+Rails/DynamicFindBy:
+  # The models used in this code aren't actually ActiveRecord
+  Enabled: false
+Style/AsciiComments:
+  AllowedChars: [ © ]
+Style/Documentation:
+  Enabled: false
+Style/MethodCallWithArgsParentheses:
+  Enabled: true
+  IgnoredMethods:
+    - gem
+    - include
+    - require
+    - require_relative
+    - ruby
+    - raise
+    - source
+    - throw
+Style/SymbolArray:
+  MinSize: 6
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: consistent_comma
