@@ -14,6 +14,11 @@ gem 'puma', '~> 4.1'
 # Use Active Model has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 
+gem 'connection_pool', '~> 2.2.2'
+gem 'redis', '~> 4.1.3'
+gem 'redis-namespace', '~> 1.7.0'
+gem 'hiredis', '~> 0.6.3'
+
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '>= 1.4.2', require: false
 
