@@ -1,4 +1,4 @@
-FROM ruby:2.6.5-alpine AS base
+FROM ruby:2.6-alpine AS base
 
 # Set a variable for the install location.
 ARG RAILS_ROOT=/usr/src/app
@@ -10,8 +10,8 @@ ENV BUNDLE_APP_CONFIG="$RAILS_ROOT/.bundle"
 RUN mkdir -p $RAILS_ROOT
 WORKDIR $RAILS_ROOT
 
-ARG BUILD_PACKAGES="build-base curl-dev git"
-ARG DEV_PACKAGES="yaml-dev zlib-dev nodejs yarn"
+ARG BUILD_PACKAGES="build-base git"
+ARG DEV_PACKAGES="yaml-dev zlib-dev"
 ARG RUBY_PACKAGES="tzdata"
 
 # Install app dependencies.
@@ -22,7 +22,8 @@ RUN apk update \
 COPY Gemfile* ./
 COPY Gemfile Gemfile.lock $RAILS_ROOT/
 
-RUN gem install bundler:2.0.1
+RUN gem install bundler:2.0
+
 RUN bundle config --global frozen 1 \
     && bundle install --deployment --without development:test:assets -j4 --path=vendor/bundle \
     && rm -rf vendor/bundle/ruby/2.6.0/cache/*.gem \
@@ -37,11 +38,11 @@ RUN rm -rf tmp/cache spec
 
 ############### Build step done ###############
 
-FROM ruby:2.6.5-alpine
+FROM ruby:2.6-alpine
 
 # Set a variable for the install location.
 ARG RAILS_ROOT=/usr/src/app
-ARG PACKAGES="tzdata curl yarn nodejs bash"
+ARG PACKAGES="tzdata bash"
 # Set Rails environment.
 ENV RAILS_ENV=production
 ENV BUNDLE_APP_CONFIG="$RAILS_ROOT/.bundle"
@@ -52,7 +53,7 @@ RUN apk update \
     && apk upgrade \
     && apk add --update --no-cache $PACKAGES
 
-RUN gem install bundler:2.0.1
+RUN gem install bundler -v '~> 2.0'
 
 # Adding project files.
 COPY --from=base $RAILS_ROOT $RAILS_ROOT
