@@ -1,0 +1,17 @@
+dist: bionic
+language: ruby
+cache: bundler
+rvm:
+  - 2.6.5
+services:
+  - redis-server
+
+before_install:
+  - gem install bundler
+
+jobs:
+  include:
+    - name: rubocop & rails test
+      script:
+        - bundle exec rubocop
+        - bundle exec rails test
