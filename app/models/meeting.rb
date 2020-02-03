@@ -27,8 +27,11 @@ class Meeting < ApplicationRedisRecord
     with_connection do |redis|
       meeting_ids = redis.smembers('meetings')
       meeting_ids.each do |id|
-        meetings << find(id)
-      rescue RecordNotFound # rubocop:disable Lint/SuppressedException
+        meeting_hash = redis.hgetall(key(id))
+        next if meeting_hash.blank?
+
+        meeting_hash[:id] = id
+        meetings << new(meeting_hash)
       end
     end
     meetings
