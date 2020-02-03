@@ -10,7 +10,6 @@ module RedisStore
       pool = ENV['REDIS_POOL'] || ENV['RAILS_MAX_THREADS'] || Rails.configuration.x.redis_store.pool || 5
       @connection_pool = ConnectionPool.new(size: pool) do
         opts = Rails.configuration.x.redis_store
-        opts = opts.merge(driver: :hiredis)
         redis = Redis.new(opts)
 
         namespace = Rails.configuration.x.redis_store.namespace
