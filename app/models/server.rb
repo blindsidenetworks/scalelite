@@ -1,28 +1,90 @@
 # frozen_string_literal: true
 
 class Server < ApplicationRedisRecord
-  # Unique ID for this server
-  attr_accessor :id
-  # Full URL used to make API requests to this server
-  attr_accessor :url
-  # Shared secret for making API requests to this server
-  attr_accessor :secret
-  # Indicator of current server load
-  attr_accessor :load
+  define_attribute_methods :id, :url, :secret, :load
 
-  def self.key(id)
-    "server:#{id}"
+  # Unique ID for this server
+  attr_reader :id
+
+  def id=(value)
+    id_will_change! unless @id == value
+    @id = value
+  end
+
+  # Full URL used to make API requests to this server
+  attr_reader :url
+
+  def url=(value)
+    url_will_change! unless @url == value
+    @url = value
+  end
+
+  # Shared secret for making API requests to this server
+  attr_reader :secret
+
+  def secret=(value)
+    secret_will_change! unless @secret == value
+    @secret = value
+  end
+
+  # Indicator of current server load
+  attr_reader :load
+
+  def load=(value)
+    load_will_change! unless @load == value
+    @load = value
+  end
+
+  def save!
+    with_connection do |redis|
+      raise RecordNotSaved.new('Cannot update id field', self) if id_changed?
+
+      # Default values
+      id = SecureRandom.uuid if id.nil?
+      load = Float::INFINITY if load.nil?
+
+      server_key = key(id)
+      redis.multi do
+        redis.hset(server_key, 'url', url) if url_changed?
+        redis.hset(server_key, 'secret', secret) if secret_changed?
+        redis.zadd('server_load', id, load) if load_changed?
+      end
+    end
+
+    # Superclass bookkeeping
+    super
+  end
+
+  def destroy!
+    with_connection do |redis|
+      raise RecordNotDestroyed.new('Object is not persisted', self) unless persisted?
+      raise RecordNotDestroyed.new('Object has uncommitted changes', self) if changed?
+
+      server_key = key(id)
+      redis.multi do
+        redis.del(server_key)
+        redis.zrem('server_load', id)
+      end
+    end
+
+    # Superclass bookkeeping
+    super
   end
 
   # Find a server by ID
   def self.find(id)
     with_connection do |redis|
-      server_hash = redis.hgetall(key(id))
+      server_hash, server_load = redis.pipelined do
+        redis.hgetall(key(id))
+        redis.zscore('server_load', id)
+      end
       raise RecordNotFound.new("Couldn't find Server with id=#{id}", name, id) if server_hash.blank?
 
       server_hash[:id] = id
-      server_hash[:load] = redis.zscore('server_load', id)
-      new(server_hash)
+      server_hash[:load] = server_load
+      server = new
+      server.init_with_attributes(server_hash)
+      server
     end
   end
 
@@ -32,13 +94,19 @@ class Server < ApplicationRedisRecord
       servers = redis.zrange('server_load', 0, 0, with_scores: true)
       raise RecordNotFound.new("Couldn't find available Server", name, nil) if servers.blank?
 
-      id, score = servers[0]
+      id, server_load = servers[0]
       server_hash = redis.hgetall(key(id))
       raise RecordNotFound.new("Couldn't find Server with id=#{id}", name, id) if server_hash.blank?
 
       server_hash[:id] = id
-      server_hash[:load] = score
-      new(server_hash)
+      server_hash[:load] = server_load
+      server = new
+      server.init_with_attributes(server_hash)
+      server
     end
+  end
+
+  def self.key(id)
+    "server:#{id}"
   end
 end

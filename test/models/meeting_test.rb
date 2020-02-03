@@ -55,4 +55,29 @@ class MeetingTest < ActiveSupport::TestCase
     assert_equal(2, all_meetings.length)
     assert_not_equal(all_meetings[0].id, all_meetings[1].id)
   end
+
+  test 'Meeting save is not implemented' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
+    end
+
+    meeting = Meeting.new
+    meeting.server_id = 'test-server-1'
+    assert_raises(ApplicationRedisRecord::RecordNotSaved) do
+      meeting.save!
+    end
+  end
+
+  test 'Meeting destroy is not implemented' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
+      redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
+      redis.sadd('meetings', 'test-meeting-1')
+    end
+
+    meeting = Meeting.find('test-meeting-1')
+    assert_raises(ApplicationRedisRecord::RecordNotDestroyed) do
+      meeting.destroy!
+    end
+  end
 end
