@@ -17,3 +17,18 @@ This set contains an entry for each BigBlueButton server.
 For each server, the value stored in this set is the server ID.
 The score attached corresponds to the load on the server (number of meetings).
 Lower scores mean a server has less load.
+
+## Meetings
+
+### Meeting Information Hash
+
+For each meeting, there is a Redis hash with the key `meeting:{ID}`.
+The ID is the `meetingID=` parameter as passed on the `create` API call.
+This hash contains the following keys:
+
+* `server_id`: The ID of the server that the meeting is allocated on.
+
+### Meetings Set
+
+This is a single set with the key `meetings`.
+It contains the ID field for each meeting that the load balancer knows about.

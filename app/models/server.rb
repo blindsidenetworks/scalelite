@@ -20,6 +20,7 @@ class Server < ApplicationRedisRecord
       server_hash = redis.hgetall(key(id))
       raise RecordNotFound.new("Couldn't find Server with id=#{id}", name, id) if server_hash.blank?
 
+      server_hash[:id] = id
       server_hash[:load] = redis.zscore('server_load', id)
       new(server_hash)
     end
@@ -35,6 +36,7 @@ class Server < ApplicationRedisRecord
       server_hash = redis.hgetall(key(id))
       raise RecordNotFound.new("Couldn't find Server with id=#{id}", name, id) if server_hash.blank?
 
+      server_hash[:id] = id
       server_hash[:load] = score
       new(server_hash)
     end
