@@ -1,5 +1,6 @@
 default: &default
   pool: <%= ENV.fetch('RAILS_MAX_THREADS') { 5 } %>
+  driver: hiredis
 
 development:
   <<: *default
@@ -7,6 +8,7 @@ development:
 
 test:
   <<: *default
+  driver: null # Reset to allow fakeredis to load
   namespace: scalelite_test
 
 production:

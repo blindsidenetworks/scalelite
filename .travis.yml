@@ -3,8 +3,6 @@ language: ruby
 cache: bundler
 rvm:
   - 2.6.5
-services:
-  - redis-server
 
 before_install:
   - gem install bundler
