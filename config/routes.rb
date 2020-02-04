@@ -7,6 +7,7 @@ Rails.application.routes.draw do
     scope 'bigbluebutton/api', as: 'bigbluebutton_api' do
       get '/', to: 'bigbluebutton_api#index'
       get 'getMeetingInfo', to: 'bigbluebutton_api#get_meeting_info'
+      get 'isMeetingRunning', to: 'bigbluebutton_api#is_meeting_running', as: :is_meeting_running
     end
 
     match '*any', via: :all, to: 'errors#unsupported_request'
