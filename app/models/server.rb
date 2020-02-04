@@ -4,36 +4,16 @@ class Server < ApplicationRedisRecord
   define_attribute_methods :id, :url, :secret, :load
 
   # Unique ID for this server
-  attr_reader :id
-
-  def id=(value)
-    id_will_change! unless @id == value
-    @id = value
-  end
+  application_redis_attr :id
 
   # Full URL used to make API requests to this server
-  attr_reader :url
-
-  def url=(value)
-    url_will_change! unless @url == value
-    @url = value
-  end
+  application_redis_attr :url
 
   # Shared secret for making API requests to this server
-  attr_reader :secret
-
-  def secret=(value)
-    secret_will_change! unless @secret == value
-    @secret = value
-  end
+  application_redis_attr :secret
 
   # Indicator of current server load
-  attr_reader :load
-
-  def load=(value)
-    load_will_change! unless @load == value
-    @load = value
-  end
+  application_redis_attr :load
 
   def save!
     with_connection do |redis|

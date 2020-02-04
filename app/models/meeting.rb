@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
 class Meeting < ApplicationRedisRecord
+  define_attribute_methods :id, :server_id
+
   # Meeting ID provided on create request
-  attr_accessor :id
+  application_redis_attr :id
   # ID of the server that the meeting was created on
-  attr_accessor :server_id
+  application_redis_attr :server_id
 
   def save!
     raise RecordNotSaved.new('Not implemented', self)
