@@ -109,6 +109,20 @@ class ApplicationRedisRecord
     self
   end
 
+  def self.application_redis_attr(*syms)
+    attr_reader(*syms)
+    syms.each do |sym|
+      raise NameError, "invalid attribute name: #{sym}" unless /^[_A-Za-z]\w*$/.match?(sym)
+
+      class_eval(<<-END_OF_RUBY, __FILE__, __LINE__ + 1)
+        def #{sym}=(value)
+          #{sym}_will_change! unless @#{sym} == value
+          @#{sym} = value
+        end
+      END_OF_RUBY
+    end
+  end
+
   def self.connection_pool
     RedisStore.connection_pool
   end
@@ -120,4 +134,9 @@ class ApplicationRedisRecord
     end
   end
   delegate :with_connection, to: 'self.class'
+
+  def self.logger
+    Rails.logger
+  end
+  delegate :logger, to: 'self.class'
 end
