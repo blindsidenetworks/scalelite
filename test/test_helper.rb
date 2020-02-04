@@ -4,6 +4,7 @@ ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
 require 'rails/test_help'
 require 'fakeredis/minitest'
+require 'webmock/minitest'
 
 module ActiveSupport
   class TestCase
