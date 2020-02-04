@@ -9,7 +9,9 @@ module ApiHelper
   REQUEST_TIMEOUT = 10
 
   # Encode URI and append checksum
-  def encode_bbb_uri(action, base_uri, secret, bbb_params)
+  def encode_bbb_uri(action, base_uri, secret, bbb_params = {})
+    # Add slash at the end if its not there
+    base_uri += '/' unless base_uri.ends_with?('/')
     check_string = URI.encode_www_form(bbb_params)
     checksum = Digest::SHA1.hexdigest(action + check_string + secret)
     uri = URI.join(base_uri, action)
@@ -29,6 +31,17 @@ module ApiHelper
       end
 
       doc
+    end
+  end
+
+  # Success response if there are no meetings on any servers
+  def no_meetings_response
+    Nokogiri::XML::Builder.new do |xml|
+      xml.response do
+        xml.returncode('SUCCESS')
+        xml.messageKey('noMeetings')
+        xml.message('No meetings were found on this server.')
+      end
     end
   end
 end
