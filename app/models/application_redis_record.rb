@@ -67,6 +67,7 @@ class ApplicationRedisRecord
   # This method has to be implemented by subclasses, which should first persist the data, then call super so we can do some
   # bookkeeping here
   def save!
+    changes_applied
     @new_record = false
     self
   end
@@ -105,6 +106,7 @@ class ApplicationRedisRecord
     self.attributes = attributes
     clear_changes_information
     @new_record = new_record
+    self
   end
 
   def self.connection_pool
