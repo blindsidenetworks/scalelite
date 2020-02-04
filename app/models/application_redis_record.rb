@@ -134,4 +134,9 @@ class ApplicationRedisRecord
     end
   end
   delegate :with_connection, to: 'self.class'
+
+  def self.logger
+    Rails.logger
+  end
+  delegate :logger, to: 'self.class'
 end
