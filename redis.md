@@ -10,6 +10,11 @@ This hash contains the following keys:
 * `url`: The URL endpoint for making BigBlueButton API calls on this server
 * `secret`: The shared secret for signing BigBlueButton API calls on this server
 
+### Servers Set
+
+This is a single set with the key `servers`
+It contains the ID field for each server that the load balancer knows about.
+
 ### Servers Load Sorted Set
 
 There is a single sorted set with the key `server_load`.

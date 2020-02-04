@@ -1,44 +1,155 @@
 # frozen_string_literal: true
 
 class Server < ApplicationRedisRecord
-  # Unique ID for this server
-  attr_accessor :id
-  # Full URL used to make API requests to this server
-  attr_accessor :url
-  # Shared secret for making API requests to this server
-  attr_accessor :secret
-  # Indicator of current server load
-  attr_accessor :load
+  define_attribute_methods :id, :url, :secret, :load
 
-  def self.key(id)
-    "server:#{id}"
+  # Unique ID for this server
+  attr_reader :id
+
+  def id=(value)
+    id_will_change! unless @id == value
+    @id = value
+  end
+
+  # Full URL used to make API requests to this server
+  attr_reader :url
+
+  def url=(value)
+    url_will_change! unless @url == value
+    @url = value
+  end
+
+  # Shared secret for making API requests to this server
+  attr_reader :secret
+
+  def secret=(value)
+    secret_will_change! unless @secret == value
+    @secret = value
+  end
+
+  # Indicator of current server load
+  attr_reader :load
+
+  def load=(value)
+    load_will_change! unless @load == value
+    @load = value
+  end
+
+  def save!
+    with_connection do |redis|
+      raise RecordNotSaved.new('Cannot update id field', self) if id_changed?
+
+      # Default values
+      id = SecureRandom.uuid if id.nil?
+
+      server_key = key(id)
+      redis.multi do
+        redis.hset(server_key, 'url', url) if url_changed?
+        redis.hset(server_key, 'secret', secret) if secret_changed?
+        if load_changed?
+          if load.nil?
+            redis.zrem('server_load', id)
+          else
+            redis.zadd('server_load', id, load)
+          end
+        end
+        redis.sadd('servers', id) if id_changed?
+      end
+    end
+
+    # Superclass bookkeeping
+    super
+  end
+
+  def destroy!
+    with_connection do |redis|
+      raise RecordNotDestroyed.new('Object is not persisted', self) unless persisted?
+      raise RecordNotDestroyed.new('Object has uncommitted changes', self) if changed?
+
+      redis.multi do
+        redis.del(key(id))
+        redis.zrem('server_load', id)
+        redis.srem('servers', id)
+      end
+    end
+
+    # Superclass bookkeeping
+    super
   end
 
   # Find a server by ID
   def self.find(id)
     with_connection do |redis|
-      server_hash = redis.hgetall(key(id))
-      raise RecordNotFound.new("Couldn't find Server with id=#{id}", name, id) if server_hash.blank?
+      hash, load = redis.pipelined do
+        redis.hgetall(key(id))
+        redis.zscore('server_load', id)
+      end
+      raise RecordNotFound.new("Couldn't find Server with id=#{id}", name, id) if hash.blank?
 
-      server_hash[:id] = id
-      server_hash[:load] = redis.zscore('server_load', id)
-      new(server_hash)
+      hash[:id] = id
+      hash[:load] = load
+      new.init_with_attributes(hash)
     end
   end
 
   # Find the server with the lowest load (for creating a new meeting)
   def self.find_available
     with_connection do |redis|
-      servers = redis.zrange('server_load', 0, 0, with_scores: true)
-      raise RecordNotFound.new("Couldn't find available Server", name, nil) if servers.blank?
+      ids_loads = redis.zrange('server_load', 0, 0, with_scores: true)
+      raise RecordNotFound.new("Couldn't find available Server", name, nil) if ids_loads.blank?
 
-      id, score = servers[0]
-      server_hash = redis.hgetall(key(id))
-      raise RecordNotFound.new("Couldn't find Server with id=#{id}", name, id) if server_hash.blank?
+      id, load = ids_loads.first
+      hash = redis.hgetall(key(id))
+      raise RecordNotFound.new("Couldn't find Server with id=#{id}", name, id) if hash.blank?
 
-      server_hash[:id] = id
-      server_hash[:load] = score
-      new(server_hash)
+      hash[:id] = id
+      hash[:load] = load
+      new.init_with_attributes(hash)
     end
+  end
+
+  # Get a list of all servers
+  def self.all
+    servers = []
+    with_connection do |redis|
+      ids = redis.smembers('servers')
+      return servers if ids.blank?
+
+      ids.each do |id|
+        hash, load = redis.pipelined do
+          redis.hgetall(key(id))
+          redis.zscore('server_load', id)
+        end
+        next if hash.blank?
+
+        hash[:id] = id
+        hash[:load] = load
+        servers << new.init_with_attributes(hash)
+      end
+    end
+    servers
+  end
+
+  # Get a list of all available servers
+  def self.available
+    servers = []
+    with_connection do |redis|
+      ids_loads = redis.zrange('server_load', 0, -1, with_scores: true)
+      return servers if ids_loads.blank?
+
+      ids_loads.each do |id, load|
+        hash = redis.hgetall(key(id))
+        next if hash.blank?
+
+        hash[:id] = id
+        hash[:load] = load
+        servers << new.init_with_attributes(hash)
+      end
+    end
+    servers
+  end
+
+  def self.key(id)
+    "server:#{id}"
   end
 end

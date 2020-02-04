@@ -6,6 +6,14 @@ class Meeting < ApplicationRedisRecord
   # ID of the server that the meeting was created on
   attr_accessor :server_id
 
+  def save!
+    raise RecordNotSaved.new('Not implemented', self)
+  end
+
+  def destroy!
+    raise RecordNotDestroyed.new('Not implemented', self)
+  end
+
   def self.key(id)
     "meeting:#{id}"
   end
