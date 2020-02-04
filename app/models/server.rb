@@ -77,6 +77,14 @@ class Server < ApplicationRedisRecord
     super
   end
 
+  # Apply a concurrency-safe adjustment to the server load
+  def increment_load(amount)
+    with_connection do |redis|
+      self.load = redis.zincrby('server_load', amount, id)
+      clear_attribute_changes([:load])
+    end
+  end
+
   # Find a server by ID
   def self.find(id)
     with_connection do |redis|

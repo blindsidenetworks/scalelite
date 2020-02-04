@@ -128,6 +128,39 @@ class ServerTest < ActiveSupport::TestCase
     assert_equal(2, server.load)
   end
 
+  test 'Server increment load' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
+      redis.sadd('servers', 'test-2')
+      redis.zadd('server_load', 2, 'test-2')
+    end
+
+    server = Server.find('test-2')
+    server.increment_load(2)
+    assert_not(server.load_changed?)
+    assert_equal(4, server.load)
+
+    RedisStore.with_connection do |redis|
+      assert_equal(4, redis.zscore('server_load', 'test-2'))
+    end
+  end
+
+  test 'Server increment load not available' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
+      redis.sadd('servers', 'test-2')
+    end
+
+    server = Server.find('test-2')
+    server.increment_load(2)
+    assert_not(server.load_changed?)
+    assert_equal(2, server.load)
+
+    RedisStore.with_connection do |redis|
+      assert_equal(2, redis.zscore('server_load', 'test-2'))
+    end
+  end
+
   test 'Server create without load' do
     server = Server.new
     server.url = 'https://test-1.example.com/bigbluebutton/api'
