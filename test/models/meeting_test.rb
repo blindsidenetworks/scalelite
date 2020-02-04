@@ -62,6 +62,7 @@ class MeetingTest < ActiveSupport::TestCase
     end
 
     meeting = Meeting.new
+    meeting.id = 'Demo Meeting'
     meeting.server_id = 'test-server-1'
     assert_raises(ApplicationRedisRecord::RecordNotSaved) do
       meeting.save!
