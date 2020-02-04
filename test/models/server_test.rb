@@ -109,7 +109,7 @@ class ServerTest < ActiveSupport::TestCase
     end
   end
 
-  test 'Server availabe returns available servers' do
+  test 'Server available returns available servers' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
       redis.sadd('servers', 'test-1')
@@ -126,5 +126,46 @@ class ServerTest < ActiveSupport::TestCase
     assert_equal('https://test-2.example.com/bigbluebutton/api', server.url)
     assert_equal('test-2-secret', server.secret)
     assert_equal(2, server.load)
+  end
+
+  test 'Server create without load' do
+    server = Server.new
+    server.url = 'https://test-1.example.com/bigbluebutton/api'
+    server.secret = 'test-1-secret'
+    server.save!
+    assert_not_nil(server.id)
+
+    RedisStore.with_connection do |redis|
+      hash = redis.hgetall("server:#{server.id}")
+      assert_equal('https://test-1.example.com/bigbluebutton/api', hash['url'])
+      assert_equal('test-1-secret', hash['secret'])
+      servers = redis.smembers('servers')
+      assert_equal(1, servers.length)
+      assert_equal(server.id, servers[0])
+      servers = redis.zrange('server_load', 0, -1)
+      assert_predicate(servers, :blank?)
+    end
+  end
+
+  test 'Server create with load' do
+    server = Server.new
+    server.url = 'https://test-2.example.com/bigbluebutton/api'
+    server.secret = 'test-2-secret'
+    server.load = 2
+    server.save!
+    assert_not_nil(server.id)
+
+    RedisStore.with_connection do |redis|
+      hash = redis.hgetall("server:#{server.id}")
+      assert_equal('https://test-2.example.com/bigbluebutton/api', hash['url'])
+      assert_equal('test-2-secret', hash['secret'])
+      servers = redis.smembers('servers')
+      assert_equal(1, servers.length)
+      assert_equal(server.id, servers[0])
+      servers = redis.zrange('server_load', 0, -1, with_scores: true)
+      assert_equal(1, servers.length)
+      assert_equal(server.id, servers[0][0])
+      assert_equal(2, servers[0][1])
+    end
   end
 end
