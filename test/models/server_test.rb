@@ -168,4 +168,155 @@ class ServerTest < ActiveSupport::TestCase
       assert_equal(2, servers[0][1])
     end
   end
+
+  test 'Server update id' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+    end
+
+    server = Server.find('test-1')
+    server.id = 'test-2'
+    assert_raises(ApplicationRedisRecord::RecordNotSaved) do
+      server.save!
+    end
+  end
+
+  test 'Server update url' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+    end
+
+    server = Server.find('test-1')
+    server.url = 'https://test-2.example.com/bigbluebutton/api'
+    server.save!
+
+    RedisStore.with_connection do |redis|
+      hash = redis.hgetall('server:test-1')
+      assert_equal('https://test-2.example.com/bigbluebutton/api', hash['url'])
+      assert_equal('test-1-secret', hash['secret'])
+    end
+  end
+
+  test 'Server update secret' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+    end
+
+    server = Server.find('test-1')
+    server.secret = 'test-2-secret'
+    server.save!
+
+    RedisStore.with_connection do |redis|
+      hash = redis.hgetall('server:test-1')
+      assert_equal('https://test-1.example.com/bigbluebutton/api', hash['url'])
+      assert_equal('test-2-secret', hash['secret'])
+    end
+  end
+
+  test 'Server update load (from nil)' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+    end
+
+    server = Server.find('test-1')
+    server.load = 1
+    server.save!
+
+    RedisStore.with_connection do |redis|
+      load = redis.zscore('server_load', 'test-1')
+      assert_equal(1, load)
+    end
+  end
+
+  test 'Server update load (to nil)' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+      redis.zadd('server_load', 1, 'test-1')
+    end
+
+    server = Server.find('test-1')
+    server.load = nil
+    server.save!
+
+    RedisStore.with_connection do |redis|
+      load = redis.zscore('server_load', 'test-1')
+      assert_nil(load)
+    end
+  end
+
+  test 'Server update load' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+      redis.zadd('server_load', 1, 'test-1')
+    end
+
+    server = Server.find('test-1')
+    server.load = 2
+    server.save!
+
+    RedisStore.with_connection do |redis|
+      load = redis.zscore('server_load', 'test-1')
+      assert_equal(2, load)
+    end
+  end
+
+  test 'Server destroy active' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+      redis.zadd('server_load', 1, 'test-1')
+    end
+
+    server = Server.find('test-1')
+    server.destroy!
+
+    RedisStore.with_connection do |redis|
+      assert_empty(redis.hgetall('server:test1'))
+      assert_not(redis.sismember('servers', 'test-1'))
+      assert_nil(redis.zscore('server_load', 'test-1'))
+    end
+  end
+
+  test 'Server destroy inactive' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+    end
+
+    server = Server.find('test-1')
+    server.destroy!
+
+    RedisStore.with_connection do |redis|
+      assert_empty(redis.hgetall('server:test1'))
+      assert_not(redis.sismember('servers', 'test-1'))
+      assert_nil(redis.zscore('server_load', 'test-1'))
+    end
+  end
+
+  test 'Server destroy with pending changes' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+      redis.zadd('server_load', 1, 'test-1')
+    end
+
+    server = Server.find('test-1')
+    server.secret = 'test-2'
+    assert_raises(ApplicationRedisRecord::RecordNotDestroyed) do
+      server.destroy!
+    end
+  end
+
+  test 'Server destroy with non-persisted object' do
+    server = Server.new(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+    assert_raises(ApplicationRedisRecord::RecordNotDestroyed) do
+      server.destroy!
+    end
+  end
 end
