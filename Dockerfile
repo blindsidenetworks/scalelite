@@ -58,8 +58,8 @@ RUN gem install bundler -v '~> 2.0'
 # Adding project files.
 COPY --from=base $RAILS_ROOT $RAILS_ROOT
 
-# Expose port 80.
-EXPOSE 80
+# Expose port 3000.
+EXPOSE 3000
 
 # Start the application.
 CMD ["bin/start"]
