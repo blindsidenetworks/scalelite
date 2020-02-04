@@ -6,6 +6,7 @@ Rails.application.routes.draw do
   scope format: false, defaults: { format: 'xml' } do
     scope 'bigbluebutton/api', as: 'bigbluebutton_api' do
       get '/', to: 'bigbluebutton_api#index'
+      get 'getMeetingInfo', to: 'bigbluebutton_api#get_meeting_info'
     end
 
     match '*any', via: :all, to: 'errors#unsupported_request'

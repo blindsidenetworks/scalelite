@@ -48,3 +48,6 @@ Style/TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: consistent_comma
 Style/TrailingCommaInHashLiteral:
   EnforcedStyleForMultiline: consistent_comma
+Naming/AccessorMethodName:
+  # Allows method names to match api request names
+  Enabled: false
