@@ -40,9 +40,9 @@ class Server < ApplicationRedisRecord
       raise RecordNotSaved.new('Cannot update id field', self) if id_changed?
 
       # Default values
-      id = SecureRandom.uuid if id.nil?
+      self.id = SecureRandom.uuid if id.nil?
 
-      server_key = key(id)
+      server_key = key
       redis.multi do
         redis.hset(server_key, 'url', url) if url_changed?
         redis.hset(server_key, 'secret', secret) if secret_changed?
@@ -50,7 +50,7 @@ class Server < ApplicationRedisRecord
           if load.nil?
             redis.zrem('server_load', id)
           else
-            redis.zadd('server_load', id, load)
+            redis.zadd('server_load', load, id)
           end
         end
         redis.sadd('servers', id) if id_changed?
@@ -67,7 +67,7 @@ class Server < ApplicationRedisRecord
       raise RecordNotDestroyed.new('Object has uncommitted changes', self) if changed?
 
       redis.multi do
-        redis.del(key(id))
+        redis.del(key)
         redis.zrem('server_load', id)
         redis.srem('servers', id)
       end
@@ -151,5 +151,9 @@ class Server < ApplicationRedisRecord
 
   def self.key(id)
     "server:#{id}"
+  end
+
+  def key
+    self.class.key(id)
   end
 end

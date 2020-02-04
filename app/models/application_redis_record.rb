@@ -112,10 +112,12 @@ class ApplicationRedisRecord
   def self.connection_pool
     RedisStore.connection_pool
   end
+  delegate :connection_pool, to: 'self.class'
 
   def self.with_connection
     RedisStore.with_connection do |redis|
       yield redis
     end
   end
+  delegate :with_connection, to: 'self.class'
 end
