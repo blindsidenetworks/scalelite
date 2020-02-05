@@ -9,6 +9,7 @@ Rails.application.routes.draw do
       get 'isMeetingRunning', to: 'bigbluebutton_api#is_meeting_running', as: :is_meeting_running
       get 'getMeetingInfo', to: 'bigbluebutton_api#get_meeting_info', as: :get_meeting_info
       get 'getMeetings', to: 'bigbluebutton_api#get_meetings', as: :get_meetings
+      get 'create', to: 'bigbluebutton_api#create'
     end
 
     match '*any', via: :all, to: 'errors#unsupported_request'
