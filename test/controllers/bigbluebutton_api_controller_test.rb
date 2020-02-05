@@ -19,10 +19,8 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   # getMeetingInfo
 
   test 'responds with the correct meeting info if everything is setup correctly' do
-    RedisStore.with_connection do |redis|
-      redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
-      redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1')
-    end
+    server = Server.create!(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1')
+    Meeting.create!(id: 'test-meeting-1', server: server)
 
     url = 'https://test-1.example.com/bigbluebutton/api/getMeetingInfo?meetingID=test-meeting-1&checksum=a4eee985e3f1f9524a6e2a32d1e35d3703e4cef9'
 
