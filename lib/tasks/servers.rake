@@ -5,19 +5,20 @@ task servers: :environment do
   servers = Server.all
   puts('No servers are configured') if servers.empty?
   Server.all.each do |server|
-    puts "id: #{server.id}"
-    puts "\turl: #{server.url}"
-    puts "\tsecret: #{server.secret}"
+    puts("id: #{server.id}")
+    puts("\turl: #{server.url}")
+    puts("\tsecret: #{server.secret}")
+    puts("\tenabled: #{server.enabled}")
     if server.load.nil?
-      puts("\tunavailable")
+      puts("\toffline")
     else
-      puts("\tavailable, load: #{server.load}")
+      puts("\tonline, load: #{server.load}")
     end
   end
 end
 
 namespace :servers do
-  desc 'Add a new BigBlueButton server (it will be added as unavailable)'
+  desc 'Add a new BigBlueButton server (it will be added disabled)'
   task :add, [:url, :secret] => :environment do |_t, args|
     server = Server.create!(url: args.url, secret: args.secret)
     puts 'OK'
@@ -34,9 +35,9 @@ namespace :servers do
   end
 
   desc 'Mark a BigBlueButton server as available for scheduling new meetings'
-  task :available, [:id] => :environment do |_t, args|
+  task :enable, [:id] => :environment do |_t, args|
     server = Server.find(args.id)
-    server.load = Float::INFINITY if server.load.nil?
+    server.enabled = true
     server.save!
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
@@ -44,9 +45,9 @@ namespace :servers do
   end
 
   desc 'Mark a BigBlueButton server as unavailable to stop scheduling new meetings'
-  task :unavailable, [:id] => :environment do |_t, args|
+  task :disable, [:id] => :environment do |_t, args|
     server = Server.find(args.id)
-    server.load = nil
+    server.enabled = false
     server.save!
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound

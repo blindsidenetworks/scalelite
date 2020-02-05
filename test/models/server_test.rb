@@ -18,7 +18,9 @@ class ServerTest < ActiveSupport::TestCase
   test 'Server find with no load' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
       redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
+      redis.sadd('servers', 'test-2')
     end
 
     server = Server.find('test-1')
@@ -26,14 +28,19 @@ class ServerTest < ActiveSupport::TestCase
     assert_equal('test-1', server.id)
     assert_equal('https://test-1.example.com/bigbluebutton/api', server.url)
     assert_equal('test-1-secret', server.secret)
+    assert_not(server.enabled)
     assert_nil(server.load)
   end
 
   test 'Server find with load' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
-      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
+      redis.sadd('servers', 'test-1')
+      redis.sadd('server_enabled', 'test-1')
       redis.zadd('server_load', 1, 'test-1')
+      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
+      redis.sadd('servers', 'test-2')
+      redis.sadd('server_enabled', 'test-2')
       redis.zadd('server_load', 2, 'test-2')
     end
 
@@ -42,7 +49,27 @@ class ServerTest < ActiveSupport::TestCase
     assert_equal('test-2', server.id)
     assert_equal('https://test-2.example.com/bigbluebutton/api', server.url)
     assert_equal('test-2-secret', server.secret)
+    assert(server.enabled)
     assert_equal(2, server.load)
+  end
+
+  test 'Server find disabled' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+      redis.sadd('server_enabled', 'test-1')
+      redis.zadd('server_load', 1, 'test-1')
+      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
+      redis.sadd('servers', 'test-2')
+    end
+
+    server = Server.find('test-2')
+
+    assert_equal('test-2', server.id)
+    assert_equal('https://test-2.example.com/bigbluebutton/api', server.url)
+    assert_equal('test-2-secret', server.secret)
+    assert_not(server.enabled)
+    assert_nil(server.load)
   end
 
   test 'Server find_available with no available servers' do
@@ -52,19 +79,27 @@ class ServerTest < ActiveSupport::TestCase
   end
 
   test 'Server find_available with missing server hash' do
+    # This is mostly a failsafe check
     RedisStore.with_connection do |redis|
       redis.zadd('server_load', 0, 'test-id')
     end
     assert_raises(ApplicationRedisRecord::RecordNotFound) do
-      Server.find_available
+      # Protection against infinite loops
+      Timeout.timeout(1) do
+        Server.find_available
+      end
     end
   end
 
   test 'Server find_available returns server with lowest load' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
-      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
+      redis.sadd('servers', 'test-1')
+      redis.sadd('server_enabled', 'test-1')
       redis.zadd('server_load', 1, 'test-1')
+      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
+      redis.sadd('servers', 'test-2')
+      redis.sadd('server_enabled', 'test-2')
       redis.zadd('server_load', 2, 'test-2')
     end
 
@@ -72,6 +107,7 @@ class ServerTest < ActiveSupport::TestCase
     assert_equal('test-1', server.id)
     assert_equal('https://test-1.example.com/bigbluebutton/api', server.url)
     assert_equal('test-1-secret', server.secret)
+    assert(server.enabled)
     assert_equal(1, server.load)
   end
 
@@ -86,6 +122,7 @@ class ServerTest < ActiveSupport::TestCase
       redis.sadd('servers', 'test-1')
       redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
       redis.sadd('servers', 'test-2')
+      redis.sadd('server_enabled', 'test-2')
       redis.zadd('server_load', 2, 'test-2')
       redis.mapped_hmset('server:test-3', url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret')
     end
@@ -98,10 +135,12 @@ class ServerTest < ActiveSupport::TestCase
       when 'test-1'
         assert_equal('https://test-1.example.com/bigbluebutton/api', server.url)
         assert_equal('test-1-secret', server.secret)
+        assert_not(server.enabled)
         assert_nil(server.load)
       when 'test-2'
         assert_equal('https://test-2.example.com/bigbluebutton/api', server.url)
         assert_equal('test-2-secret', server.secret)
+        assert(server.enabled)
         assert_equal(2, server.load)
       else
         flunk("Returned unexpected server #{server.id}")
@@ -113,8 +152,10 @@ class ServerTest < ActiveSupport::TestCase
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
       redis.sadd('servers', 'test-1')
+      redis.sadd('server_enabled', 'test-1')
       redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
       redis.sadd('servers', 'test-2')
+      redis.sadd('server_enabled', 'test-2')
       redis.zadd('server_load', 2, 'test-2')
       redis.mapped_hmset('server:test-3', url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret')
     end
@@ -125,6 +166,7 @@ class ServerTest < ActiveSupport::TestCase
     assert_equal('test-2', server.id)
     assert_equal('https://test-2.example.com/bigbluebutton/api', server.url)
     assert_equal('test-2-secret', server.secret)
+    assert(server.enabled)
     assert_equal(2, server.load)
   end
 
@@ -132,6 +174,7 @@ class ServerTest < ActiveSupport::TestCase
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
       redis.sadd('servers', 'test-2')
+      redis.sadd('server_enabled', 'test-2')
       redis.zadd('server_load', 2, 'test-2')
     end
 
@@ -149,15 +192,16 @@ class ServerTest < ActiveSupport::TestCase
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
       redis.sadd('servers', 'test-2')
+      redis.sadd('server_enabled', 'test-2')
     end
 
     server = Server.find('test-2')
     server.increment_load(2)
     assert_not(server.load_changed?)
-    assert_equal(2, server.load)
+    assert_nil(server.load)
 
     RedisStore.with_connection do |redis|
-      assert_equal(2, redis.zscore('server_load', 'test-2'))
+      assert_nil(redis.zscore('server_load', 'test-2'))
     end
   end
 
@@ -165,6 +209,7 @@ class ServerTest < ActiveSupport::TestCase
     server = Server.new
     server.url = 'https://test-1.example.com/bigbluebutton/api'
     server.secret = 'test-1-secret'
+    server.enabled = true
     server.save!
     assert_not_nil(server.id)
 
@@ -175,6 +220,7 @@ class ServerTest < ActiveSupport::TestCase
       servers = redis.smembers('servers')
       assert_equal(1, servers.length)
       assert_equal(server.id, servers[0])
+      assert(redis.sismember('server_enabled', server.id))
       servers = redis.zrange('server_load', 0, -1)
       assert_predicate(servers, :blank?)
     end
@@ -184,6 +230,7 @@ class ServerTest < ActiveSupport::TestCase
     server = Server.new
     server.url = 'https://test-2.example.com/bigbluebutton/api'
     server.secret = 'test-2-secret'
+    server.enabled = true
     server.load = 2
     server.save!
     assert_not_nil(server.id)
@@ -195,6 +242,7 @@ class ServerTest < ActiveSupport::TestCase
       servers = redis.smembers('servers')
       assert_equal(1, servers.length)
       assert_equal(server.id, servers[0])
+      assert(redis.sismember('server_enabled', server.id))
       servers = redis.zrange('server_load', 0, -1, with_scores: true)
       assert_equal(1, servers.length)
       assert_equal(server.id, servers[0][0])
@@ -253,6 +301,7 @@ class ServerTest < ActiveSupport::TestCase
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
       redis.sadd('servers', 'test-1')
+      redis.sadd('server_enabled', 'test-1')
     end
 
     server = Server.find('test-1')
@@ -269,6 +318,7 @@ class ServerTest < ActiveSupport::TestCase
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
       redis.sadd('servers', 'test-1')
+      redis.sadd('server_enabled', 'test-1')
       redis.zadd('server_load', 1, 'test-1')
     end
 
@@ -286,6 +336,7 @@ class ServerTest < ActiveSupport::TestCase
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
       redis.sadd('servers', 'test-1')
+      redis.sadd('server_enabled', 'test-1')
       redis.zadd('server_load', 1, 'test-1')
     end
 
@@ -299,10 +350,64 @@ class ServerTest < ActiveSupport::TestCase
     end
   end
 
+  test 'Server update load disabled' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+    end
+
+    server = Server.find('test-1')
+    server.load = 2
+    server.save!
+    assert_nil(server.load)
+
+    RedisStore.with_connection do |redis|
+      assert_nil(redis.zscore('server_load', 'test-1'))
+    end
+  end
+
+  test 'Server disable' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+      redis.sadd('server_enabled', 'test-1')
+      redis.zadd('server_load', 1, 'test-1')
+    end
+
+    server = Server.find('test-1')
+    server.enabled = false
+    server.save!
+
+    assert_nil(server.load)
+
+    RedisStore.with_connection do |redis|
+      assert_not(redis.sismember('server_enabled', 'test-1'))
+      assert_nil(redis.zscore('server_load', 'test-1'))
+    end
+  end
+
+  test 'Server enable' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+    end
+
+    server = Server.find('test-1')
+    server.enabled = true
+    server.load = 2
+    server.save!
+
+    RedisStore.with_connection do |redis|
+      assert(redis.sismember('server_enabled', 'test-1'))
+      assert_equal(2, redis.zscore('server_load', 'test-1'))
+    end
+  end
+
   test 'Server destroy active' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
       redis.sadd('servers', 'test-1')
+      redis.sadd('server_enabled', 'test-1')
       redis.zadd('server_load', 1, 'test-1')
     end
 
@@ -312,11 +417,30 @@ class ServerTest < ActiveSupport::TestCase
     RedisStore.with_connection do |redis|
       assert_empty(redis.hgetall('server:test1'))
       assert_not(redis.sismember('servers', 'test-1'))
+      assert_not(redis.sismember('server_enabled', 'test-1'))
       assert_nil(redis.zscore('server_load', 'test-1'))
     end
   end
 
-  test 'Server destroy inactive' do
+  test 'Server destroy unavailable' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+      redis.sadd('servers', 'test-1')
+      redis.sadd('server_enabled', 'test-1')
+    end
+
+    server = Server.find('test-1')
+    server.destroy!
+
+    RedisStore.with_connection do |redis|
+      assert_empty(redis.hgetall('server:test1'))
+      assert_not(redis.sismember('servers', 'test-1'))
+      assert_not(redis.sismember('server_enabled', 'test-1'))
+      assert_nil(redis.zscore('server_load', 'test-1'))
+    end
+  end
+
+  test 'Server destroy disabled' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
       redis.sadd('servers', 'test-1')
@@ -328,6 +452,7 @@ class ServerTest < ActiveSupport::TestCase
     RedisStore.with_connection do |redis|
       assert_empty(redis.hgetall('server:test1'))
       assert_not(redis.sismember('servers', 'test-1'))
+      assert_not(redis.sismember('server_enabled', 'test-1'))
       assert_nil(redis.zscore('server_load', 'test-1'))
     end
   end

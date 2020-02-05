@@ -15,6 +15,11 @@ This hash contains the following keys:
 This is a single set with the key `servers`
 It contains the ID field for each server that the load balancer knows about.
 
+### Servers Enabled Set
+
+This is a single set with the key `server_enabled`.
+It contains the ID field for each server which is administratively enabled (allowed to be used for new meetings).
+
 ### Servers Load Sorted Set
 
 There is a single sorted set with the key `server_load`.
@@ -22,6 +27,10 @@ This set contains an entry for each BigBlueButton server.
 For each server, the value stored in this set is the server ID.
 The score attached corresponds to the load on the server (number of meetings).
 Lower scores mean a server has less load.
+
+If a server is present in this set, that means it is available to be used for creating new meetings on.
+(The server is enabled and online)
+Every server in this set MUST also be in the `server_enabled` set.
 
 ## Meetings
 
