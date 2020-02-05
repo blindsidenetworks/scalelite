@@ -2,6 +2,7 @@
 
 class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   include BBBErrors
+  include ApiHelper
 
   # /
 
@@ -51,6 +52,47 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   test 'responds with MeetingNotFoundError if meeting is not found in database' do
     get bigbluebutton_api_getMeetingInfo_url, params: { meetingID: 'test' }
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    expected_error = MeetingNotFoundError.new
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
+    assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
+    assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+  end
+
+  # isMeetingRunning
+
+  test 'responds with the correct meeting status' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 0)
+    meeting1 = Meeting.find_or_create_with_server('Demo Meeting', server1)
+
+    stub_request(:get, encode_bbb_uri('isMeetingRunning', server1.url, server1.secret, 'meetingID' => meeting1.id))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><running>true</running></response>')
+
+    get bigbluebutton_api_is_meeting_running_url, params: { meetingID: meeting1.id }
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').content
+    assert response_xml.at_xpath('/response/running').content
+  end
+
+  test 'responds with MissingMeetingIDError if meeting ID is not passed to isMeetingRunning' do
+    get bigbluebutton_api_is_meeting_running_url
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    expected_error = MissingMeetingIDError.new
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
+    assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
+    assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+  end
+
+  test 'responds with MeetingNotFoundError if meeting is not found in database for isMeetingRunning' do
+    get bigbluebutton_api_is_meeting_running_url, params: { meetingID: 'test' }
 
     response_xml = Nokogiri::XML(@response.body)
 
