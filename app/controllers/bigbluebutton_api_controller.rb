@@ -58,9 +58,9 @@ class BigBlueButtonApiController < ApplicationController
     begin
       meeting = Meeting.find(params[:meetingID])
     rescue ApplicationRedisRecord::RecordNotFound
-      # Respond with MeetingNotFoundError if the meeting could not be found
+      # Respond with false if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
-      raise MeetingNotFoundError
+      return render(xml: not_running_response)
     end
 
     server = meeting.server

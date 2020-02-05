@@ -44,4 +44,14 @@ module ApiHelper
       end
     end
   end
+
+  # Not running response if meeting doesn't exist in database
+  def not_running_response
+    Nokogiri::XML::Builder.new do |xml|
+      xml.response do
+        xml.returncode('SUCCESS')
+        xml.running('false')
+      end
+    end
+  end
 end

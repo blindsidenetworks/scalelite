@@ -89,16 +89,13 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
   end
 
-  test 'responds with MeetingNotFoundError if meeting is not found in database for isMeetingRunning' do
+  test 'responds with false if meeting is not found in database for isMeetingRunning' do
     get bigbluebutton_api_is_meeting_running_url, params: { meetingID: 'test' }
 
     response_xml = Nokogiri::XML(@response.body)
 
-    expected_error = MeetingNotFoundError.new
-
-    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
-    assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
-    assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal 'false', response_xml.at_xpath('/response/running').text
   end
 
   # getMeetings
