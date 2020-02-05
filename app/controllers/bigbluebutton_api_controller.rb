@@ -15,7 +15,7 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def get_meeting_info
-    params.require(:meetingID)
+    raise MeetingNotFoundError if params[:meetingID].blank?
 
     begin
       meeting = Meeting.find(params[:meetingID])

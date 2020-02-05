@@ -36,12 +36,12 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal 'test-meeting-1', response_xml.at_xpath('/response/meetingID').content
   end
 
-  test 'responds with MissingMeetingIDError if meeting ID is not passed' do
+  test 'responds with MeetingNotFound if meeting ID is not passed' do
     get bigbluebutton_api_get_meeting_info_url
 
     response_xml = Nokogiri::XML(@response.body)
 
-    expected_error = MissingMeetingIDError.new
+    expected_error = MeetingNotFoundError.new
 
     assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
     assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
