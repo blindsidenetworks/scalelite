@@ -9,6 +9,7 @@ This hash contains the following keys:
 
 * `url`: The URL endpoint for making BigBlueButton API calls on this server
 * `secret`: The shared secret for signing BigBlueButton API calls on this server
+* `online`: The last online/offline result from the server health check
 
 ### Servers Set
 

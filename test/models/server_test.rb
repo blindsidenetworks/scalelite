@@ -30,6 +30,7 @@ class ServerTest < ActiveSupport::TestCase
     assert_equal('test-1-secret', server.secret)
     assert_not(server.enabled)
     assert_nil(server.load)
+    assert_not(server.online)
   end
 
   test 'Server find with load' do
@@ -38,7 +39,8 @@ class ServerTest < ActiveSupport::TestCase
       redis.sadd('servers', 'test-1')
       redis.sadd('server_enabled', 'test-1')
       redis.zadd('server_load', 1, 'test-1')
-      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
+      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
+                                          online: 'true')
       redis.sadd('servers', 'test-2')
       redis.sadd('server_enabled', 'test-2')
       redis.zadd('server_load', 2, 'test-2')
@@ -51,6 +53,7 @@ class ServerTest < ActiveSupport::TestCase
     assert_equal('test-2-secret', server.secret)
     assert(server.enabled)
     assert_equal(2, server.load)
+    assert(server.online)
   end
 
   test 'Server find disabled' do
@@ -217,6 +220,7 @@ class ServerTest < ActiveSupport::TestCase
       hash = redis.hgetall("server:#{server.id}")
       assert_equal('https://test-1.example.com/bigbluebutton/api', hash['url'])
       assert_equal('test-1-secret', hash['secret'])
+      assert_equal('false', hash['online'])
       servers = redis.smembers('servers')
       assert_equal(1, servers.length)
       assert_equal(server.id, servers[0])
@@ -232,6 +236,7 @@ class ServerTest < ActiveSupport::TestCase
     server.secret = 'test-2-secret'
     server.enabled = true
     server.load = 2
+    server.online = true
     server.save!
     assert_not_nil(server.id)
 
@@ -239,6 +244,7 @@ class ServerTest < ActiveSupport::TestCase
       hash = redis.hgetall("server:#{server.id}")
       assert_equal('https://test-2.example.com/bigbluebutton/api', hash['url'])
       assert_equal('test-2-secret', hash['secret'])
+      assert_equal('true', hash['online'])
       servers = redis.smembers('servers')
       assert_equal(1, servers.length)
       assert_equal(server.id, servers[0])
@@ -363,6 +369,24 @@ class ServerTest < ActiveSupport::TestCase
 
     RedisStore.with_connection do |redis|
       assert_nil(redis.zscore('server_load', 'test-1'))
+    end
+  end
+
+  test 'Server update online' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
+                                          online: 'false')
+      redis.sadd('servers', 'test-1')
+    end
+
+    server = Server.find('test-1')
+    assert_not(server.online)
+    server.online = true
+    server.save!
+
+    RedisStore.with_connection do |redis|
+      hash = redis.hgetall('server:test-1')
+      assert_equal('true', hash['online'])
     end
   end
 
