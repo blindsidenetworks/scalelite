@@ -19,7 +19,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   # getMeetingInfo
 
-  test 'responds with the correct meeting info if everything is setup correctly' do
+  test 'responds with the correct meeting info' do
     server = Server.create!(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1')
     Meeting.create!(id: 'test-meeting-1', server: server)
 
@@ -28,7 +28,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     stub_request(:get, url)
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID></response>')
 
-    get bigbluebutton_api_getMeetingInfo_url, params: { meetingID: 'test-meeting-1' }
+    get bigbluebutton_api_get_meeting_info_url, params: { meetingID: 'test-meeting-1' }
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -37,7 +37,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'responds with MissingMeetingIDError if meeting ID is not passed' do
-    get bigbluebutton_api_getMeetingInfo_url
+    get bigbluebutton_api_get_meeting_info_url
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -49,7 +49,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'responds with MeetingNotFoundError if meeting is not found in database' do
-    get bigbluebutton_api_getMeetingInfo_url, params: { meetingID: 'test' }
+    get bigbluebutton_api_get_meeting_info_url, params: { meetingID: 'test' }
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -99,5 +99,37 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
     assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
     assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+  end
+
+  # getMeetings
+
+  test 'responds with the correct meetings' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1)
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1)
+
+    stub_request(:get, encode_bbb_uri('getMeetings', server1.url, server1.secret))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
+                       '<meeting>test-meeting-1<meeting></meetings></response>')
+    stub_request(:get, encode_bbb_uri('getMeetings', server2.url, server2.secret))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
+                       '<meeting>test-meeting-2<meeting></meetings></response>')
+
+    get bigbluebutton_api_get_meetings_url
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert response_xml.xpath('//meeting[text()="test-meeting-1"]').present?
+    assert response_xml.xpath('//meeting[text()="test-meeting-2"]').present?
+  end
+
+  test 'responds with noMeetings if there are no meetings on any server' do
+    get bigbluebutton_api_get_meetings_url
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal 'noMeetings', response_xml.at_xpath('/response/messageKey').text
+    assert_equal 'No meetings were found on this server.', response_xml.at_xpath('/response/message').text
   end
 end

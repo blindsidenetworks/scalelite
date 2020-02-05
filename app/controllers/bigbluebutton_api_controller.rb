@@ -90,4 +90,46 @@ class BigBlueButtonApiController < ApplicationController
     # Render response from the server
     render(xml: response)
   end
+
+  def get_meetings
+    # Get all available servers
+    servers = Server.all
+
+    logger.warn('No servers are currently available') if servers.empty?
+
+    builder = Nokogiri::XML::Builder.new do |xml|
+      xml.response do
+        xml.returncode('SUCCESS')
+        xml.meetings
+      end
+    end
+
+    all_meetings = builder.doc
+    meetings_node = all_meetings.at_xpath('/response/meetings')
+
+    # Make individual getMeetings call for each server and append result to all_meetings
+    servers.each do |server|
+      uri = encode_bbb_uri('getMeetings', server.url, server.secret)
+
+      begin
+        # Send a GET request to the server
+        response = get_req(uri)
+
+        # Skip over if no meetings on this server
+        server_meetings = response.at_xpath('/response/meetings').children
+        next if server_meetings.empty?
+
+        # Add all meetings returned from the getMeetings call to the list
+        meetings_node.add_child(server_meetings)
+      rescue BBBError => e
+        raise e
+      rescue StandardError => e
+        logger.warn("Error #{e} accessing server #{server.id}.")
+        raise InternalError, 'Unable to access server.'
+      end
+    end
+
+    # Render all meetings if there are any or a custom no meetings response if no meetings exist
+    render(xml: meetings_node.children.empty? ? no_meetings_response : all_meetings)
+  end
 end
