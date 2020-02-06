@@ -9,7 +9,7 @@ task servers: :environment do
     puts("\turl: #{server.url}")
     puts("\tsecret: #{server.secret}")
     puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
-    puts("\tload: #{server.load}") if server.load.present?
+    puts("\tload: #{server.load.presence || 'unavailable'}")
     puts("\t#{server.online ? 'online' : 'offline'}")
   end
 end
@@ -46,6 +46,30 @@ namespace :servers do
     server = Server.find(args.id)
     server.enabled = false
     server.save!
+    puts('OK')
+  rescue ApplicationRedisRecord::RecordNotFound
+    puts("ERROR: No server found with id: #{args.id}")
+  end
+
+  desc 'Mark a BigBlueButton server as unavailable, and clear all meetings from it'
+  task :panic, [:id] => :environment do |_t, args|
+    include ApiHelper
+
+    server = Server.find(args.id)
+    server.enabled = false
+    server.save!
+
+    meetings = Meeting.all.select { |m| m.server_id == server.id }
+    meetings.each do |meeting|
+      puts("Clearing Meeting id=#{meeting.id}")
+      meeting.destroy!
+
+      get_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id))
+    rescue ApplicationRedisRecord::RecordNotDestroyed => e
+      puts("WARNING: Could not destroy meeting id=#{meeting.id}: #{e}")
+    rescue StandardError => e
+      puts("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
+    end
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")

@@ -107,13 +107,13 @@ class Meeting < ApplicationRedisRecord
   def self.all
     meetings = []
     with_connection do |redis|
-      meeting_ids = redis.smembers('meetings')
-      meeting_ids.each do |id|
-        meeting_hash = redis.hgetall(key(id))
-        next if meeting_hash.blank?
+      ids = redis.smembers('meetings')
+      ids.each do |id|
+        hash = redis.hgetall(key(id))
+        next if hash.blank?
 
-        meeting_hash[:id] = id
-        meetings << new(meeting_hash)
+        hash[:id] = id
+        meetings << new.init_with_attributes(hash)
       end
     end
     meetings

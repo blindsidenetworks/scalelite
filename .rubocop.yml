@@ -36,6 +36,7 @@ Style/DoubleNegation:
 Style/MethodCallWithArgsParentheses:
   Enabled: true
   IgnoredMethods:
+    - desc
     - gem
     - include
     - require
