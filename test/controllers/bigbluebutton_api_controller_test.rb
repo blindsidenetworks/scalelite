@@ -306,4 +306,42 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
     assert_equal 'sentEndMeetingRequest', response_xml.at_xpath('/response/messageKey').text
   end
+
+  # join
+
+  test 'responds with MeetingNotFoundError if meeting ID is not passed to join' do
+    get bigbluebutton_api_join_url
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    expected_error = MeetingNotFoundError.new
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
+    assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
+    assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+  end
+
+  test 'responds with MeetingNotFoundError if meeting is not found in database for join' do
+    get bigbluebutton_api_join_url, params: { meetingID: 'test-meeting-1' }
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    expected_error = MeetingNotFoundError.new
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
+    assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
+    assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+  end
+
+  test 'redirects user to the corrent join url' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+    meeting = Meeting.find_or_create_with_server('test-meeting-1', server1)
+
+    params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name' }
+
+    get bigbluebutton_api_join_url, params: params
+
+    assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, params).to_s
+  end
 end
