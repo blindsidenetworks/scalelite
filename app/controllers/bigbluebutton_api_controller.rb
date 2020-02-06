@@ -210,4 +210,26 @@ class BigBlueButtonApiController < ApplicationController
     # Render response from the server
     render(xml: response)
   end
+
+  def join
+    raise MeetingNotFoundError if params[:meetingID].blank?
+
+    begin
+      meeting = Meeting.find(params[:meetingID])
+    rescue ApplicationRedisRecord::RecordNotFound
+      # Respond with MeetingNotFoundError if the meeting could not be found
+      logger.info("The requested meeting #{params[:meetingID]} does not exist")
+      raise MeetingNotFoundError
+    end
+
+    server = meeting.server
+
+    # Pass along all params except the built in rails ones
+    # Has to be to_unsafe_hash since to_h only accepts permitted attributes
+    uri = encode_bbb_uri('join', server.url, server.secret, params.except(:format, :controller, :action).to_unsafe_hash)
+
+    # Redirect the user to the join url
+    logger.debug("Redirecting user to join url: #{uri}")
+    redirect_to(uri.to_s)
+  end
 end
