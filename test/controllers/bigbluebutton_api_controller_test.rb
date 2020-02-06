@@ -181,4 +181,30 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal server1.id, meeting.server.id
     assert_equal 1, server1.load
   end
+
+  test 'creates the room successfully using POST' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+
+    params = {
+      meetingID: 'test-meeting-1',
+    }
+
+    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
+      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+
+    post bigbluebutton_api_create_url, params: params
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    # Reload
+    server1 = Server.find(server1.id)
+    meeting = Meeting.find(params[:meetingID])
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal params[:meetingID], meeting.id
+    assert_equal server1.id, meeting.server.id
+    assert_equal 1, server1.load
+  end
 end
