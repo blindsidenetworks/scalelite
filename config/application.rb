@@ -39,5 +39,7 @@ module Scalelite
     config.api_only = true
 
     config.x.redis_store = config_for(:redis_store)
+
+    config.x.build_number = ENV['BUILD_NUMBER']
   end
 end
