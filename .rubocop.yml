@@ -31,6 +31,8 @@ Style/AsciiComments:
   AllowedChars: [ © ]
 Style/Documentation:
   Enabled: false
+Style/DoubleNegation:
+  Enabled: false
 Style/MethodCallWithArgsParentheses:
   Enabled: true
   IgnoredMethods:

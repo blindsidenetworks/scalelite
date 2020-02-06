@@ -8,12 +8,9 @@ task servers: :environment do
     puts("id: #{server.id}")
     puts("\turl: #{server.url}")
     puts("\tsecret: #{server.secret}")
-    puts("\tenabled: #{server.enabled}")
-    if server.load.nil?
-      puts("\toffline")
-    else
-      puts("\tonline, load: #{server.load}")
-    end
+    puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
+    puts("\tload: #{server.load}") if server.load.present?
+    puts("\t#{server.online ? 'online' : 'offline'}")
   end
 end
 

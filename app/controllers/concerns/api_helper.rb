@@ -26,7 +26,9 @@ module ApiHelper
                                         open_timeout: REQUEST_TIMEOUT, read_timeout: REQUEST_TIMEOUT) do |http|
       res = http.request(req)
       doc = Nokogiri::XML(res.body)
-      if doc.at_xpath('/response/returncode').content != 'SUCCESS'
+      returncode = doc.at_xpath('/response/returncode')
+      raise InternalError, 'Response did not include returncode' if returncode.nil?
+      if returncode.content != 'SUCCESS'
         raise BBBError.new(doc.at_xpath('/response/messageKey').content, doc.at_xpath('/response/message').content)
       end
 

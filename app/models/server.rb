@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Server < ApplicationRedisRecord
-  define_attribute_methods :id, :url, :secret, :enabled, :load
+  define_attribute_methods :id, :url, :secret, :enabled, :load, :online
 
   # Unique ID for this server
   application_redis_attr :id
@@ -18,12 +18,22 @@ class Server < ApplicationRedisRecord
   # Indicator of current server load
   application_redis_attr :load
 
+  # Whether the server is considered online (checked when server polled)
+  attr_reader :online
+
+  def online=(value)
+    value = !!value
+    online_will_change! unless @online == value
+    @online = value
+  end
+
   def save!
     with_connection do |redis|
       raise RecordNotSaved.new('Cannot update id field', self) if id_changed?
 
       # Default values
       self.id = SecureRandom.uuid if id.nil?
+      self.online = false if online.nil?
 
       # Ignore load changes (would re-add to server_load set) unless enabled
       unless enabled
@@ -35,6 +45,7 @@ class Server < ApplicationRedisRecord
       redis.multi do
         redis.hset(server_key, 'url', url) if url_changed?
         redis.hset(server_key, 'secret', secret) if secret_changed?
+        redis.hset(server_key, 'online', online ? 'true' : 'false') if online_changed?
         redis.sadd('servers', id) if id_changed?
         if enabled_changed?
           if enabled
@@ -95,9 +106,10 @@ class Server < ApplicationRedisRecord
       end
       raise RecordNotFound.new("Couldn't find Server with id=#{id}", name, id) if hash.blank?
 
-      hash[:id] = id
-      hash[:enabled] = enabled
-      hash[:load] = load if enabled
+      hash['id'] = id
+      hash['enabled'] = enabled
+      hash['load'] = load if enabled
+      hash['online'] = (hash['online'] == 'true')
       new.init_with_attributes(hash)
     end
   end
@@ -115,9 +127,10 @@ class Server < ApplicationRedisRecord
       end
       raise RecordNotFound.new("Couldn't find available Server", name, id) if hash.blank?
 
-      hash[:id] = id
-      hash[:enabled] = true # all servers in server_load set are enabled
-      hash[:load] = load
+      hash['id'] = id
+      hash['enabled'] = true # all servers in server_load set are enabled
+      hash['load'] = load
+      hash['online'] = (hash['online'] == 'true')
       new.init_with_attributes(hash)
     end
   end
@@ -137,9 +150,10 @@ class Server < ApplicationRedisRecord
         end
         next if hash.blank?
 
-        hash[:id] = id
-        hash[:enabled] = enabled
-        hash[:load] = load if enabled
+        hash['id'] = id
+        hash['enabled'] = enabled
+        hash['load'] = load if enabled
+        hash['online'] = (hash['online'] == 'true')
         servers << new.init_with_attributes(hash)
       end
     end
@@ -154,9 +168,10 @@ class Server < ApplicationRedisRecord
         hash = redis.hgetall(key(id))
         next if hash.blank?
 
-        hash[:id] = id
-        hash[:enabled] = true # all servers in server_load set are enabled
-        hash[:load] = load
+        hash['id'] = id
+        hash['enabled'] = true # all servers in server_load set are enabled
+        hash['load'] = load
+        hash['online'] = (hash['online'] == 'true')
         servers << new.init_with_attributes(hash)
       end
     end
@@ -173,9 +188,10 @@ class Server < ApplicationRedisRecord
           redis.zscore('server_load', id)
         end
 
-        hash[:id] = id
-        hash[:enabled] = enabled
-        hash[:load] = load if enabled
+        hash['id'] = id
+        hash['enabled'] = enabled
+        hash['load'] = load if enabled
+        hash['online'] = (hash['online'] == 'true')
         servers << new.init_with_attributes(hash)
       end
     end
