@@ -1,65 +1,46 @@
-FROM ruby:2.6-alpine AS base
+FROM alpine:3.11 AS base
 
-# Set a variable for the install location.
-ARG RAILS_ROOT=/usr/src/app
-# Set Rails environment.
-ENV RAILS_ENV production
-ENV BUNDLE_APP_CONFIG="$RAILS_ROOT/.bundle"
+RUN apk add --no-cache \
+    libstdc++ \
+    libxml2 \
+    libxslt \
+    ruby \
+    ruby-bigdecimal \
+    ruby-bundler \
+    ruby-json \
+    tini \
+    tzdata \
+    && addgroup scalelite \
+    && adduser -h /srv/scalelite -G scalelite -D scalelite
+WORKDIR /srv/scalelite
 
-# Make the directory and set as working.
-RUN mkdir -p $RAILS_ROOT
-WORKDIR $RAILS_ROOT
+FROM base as builder
 
-ARG BUILD_PACKAGES="build-base git"
-ARG DEV_PACKAGES="yaml-dev zlib-dev"
-ARG RUBY_PACKAGES="tzdata"
+RUN apk add --no-cache \
+    build-base \
+    libxml2-dev \
+    libxslt-dev \
+    pkgconf \
+    ruby-dev \
+    && ( echo 'install: --no-document' ; echo 'update: --no-document' ) >>/etc/gemrc
+USER scalelite:scalelite
+COPY --chown=scalelite:scalelite Gemfile* ./
+RUN bundle config build.nokogiri --user-system-libraries \
+    && bundle install --deployment --without development:test -j4 \
+    && rm -rf vendor/bundle/ruby/*/cache \
+    && find vendor/bundle/ruby/*/gems/ \( -name '*.c' -o -name '*.o' \) -delete
+COPY --chown=scalelite:scalelite . ./
 
-# Install app dependencies.
-RUN apk update \
-    && apk upgrade \
-    && apk add --update --no-cache $BUILD_PACKAGES $DEV_PACKAGES $RUBY_PACKAGES
+FROM base AS application
+USER scalelite:scalelite
+ENV RAILS_ENV=production RAILS_LOG_TO_STDOUT=1
+COPY --from=builder --chown=scalelite:scalelite /srv/scalelite ./
 
-COPY Gemfile* ./
-COPY Gemfile Gemfile.lock $RAILS_ROOT/
+FROM application AS poller
 
-RUN gem install bundler:2.0
+ENTRYPOINT [ "bin/start-poller" ]
 
-RUN bundle config --global frozen 1 \
-    && bundle install --deployment --without development:test:assets -j4 --path=vendor/bundle \
-    && rm -rf vendor/bundle/ruby/2.6.0/cache/*.gem \
-    && find vendor/bundle/ruby/2.6.0/gems/ -name "*.c" -delete \
-    && find vendor/bundle/ruby/2.6.0/gems/ -name "*.o" -delete
+FROM application AS api
 
-# Adding project files.
-COPY . .
-
-# Remove folders not needed in resulting image
-RUN rm -rf tmp/cache spec
-
-############### Build step done ###############
-
-FROM ruby:2.6-alpine
-
-# Set a variable for the install location.
-ARG RAILS_ROOT=/usr/src/app
-ARG PACKAGES="tzdata bash"
-# Set Rails environment.
-ENV RAILS_ENV=production
-ENV BUNDLE_APP_CONFIG="$RAILS_ROOT/.bundle"
-
-WORKDIR $RAILS_ROOT
-
-RUN apk update \
-    && apk upgrade \
-    && apk add --update --no-cache $PACKAGES
-
-RUN gem install bundler -v '~> 2.0'
-
-# Adding project files.
-COPY --from=base $RAILS_ROOT $RAILS_ROOT
-
-# Expose port 3000.
 EXPOSE 3000
-
-# Start the application.
-CMD ["bin/start"]
+ENTRYPOINT [ "bin/start" ]

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec tini -- bundle exec rake poll["$INTERVAL"]

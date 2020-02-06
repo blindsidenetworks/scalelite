@@ -22,6 +22,15 @@ module RedisStore
     end
   end
 
+  def self.before_fork
+    @mutex.synchronize do
+      return if @connection_pool.nil?
+
+      @connection_pool.shutdown
+      @connection_pool = nil
+    end
+  end
+
   def self.with_connection
     connection_pool.with { |connection| yield(connection) }
   end
