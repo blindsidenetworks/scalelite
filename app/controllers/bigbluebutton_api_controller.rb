@@ -132,4 +132,45 @@ class BigBlueButtonApiController < ApplicationController
     # Render all meetings if there are any or a custom no meetings response if no meetings exist
     render(xml: meetings_node.children.empty? ? no_meetings_response : all_meetings)
   end
+
+  def create
+    params.require(:meetingID)
+
+    begin
+      server = Server.find_available
+    rescue ApplicationRedisRecord::RecordNotFound
+      raise InternalError, 'Could not find any available servers.'
+    end
+
+    # Create meeting in database
+    logger.debug("Creating meeting #{params[:meetingID]} in database.")
+    meeting = Meeting.find_or_create_with_server(params[:meetingID], server)
+
+    # Update with old server if meeting already existed in database
+    server = meeting.server
+
+    logger.debug("Incrementing server #{server.id} load by 1")
+    server.increment_load(1)
+
+    logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
+    # Pass along all params except the built in rails ones
+    # Has to be to_unsafe_hash since to_h only accepts permitted attributes
+    uri = encode_bbb_uri('create', server.url, server.secret, params.except(:format, :controller, :action).to_unsafe_hash)
+
+    begin
+      # Send a GET request to the server
+      response = get_req(uri)
+
+      # TODO: handle create post for preupload presentations
+    rescue BBBError
+      # Reraise the error to return error xml to caller
+      raise
+    rescue StandardError => e
+      logger.warn("Error #{e} creating meeting #{params[:meetingID]} on server #{server.id}.")
+      raise InternalError, 'Unable to create meeting on server.'
+    end
+
+    # Render response from the server
+    render(xml: response)
+  end
 end
