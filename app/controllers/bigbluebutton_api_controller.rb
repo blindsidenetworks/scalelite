@@ -4,10 +4,14 @@ class BigBlueButtonApiController < ApplicationController
   include ApiHelper
 
   def index
+    # Return the scalelite build number if passed as an env variable
+    build_number = Rails.configuration.x.build_number
+
     builder = Nokogiri::XML::Builder.new do |xml|
       xml.response do
         xml.returncode('SUCCESS')
         xml.version('2.0')
+        xml.build(build_number) if build_number.present?
       end
     end
 
