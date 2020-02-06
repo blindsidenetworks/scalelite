@@ -23,27 +23,9 @@ module BBBErrors
     end
   end
 
-  class IncorrectPasswordError < BBBError
-    def initialize
-      super('invalidPassword', 'You must supply the moderator password for this call.')
-    end
-  end
-
-  class MeetingAlreadyExistsError < BBBError
-    def initialize
-      super('alreadyExists', 'This meeting already exists.')
-    end
-  end
-
   class MeetingNotFoundError < BBBError
     def initialize
       super('notFound', 'We could not find a meeting with that meeting ID - perhaps the meeting is not yet running?')
-    end
-  end
-
-  class MeetingStateUpdateError < BBBError
-    def initialize
-      super('internalError', 'Failed to update meeting state during terminate.')
     end
   end
 

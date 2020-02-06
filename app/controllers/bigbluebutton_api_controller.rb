@@ -15,7 +15,7 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def get_meeting_info
-    raise MeetingNotFoundError if params[:meetingID].blank?
+    params.require(:meetingID)
 
     begin
       meeting = Meeting.find(params[:meetingID])
@@ -116,7 +116,7 @@ class BigBlueButtonApiController < ApplicationController
         response = get_req(uri)
 
         # Skip over if no meetings on this server
-        server_meetings = response.at_xpath('/response/meetings').children
+        server_meetings = response.xpath('/response/meetings/meeting')
         next if server_meetings.empty?
 
         # Add all meetings returned from the getMeetings call to the list
@@ -175,7 +175,7 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def end
-    raise MeetingNotFoundError if params[:meetingID].blank?
+    params.require(:meetingID)
 
     begin
       meeting = Meeting.find(params[:meetingID])
@@ -212,7 +212,7 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def join
-    raise MeetingNotFoundError if params[:meetingID].blank?
+    params.require(:meetingID)
 
     begin
       meeting = Meeting.find(params[:meetingID])
