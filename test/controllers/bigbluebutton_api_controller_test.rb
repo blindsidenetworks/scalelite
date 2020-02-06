@@ -207,4 +207,103 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal server1.id, meeting.server.id
     assert_equal 1, server1.load
   end
+
+  # end
+
+  test 'responds with MeetingNotFoundError if meeting ID is not passed to end' do
+    get bigbluebutton_api_end_url
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    expected_error = MeetingNotFoundError.new
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
+    assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
+    assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+  end
+
+  test 'responds with MeetingNotFoundError if meeting is not found in database for end' do
+    get bigbluebutton_api_end_url, params: { meetingID: 'test-meeting-1' }
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    expected_error = MeetingNotFoundError.new
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
+    assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
+    assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+  end
+
+  test 'responds with MeetingNotFoundError if meetingID && password are passed but meeting doesnt exist' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+
+    params = {
+      meetingID: 'test-meeting-1',
+      password: 'test-password',
+    }
+
+    stub_request(:get, encode_bbb_uri('end', server1.url, server1.secret, params))
+      .to_return(body: '<response><returncode>FAILED</returncode><messageKey>notFound</messageKey>' \
+        '<message>We could not find a meeting with that meeting ID - perhaps the meeting is not yet' \
+        ' running?</message></response>')
+
+    get bigbluebutton_api_end_url, params: params
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    expected_error = MeetingNotFoundError.new
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
+    assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
+    assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+  end
+
+  test 'responds with IncorrectPasswordError if meeting exists but password is wrong' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+    Meeting.find_or_create_with_server('test-meeting-1', server1)
+
+    params = {
+      meetingID: 'test-meeting-1',
+      password: 'test-password',
+    }
+
+    stub_request(:get, encode_bbb_uri('end', server1.url, server1.secret, params))
+      .to_return(body: '<response><returncode>FAILED</returncode><messageKey>invalidPassword</messageKey>' \
+        '<message>You must supply the moderator password for this call.</message></response>')
+
+    get bigbluebutton_api_end_url, params: params
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    expected_error = IncorrectPasswordError.new
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
+    assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
+    assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+  end
+
+  test 'responds with sentEndMeetingRequest if meeting exists and password is correct' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+    Meeting.find_or_create_with_server('test-meeting-1', server1)
+
+    params = {
+      meetingID: 'test-meeting-1',
+      password: 'test-password',
+    }
+
+    stub_request(:get, encode_bbb_uri('end', server1.url, server1.secret, params))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><messageKey>sentEndMeetingRequest</messageKey>' \
+        '<message>A request to end the meeting was sent. Please wait a few seconds, and then use the getMeetingInfo' \
+        ' or isMeetingRunning API calls to verify that it was ended.</message></response>')
+
+    get bigbluebutton_api_end_url, params: params
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal 'sentEndMeetingRequest', response_xml.at_xpath('/response/messageKey').text
+  end
 end
