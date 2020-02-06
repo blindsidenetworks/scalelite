@@ -8,7 +8,11 @@ task :poll, [:interval] => :environment do |_t, args|
 
   poll_all_task = Rake::Task['poll:all']
   loop do
-    poll_all_task.invoke
+    begin
+      poll_all_task.invoke
+    rescue Redis::CannotConnectError => e
+      Rails.logger.warn(e)
+    end
 
     sleep(interval)
 
