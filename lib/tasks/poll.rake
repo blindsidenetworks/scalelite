@@ -36,9 +36,9 @@ namespace :poll do
       server.load = nil
       server.online = false
     ensure
-      Rails.logger.info("Server id=#{server.id} load: #{server.load}")
       begin
         server.save!
+        Rails.logger.info("Server id=#{server.id} load: #{server.load.nil? ? 'unavailable' : server.load}")
       rescue ApplicationRedisRecord::RecordNotSaved => e
         Rails.logger.warn("Unable to update Server id=#{server.id}: #{e}")
       end
@@ -61,8 +61,8 @@ namespace :poll do
       end
 
       begin
-        Rails.logger.info("Meeting id=#{meeting.id} on Server id=#{server.id} has ended")
         meeting.destroy!
+        Rails.logger.info("Meeting id=#{meeting.id} on Server id=#{server.id} has ended")
       rescue ApplicationRedisRecord::RecordNotSaved => e
         Rails.logger.warn("Unable to destroy meeting id=#{meeting.id}: #{e}")
       end
