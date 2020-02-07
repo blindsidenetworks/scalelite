@@ -53,8 +53,8 @@ This will print a summary of details for each server which looks like this:
 
 ```
 id: 2d2d674a-c6bb-48f3-8ad4-68f33a80a5b7
-        url: https://test-install.blindsidenetworks.com/bigbluebutton/api
-        secret: 8cd8ef52e8e101574e400365b55e11a6
+        url: https://bbb1.example.com/bigbluebutton/api
+        secret: 2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535
         enabled
         load: 21.0
         online
@@ -131,8 +131,8 @@ This will print a summary of details for each server aswell as details for every
 
 ```
 id: 2d2d674a-c6bb-48f3-8ad4-68f33a80a5b7
-        url: https://test-install.blindsidenetworks.com/bigbluebutton/api
-        secret: 8cd8ef52e8e101574e400365b55e11a6
+        url: https://bbb1.example.com/bigbluebutton/api
+        secret: 2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535
         enabled
         load: 2.0
         online
