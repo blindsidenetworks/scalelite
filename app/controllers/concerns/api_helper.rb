@@ -7,6 +7,22 @@ module ApiHelper
   include BBBErrors
 
   REQUEST_TIMEOUT = 10
+  CHECKSUM_LENGTH = 40
+
+  # Verify checksum
+  def verify_checksum
+    raise ChecksumError unless params[:checksum].present? && params[:checksum].length == CHECKSUM_LENGTH
+
+    check_string = request.query_string.gsub(
+      /&checksum=#{params[:checksum]}|checksum=#{params[:checksum]}&|checksum=#{params[:checksum]}/,
+      ''
+    )
+
+    # Camel case (ex) get_meetings to getMeetings to match BBB server
+    checksum = Digest::SHA1.hexdigest(action_name.camelcase(:lower) + check_string + Rails.configuration.x.loadbalancer_secret)
+
+    raise ChecksumError unless fixed_length_secure_compare(checksum, params[:checksum])
+  end
 
   # Encode URI and append checksum
   def encode_bbb_uri(action, base_uri, secret, bbb_params = {})
@@ -33,27 +49,6 @@ module ApiHelper
       end
 
       doc
-    end
-  end
-
-  # Success response if there are no meetings on any servers
-  def no_meetings_response
-    Nokogiri::XML::Builder.new do |xml|
-      xml.response do
-        xml.returncode('SUCCESS')
-        xml.messageKey('noMeetings')
-        xml.message('No meetings were found on this server.')
-      end
-    end
-  end
-
-  # Not running response if meeting doesn't exist in database
-  def not_running_response
-    Nokogiri::XML::Builder.new do |xml|
-      xml.response do
-        xml.returncode('SUCCESS')
-        xml.running('false')
-      end
     end
   end
 end

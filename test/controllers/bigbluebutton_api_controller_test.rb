@@ -8,7 +8,10 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   test 'responds with only success and version' do
     Rails.configuration.x.build_number = nil
-    get bigbluebutton_api_url
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_url
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -21,7 +24,10 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   test 'includes build in response if env variable is set' do
     Rails.configuration.x.build_number = 'alpha-1'
-    get bigbluebutton_api_url
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_url
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -43,7 +49,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     stub_request(:get, url)
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID></response>')
 
-    get bigbluebutton_api_get_meeting_info_url, params: { meetingID: 'test-meeting-1' }
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_get_meeting_info_url, params: { meetingID: 'test-meeting-1' }
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -52,7 +60,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'responds with MissingMeetingIDError if meeting ID is not passed' do
-    get bigbluebutton_api_get_meeting_info_url
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_get_meeting_info_url
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -64,7 +74,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'responds with MeetingNotFoundError if meeting is not found in database' do
-    get bigbluebutton_api_get_meeting_info_url, params: { meetingID: 'test' }
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_get_meeting_info_url, params: { meetingID: 'test' }
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -84,7 +96,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     stub_request(:get, encode_bbb_uri('isMeetingRunning', server1.url, server1.secret, 'meetingID' => meeting1.id))
       .to_return(body: '<response><returncode>SUCCESS</returncode><running>true</running></response>')
 
-    get bigbluebutton_api_is_meeting_running_url, params: { meetingID: meeting1.id }
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_is_meeting_running_url, params: { meetingID: meeting1.id }
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -93,7 +107,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'responds with MissingMeetingIDError if meeting ID is not passed to isMeetingRunning' do
-    get bigbluebutton_api_is_meeting_running_url
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_is_meeting_running_url
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -105,7 +121,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'responds with false if meeting is not found in database for isMeetingRunning' do
-    get bigbluebutton_api_is_meeting_running_url, params: { meetingID: 'test' }
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_is_meeting_running_url, params: { meetingID: 'test' }
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -126,7 +144,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
                        '<meeting>test-meeting-2<meeting></meetings></response>')
 
-    get bigbluebutton_api_get_meetings_url
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_get_meetings_url
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -136,7 +156,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'responds with noMeetings if there are no meetings on any server' do
-    get bigbluebutton_api_get_meetings_url
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_get_meetings_url
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -148,7 +170,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   # /create
 
   test 'responds with MissingMeetingIDError if meeting ID is not passed to create' do
-    get bigbluebutton_api_create_url
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_create_url
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -160,7 +184,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'responds with InternalError if no servers are available in create' do
-    get bigbluebutton_api_create_url, params: { meetingID: 'test-meeting-1' }
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_create_url, params: { meetingID: 'test-meeting-1' }
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -183,7 +209,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
-    get bigbluebutton_api_create_url, params: params
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_create_url, params: params
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -209,7 +237,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
-    post bigbluebutton_api_create_url, params: params
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      post bigbluebutton_api_create_url, params: params
+    end
 
     response_xml = Nokogiri::XML(@response.body)
 
@@ -226,8 +256,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   # end
 
   test 'responds with MissingMeetingIDError if meeting ID is not passed to end' do
-    get bigbluebutton_api_end_url
-
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_end_url
+    end
     response_xml = Nokogiri::XML(@response.body)
 
     expected_error = MissingMeetingIDError.new
@@ -238,8 +269,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'responds with MeetingNotFoundError if meeting is not found in database for end' do
-    get bigbluebutton_api_end_url, params: { meetingID: 'test-meeting-1' }
-
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_end_url, params: { meetingID: 'test-meeting-1' }
+    end
     response_xml = Nokogiri::XML(@response.body)
 
     expected_error = MeetingNotFoundError.new
@@ -263,8 +295,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
         '<message>We could not find a meeting with that meeting ID - perhaps the meeting is not yet' \
         ' running?</message></response>')
 
-    get bigbluebutton_api_end_url, params: params
-
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_end_url, params: params
+    end
     response_xml = Nokogiri::XML(@response.body)
 
     expected_error = MeetingNotFoundError.new
@@ -289,8 +322,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
         '<message>A request to end the meeting was sent. Please wait a few seconds, and then use the getMeetingInfo' \
         ' or isMeetingRunning API calls to verify that it was ended.</message></response>')
 
-    get bigbluebutton_api_end_url, params: params
-
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_end_url, params: params
+    end
     response_xml = Nokogiri::XML(@response.body)
 
     assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
@@ -300,8 +334,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   # join
 
   test 'responds with MissingMeetingIDError if meeting ID is not passed to join' do
-    get bigbluebutton_api_join_url
-
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_join_url
+    end
     response_xml = Nokogiri::XML(@response.body)
 
     expected_error = MissingMeetingIDError.new
@@ -312,8 +347,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'responds with MeetingNotFoundError if meeting is not found in database for join' do
-    get bigbluebutton_api_join_url, params: { meetingID: 'test-meeting-1' }
-
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_join_url, params: { meetingID: 'test-meeting-1' }
+    end
     response_xml = Nokogiri::XML(@response.body)
 
     expected_error = MeetingNotFoundError.new
@@ -330,7 +366,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name' }
 
-    get bigbluebutton_api_join_url, params: params
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_join_url, params: params
+    end
 
     assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, params).to_s
   end
