@@ -7,6 +7,8 @@ module RedisStore
     return @connection_pool if @connection_pool
 
     @mutex.synchronize do
+      return @connection_pool if @connection_pool
+
       pool = Rails.configuration.x.redis_store.pool || ENV['RAILS_MAX_THREADS'] || ConnectionPool::DEFAULTS[:size]
       pool_timeout = Rails.configuration.x.redis_store.pool_timeout || ConnectionPool::DEFAULTS[:timeout]
       @connection_pool = ConnectionPool.new(size: pool, timeout: pool_timeout) do
