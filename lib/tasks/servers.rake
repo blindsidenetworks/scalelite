@@ -4,7 +4,7 @@ desc('List configured BigBlueButton servers')
 task servers: :environment do
   servers = Server.all
   puts('No servers are configured') if servers.empty?
-  Server.all.each do |server|
+  servers.each do |server|
     puts("id: #{server.id}")
     puts("\turl: #{server.url}")
     puts("\tsecret: #{server.secret}")
