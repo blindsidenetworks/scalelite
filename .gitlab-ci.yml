@@ -1,0 +1,65 @@
+stages:
+  - test
+  - build
+
+variables:
+  RUBY_VERSION: "2.6"
+
+.test:
+  stage: test
+  image: ruby:$RUBY_VERSION
+  cache:
+    key:
+      files:
+        - Gemfile.lock
+      prefix: test-$RUBY_VERSION
+    paths:
+      - vendor/bundle/ruby
+  before_script:
+    - ruby -v
+    - gem install --no-document bundler -v '~> 2.0'
+    - bundle config set path vendor/bundle
+    - bundle install
+  interruptible: true
+
+rubocop:
+  extends: .test
+  script:
+    - bundle exec rubocop
+
+rails_test:
+  extends: .test
+  script:
+    - bundle exec rails test
+
+.docker:
+  stage: build
+  image: docker:19.03
+  services:
+    - docker:19.03-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_BUILDKIT: "1"
+  before_script:
+    - docker info
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  interruptible: true
+
+docker:
+  extends: .docker
+  script:
+    - docker build
+        --target api
+        --build-arg BUILDKIT_INLINE_CACHE=1
+        --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+        --tag $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+        .
+    - docker build
+        --target poller
+        --build-arg BUILDKIT_INLINE_CACHE=1
+        --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+        --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
+        --tag $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
+        .
+    - docker push $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
