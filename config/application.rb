@@ -41,5 +41,7 @@ module Scalelite
     config.x.redis_store = config_for(:redis_store)
 
     config.x.build_number = ENV['BUILD_NUMBER']
+
+    config.x.loadbalancer_secret = ENV['LOADBALANCER_SECRET']
   end
 end

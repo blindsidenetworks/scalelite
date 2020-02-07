@@ -3,6 +3,8 @@
 class BigBlueButtonApiController < ApplicationController
   include ApiHelper
 
+  before_action :verify_checksum, except: :index
+
   def index
     # Return the scalelite build number if passed as an env variable
     build_number = Rails.configuration.x.build_number
@@ -39,14 +41,9 @@ class BigBlueButtonApiController < ApplicationController
     begin
       # Send a GET request to the server
       response = get_req(uri)
-    rescue BBBError => e
-      if e.message_key == 'notFound'
-        # If the meeting is not found, delete the meeting from the load balancer database
-        logger.debug("Meeting #{params[:meetingID]} not found on server; deleting from database.")
-        meeting.destroy!
-      end
+    rescue BBBError
       # Reraise the error
-      raise e
+      raise
     rescue StandardError => e
       logger.warn("Error #{e} accessing meeting #{params[:meetingID]} on server.")
       raise InternalError, 'Unable to access meeting on server.'
@@ -78,14 +75,9 @@ class BigBlueButtonApiController < ApplicationController
     begin
       # Send a GET request to the server
       response = get_req(uri)
-    rescue BBBError => e
-      if e.message_key == 'notFound'
-        # If the meeting is not found, delete the meeting from the load balancer database
-        logger.debug("Meeting #{params[:meetingID]} not found on server; deleting from database.")
-        meeting.destroy!
-      end
+    rescue BBBError
       # Reraise the error
-      raise e
+      raise
     rescue StandardError => e
       logger.warn("Error #{e} accessing meeting #{params[:meetingID]} on server.")
       raise InternalError, 'Unable to access meeting on server.'
@@ -158,8 +150,7 @@ class BigBlueButtonApiController < ApplicationController
 
     logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
     # Pass along all params except the built in rails ones
-    # Has to be to_unsafe_hash since to_h only accepts permitted attributes
-    uri = encode_bbb_uri('create', server.url, server.secret, params.except(:format, :controller, :action).to_unsafe_hash)
+    uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params)
 
     begin
       # Send a GET request to the server
@@ -229,11 +220,39 @@ class BigBlueButtonApiController < ApplicationController
     server = meeting.server
 
     # Pass along all params except the built in rails ones
-    # Has to be to_unsafe_hash since to_h only accepts permitted attributes
-    uri = encode_bbb_uri('join', server.url, server.secret, params.except(:format, :controller, :action).to_unsafe_hash)
+    uri = encode_bbb_uri('join', server.url, server.secret, pass_through_params)
 
     # Redirect the user to the join url
     logger.debug("Redirecting user to join url: #{uri}")
     redirect_to(uri.to_s)
+  end
+
+  private
+
+  # Filter out unneeded params when passing through to join and create calls
+  # Has to be to_unsafe_hash since to_h only accepts permitted attributes
+  def pass_through_params
+    params.except(:format, :controller, :action, :checksum).to_unsafe_hash
+  end
+
+  # Success response if there are no meetings on any servers
+  def no_meetings_response
+    Nokogiri::XML::Builder.new do |xml|
+      xml.response do
+        xml.returncode('SUCCESS')
+        xml.messageKey('noMeetings')
+        xml.message('No meetings were found on this server.')
+      end
+    end
+  end
+
+  # Not running response if meeting doesn't exist in database
+  def not_running_response
+    Nokogiri::XML::Builder.new do |xml|
+      xml.response do
+        xml.returncode('SUCCESS')
+        xml.running('false')
+      end
+    end
   end
 end
