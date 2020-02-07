@@ -36,3 +36,86 @@ Additionally, these options can be set:
 * `BUILD_NUMBER`: An additional build version to report in the BigBlueButton top-level API endpoint. The Docker image has this preset to a value determined at image build time.
 * `RAILS_LOG_TO_STDOUT`: Log to STDOUT instead of a file. Recommended for deployments with a service manager (e.g. systemd) or in Docker. The Docker image sets this by default.
 * `REDIS_POOL`: Configure the Redis connection pool size. Defaults to `RAILS_MAX_THREADS`.
+
+## Server Management
+
+Server management is provided using rake tasks which update server information in Redis.
+
+In a Docker deployment, these should be run from in the Docker container. You can enter the Docker container using a command like `docker exec -it <container name> /bin/sh`
+
+### Show configured server details
+
+```sh
+./bin/rake servers
+```
+
+This will print a summary of details for each server which looks like this:
+
+```
+id: 2d2d674a-c6bb-48f3-8ad4-68f33a80a5b7
+        url: https://test-install.blindsidenetworks.com/bigbluebutton/api
+        secret: 8cd8ef52e8e101574e400365b55e11a6
+        enabled
+        load: 21.0
+        online
+```
+
+Particular information to note:
+
+* `id`: This is the ID value used when updating or removing the server
+* `enabled` or `disabled`: Whether the server is administratively enabled. See "Enable/Disable servers" below.
+* `load`: The number of meetings on the server. New meetings will be scheduled on servers with lower load. Updated by the poll process.
+* `online`: Whether the server is responding to API requests. Updated by the poll process.
+
+### Add a server
+
+```sh
+./bin/rake servers:add[url,secret]
+```
+
+The `url` value is the complete URL to the BigBlueButton API endpoint of the server. The `/api` on the end is required.
+You can find the BigBlueButton server's URL and Secret by running `bbb-conf --secret` on the BigBlueButton server.
+
+This command will print out the ID of the newly created server, and `OK` if it was successful.
+Note that servers are added in the disabled state; see "Enable a server" below to enable it.
+
+### Remove a server
+
+```sh
+./bin/rake servers:remove[id]
+```
+
+Warning: Do not remove a server which has running meetings! This will leave the database in an inconsistant state.
+You should either wait for all meetings to end, or run the "Panic" function first.
+
+### Disable a server
+
+```sh
+./bin/rake servers:disable[id]
+```
+
+Mark the server as disabled.
+When a server is disabled, no new meetings will be started on the server.
+Any existing meetings will continue to run until they finish.
+The Poll process continues to run on disabled servers to update the "Online" status and detect ended meetings.
+This is useful to "drain" a server for updates without disrupting any ongoing meetings.
+
+### Enable a server
+
+```sh
+./bin/rake servers:enable[id]
+```
+
+Mark the server as enabled.
+
+Note that the server won't be used for new meetings until after the next time the Poll process runs to update the load information.
+
+### Panic a server
+
+```sh
+./bin/rake servers:panic[id]
+```
+
+Disable a server and clear all meeting state.
+This method is used to recover from a crashed BigBlueButton server.
+After the meeting state is cleared, anyone who tries to join a meeting that was previously on this server will instead be directed to a new meeting on a different server.
