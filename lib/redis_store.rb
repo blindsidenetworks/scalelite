@@ -7,10 +7,12 @@ module RedisStore
     return @connection_pool if @connection_pool
 
     @mutex.synchronize do
-      pool = ENV['REDIS_POOL'] || ENV['RAILS_MAX_THREADS'] || Rails.configuration.x.redis_store.pool || 5
-      @connection_pool = ConnectionPool.new(size: pool) do
-        opts = Rails.configuration.x.redis_store
-        redis = Redis.new(opts)
+      return @connection_pool if @connection_pool
+
+      pool = Rails.configuration.x.redis_store.pool || ENV['RAILS_MAX_THREADS'] || ConnectionPool::DEFAULTS[:size]
+      pool_timeout = Rails.configuration.x.redis_store.pool_timeout || ConnectionPool::DEFAULTS[:timeout]
+      @connection_pool = ConnectionPool.new(size: pool, timeout: pool_timeout) do
+        redis = Redis.new(Rails.configuration.x.redis_store)
 
         namespace = Rails.configuration.x.redis_store.namespace
         redis = Redis::Namespace.new(namespace, redis: redis) if namespace
