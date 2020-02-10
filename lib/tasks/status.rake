@@ -15,7 +15,7 @@ task status: :environment do
     puts("\tload: #{server.load.presence || 'unavailable'}")
     puts("\t#{server.online ? 'online' : 'offline'}")
 
-    response = get_req(encode_bbb_uri('getMeetings', server.url, server.secret))
+    response = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
     meetings = response.xpath('/response/meetings/meeting')
 
     server_users = 0

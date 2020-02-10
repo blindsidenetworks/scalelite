@@ -35,9 +35,17 @@ module ApiHelper
     uri
   end
 
-  # Get request
-  def get_req(uri)
-    req = Net::HTTP::Get.new(uri.request_uri)
+  # GET/POST request
+  def get_post_req(uri, body = '')
+    # If body is passed and has a value, setup POST request
+    if body.present?
+      req = Net::HTTP::Post.new(uri.request_uri)
+      req['Content-Type'] = 'application/xml'
+      req.body = body
+    else
+      req = Net::HTTP::Get.new(uri.request_uri)
+    end
+
     Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https',
                                         open_timeout: REQUEST_TIMEOUT, read_timeout: REQUEST_TIMEOUT) do |http|
       res = http.request(req)
