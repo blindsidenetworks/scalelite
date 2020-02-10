@@ -127,21 +127,10 @@ After the meeting state is cleared, anyone who tries to join a meeting that was 
 ./bin/rake status
 ```
 
-This will print a summary of details for each server aswell as details for every meeting on that server which looks like this:
+This will print a table displaying a list of all servers and some basic statistics that can be used for monitoring the overall status of the deployment
 
 ```
-id: 2d2d674a-c6bb-48f3-8ad4-68f33a80a5b7
-        url: https://bbb1.example.com/bigbluebutton/api
-        secret: 2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535
-        enabled
-        load: 2.0
-        online
-        total users: 3
-        meetings:
-                id: b4b208121b53b5e7d952333945e1fb5d4a2c4fcd
-			name: Room 1
-			users: 1
-		id: 57be4d8cee1befa3de19ef7b439f95df79b50862
-			name: Room 2
-			users: 2
+     HOSTNAME        STATE   STATUS  MEETINGS  USERS  LARGEST MEETING  VIDEOS 
+ bbb1.example.com  enabled   online        12     25                7      15 
+ bbb2.example.com  enabled   online         4     14                4       5 
 ```
