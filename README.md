@@ -130,7 +130,7 @@ After the meeting state is cleared, anyone who tries to join a meeting that was 
 This will print a table displaying a list of all servers and some basic statistics that can be used for monitoring the overall status of the deployment
 
 ```
-     HOSTNAME        STATE   STATUS  MEETINGS  USERS  VIDEOS 
- bbb1.example.com  enabled   online        12     24      15 
- bbb2.example.com  enabled   online         4     14       5 
+     HOSTNAME        STATE   STATUS  MEETINGS  USERS  LARGEST MEETING  VIDEOS 
+ bbb1.example.com  enabled   online        12     25                7      15 
+ bbb2.example.com  enabled   online         4     14                4       5 
 ```
