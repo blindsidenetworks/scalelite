@@ -173,11 +173,15 @@ GEM
       actionpack (>= 4.0)
       activesupport (>= 4.0)
       sprockets (>= 3.0.0)
+    tabulo (2.3.0)
+      tty-screen (= 0.7.0)
+      unicode-display_width (= 1.6.0)
     thor (1.0.1)
     thread_safe (0.3.6)
+    tty-screen (0.7.0)
     tzinfo (1.2.6)
       thread_safe (~> 0.1)
-    unicode-display_width (1.6.1)
+    unicode-display_width (1.6.0)
     webmock (3.8.0)
       addressable (>= 2.3.6)
       crack (>= 0.3.2)
@@ -206,6 +210,7 @@ DEPENDENCIES
   rubocop-rails (~> 2.4.0)
   spring
   spring-watcher-listen (~> 2.0.0)
+  tabulo (~> 2.3.0)
   tzinfo-data
   webmock
 
