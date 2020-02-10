@@ -49,17 +49,27 @@ docker:
   extends: .docker
   script:
     - docker build
+        --target builder
+        --build-arg BUILDKIT_INLINE_CACHE=1
+        --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+        --tag $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+        .
+    - docker build
         --target api
         --build-arg BUILDKIT_INLINE_CACHE=1
+        --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
         --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+        --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
         --tag $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
         .
     - docker build
         --target poller
         --build-arg BUILDKIT_INLINE_CACHE=1
+        --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
         --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
         --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
         --tag $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
         .
+    - docker push $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
     - docker push $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
     - docker push $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
