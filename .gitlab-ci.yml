@@ -29,8 +29,14 @@ rubocop:
 
 rails_test:
   extends: .test
+  services:
+    - postgres:11
+  variables:
+    POSTGRES_USER: scalelite
+    POSTGRES_PASSWORD: ""
+    DATABASE_URL: postgres://scalelite@postgres/scalelite_test
   script:
-    - bundle exec rails test
+    - bundle exec rails test:db
 
 .docker:
   stage: build
