@@ -227,6 +227,17 @@ class BigBlueButtonApiController < ApplicationController
     redirect_to(uri.to_s)
   end
 
+  def get_recordings
+    query = Recording.includes(playback_formats: [:thumbnails], metadata: [])
+    query = query.with_recording_id_prefixes(params[:recordID].split(',')) if params[:recordID].present?
+    query = query.where(meeting_id: params[:meetingID].split(',')) if params[:meetingID].present?
+
+    @recordings = query.order(starttime: :desc).all
+    @url_prefix = "#{request.protocol}#{request.host}"
+
+    render(:get_recordings)
+  end
+
   private
 
   # Filter out unneeded params when passing through to join and create calls

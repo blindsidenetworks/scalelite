@@ -15,5 +15,14 @@ module ActiveSupport
     parallelize(workers: :number_of_processors)
 
     # Add more helper methods to be used by all tests here...
+
+    def encode_bbb_params(api_method, query_string)
+      checksum = ::Digest::SHA1.hexdigest("#{api_method}#{query_string}#{Rails.configuration.x.loadbalancer_secret}")
+      if query_string.blank?
+        "checksum=#{checksum}"
+      else
+        "#{query_string}&checksum=#{checksum}"
+      end
+    end
   end
 end

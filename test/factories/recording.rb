@@ -19,5 +19,10 @@ FactoryBot.define do
     starttime
     endtime { starttime + 30.minutes }
     record_id { "#{Digest::SHA1.hexdigest(meeting_id)}-#{starttime.strftime('%s%L')}" }
+
+    trait :published do
+      published { true }
+      state { 'published' }
+    end
   end
 end
