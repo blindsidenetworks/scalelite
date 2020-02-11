@@ -11,9 +11,8 @@ Rails.application.routes.draw do
     match 'create', to: 'bigbluebutton_api#create', via: [:get, :post]
     get 'end', to: 'bigbluebutton_api#end'
     get 'join', to: 'bigbluebutton_api#join'
-
-    match '*any', via: :all, to: 'errors#unsupported_request'
   end
 
+  match '*any', via: :all, to: 'errors#unsupported_request'
   root to: 'errors#unsupported_request', via: :all
 end
