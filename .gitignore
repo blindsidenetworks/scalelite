@@ -19,5 +19,8 @@
 # For people using rbenv
 .ruby-version
 
+# Local dotenv
+.env*.local
+
 # Ignore master key for decrypting credentials and more.
 /config/master.key
