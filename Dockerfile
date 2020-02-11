@@ -36,6 +36,9 @@ USER scalelite:scalelite
 ENV RAILS_ENV=production RAILS_LOG_TO_STDOUT=1
 COPY --from=builder --chown=scalelite:scalelite /srv/scalelite ./
 
+ARG build_number
+ENV BUILD_NUMBER=$build_number
+
 FROM application AS poller
 
 ENTRYPOINT [ "bin/start-poller" ]
