@@ -81,6 +81,11 @@ GEM
       dotenv (= 2.7.5)
       railties (>= 3.2, < 6.1)
     erubi (1.9.0)
+    factory_bot (5.1.1)
+      activesupport (>= 4.2.0)
+    factory_bot_rails (5.1.1)
+      factory_bot (~> 5.1.0)
+      railties (>= 4.2.0)
     ffi (1.12.2)
     globalid (0.4.2)
       activesupport (>= 4.2.0)
@@ -205,6 +210,7 @@ DEPENDENCIES
   byebug
   connection_pool (~> 2.2.2)
   dotenv-rails
+  factory_bot_rails
   fakeredis!
   hiredis (~> 0.6.3)
   listen (>= 3.0.5, < 3.2)
