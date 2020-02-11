@@ -51,6 +51,8 @@ Style/MethodCallWithArgsParentheses:
     - raise
     - source
     - throw
+  Exclude:
+    - "**/*.xml.builder"
 Style/SymbolArray:
   MinSize: 6
 Style/TrailingCommaInArrayLiteral:
