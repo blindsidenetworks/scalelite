@@ -1,7 +1,7 @@
 FROM alpine:3.11 AS base
 
 RUN apk add --no-cache \
-    libstdc++ \
+    libpq \
     libxml2 \
     libxslt \
     ruby \
@@ -21,6 +21,7 @@ RUN apk add --no-cache \
     libxml2-dev \
     libxslt-dev \
     pkgconf \
+    postgresql-dev \
     ruby-dev \
     && ( echo 'install: --no-document' ; echo 'update: --no-document' ) >>/etc/gemrc
 USER scalelite:scalelite
