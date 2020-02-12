@@ -238,6 +238,23 @@ class BigBlueButtonApiController < ApplicationController
     render(:get_recordings)
   end
 
+  def publish_recordings
+    raise BBBError.new('missingParamRecordID', 'You must specify a recordID.') if params[:recordID].blank?
+    raise BBBError.new('missingParamPublish', 'You must specify a publish value true or false.') if params[:publish].blank?
+
+    publish = params[:publish].casecmp('true').zero?
+
+    Recording.transaction do
+      query = Recording.where(record_id: params[:recordID].split(','), state: 'published')
+      raise BBBError.new('notFound', 'We could not find recordings') if query.none?
+
+      query.where.not(published: publish).update_all(published: publish)
+    end
+
+    @published = publish
+    render(:publish_recordings)
+  end
+
   private
 
   # Filter out unneeded params when passing through to join and create calls

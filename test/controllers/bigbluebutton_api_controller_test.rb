@@ -502,4 +502,78 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>recordings>recording', 2
   end
+
+  # publishRecordings
+
+  test 'publishRecordings with no parameters returns checksum error' do
+    get bigbluebutton_api_publish_recordings_url
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'checksumError'
+  end
+
+  test 'publishRecordings with invalid checksum returns checksum error' do
+    get bigbluebutton_api_publish_recordings_url, params: "checksum=#{'x' * 40}"
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'checksumError'
+  end
+
+  test 'publishRecordings requires recordID parameter' do
+    params = encode_bbb_params('publishRecordings', { publish: 'true' }.to_query)
+    get bigbluebutton_api_publish_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'missingParamRecordID'
+  end
+
+  test 'publishRecordings requires publish parameter' do
+    r = create(:recording)
+    params = encode_bbb_params('publishRecordings', { recordID: r.record_id }.to_query)
+    get bigbluebutton_api_publish_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'missingParamPublish'
+  end
+
+  test 'publishRecordings updates published property to false' do
+    r = create(:recording, :published)
+    assert_equal r.published, true
+
+    params = encode_bbb_params('publishRecordings', { recordID: r.record_id, publish: 'false' }.to_query)
+    get bigbluebutton_api_publish_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>published', 'false'
+
+    r.reload
+    assert_equal r.published, false
+  end
+
+  test 'publishRecordings updates published property to true' do
+    r = create(:recording, :unpublished)
+    assert_equal r.published, false
+
+    params = encode_bbb_params('publishRecordings', { recordID: r.record_id, publish: 'true' }.to_query)
+    get bigbluebutton_api_publish_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>published', 'true'
+
+    r.reload
+    assert_equal r.published, true
+  end
+
+  test 'publishRecordings returns error if no recording found' do
+    r = create(:recording)
+
+    params = encode_bbb_params('publishRecordings', { recordID: 'not-a-real-record-id', publish: 'true' }.to_query)
+    get bigbluebutton_api_publish_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'notFound'
+  end
 end

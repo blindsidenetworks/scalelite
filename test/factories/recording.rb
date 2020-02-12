@@ -24,5 +24,10 @@ FactoryBot.define do
       published { true }
       state { 'published' }
     end
+
+    trait :unpublished do
+      published { false }
+      state { 'published' }
+    end
   end
 end

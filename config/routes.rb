@@ -12,6 +12,7 @@ Rails.application.routes.draw do
     get 'end', to: 'bigbluebutton_api#end'
     get 'join', to: 'bigbluebutton_api#join'
     get 'getRecordings', to: 'bigbluebutton_api#get_recordings', as: :get_recordings
+    get 'publishRecordings', to: 'bigbluebutton_api#publish_recordings', as: :publish_recordings
   end
 
   match '*any', via: :all, to: 'errors#unsupported_request'
