@@ -227,6 +227,64 @@ class BigBlueButtonApiController < ApplicationController
     redirect_to(uri.to_s)
   end
 
+  def get_recordings
+    query = Recording.includes(playback_formats: [:thumbnails], metadata: [])
+    query = query.with_recording_id_prefixes(params[:recordID].split(',')) if params[:recordID].present?
+    query = query.where(meeting_id: params[:meetingID].split(',')) if params[:meetingID].present?
+
+    @recordings = query.order(starttime: :desc).all
+    @url_prefix = "#{request.protocol}#{request.host}"
+
+    render(:get_recordings)
+  end
+
+  def publish_recordings
+    raise BBBError.new('missingParamRecordID', 'You must specify a recordID.') if params[:recordID].blank?
+    raise BBBError.new('missingParamPublish', 'You must specify a publish value true or false.') if params[:publish].blank?
+
+    publish = params[:publish].casecmp('true').zero?
+
+    Recording.transaction do
+      query = Recording.where(record_id: params[:recordID].split(','), state: 'published')
+      raise BBBError.new('notFound', 'We could not find recordings') if query.none?
+
+      query.where.not(published: publish).update_all(published: publish) # rubocop:disable Rails/SkipsModelValidations
+    end
+
+    @published = publish
+    render(:publish_recordings)
+  end
+
+  def update_recordings
+    raise BBBError.new('missingParamRecordID', 'You must specify a recordID.') if params[:recordID].blank?
+
+    add_metadata = {}
+    remove_metadata = []
+    params.each do |key, value|
+      next unless key.start_with?('meta_')
+
+      key = key[5..-1].downcase
+
+      if value.blank?
+        remove_metadata << key
+      else
+        add_metadata[key] = value
+      end
+    end
+
+    logger.debug("Adding metadata: #{add_metadata}")
+    logger.debug("Removing metadata: #{remove_metadata}")
+
+    record_ids = params[:recordID].split(',')
+    Metadatum.transaction do
+      Metadatum.upsert_by_record_id(record_ids, add_metadata)
+      Metadatum.delete_by_record_id(record_ids, remove_metadata)
+    end
+
+    @updated = !(add_metadata.empty? && remove_metadata.empty?)
+    render(:update_recordings)
+  end
+
   private
 
   # Filter out unneeded params when passing through to join and create calls

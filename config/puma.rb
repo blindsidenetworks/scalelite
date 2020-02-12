@@ -30,7 +30,12 @@ environment(ENV.fetch('RAILS_ENV') { 'development' })
 preload_app!
 
 before_fork do
+  ActiveRecord::Base.connection_pool.disconnect!
   RedisStore.before_fork
+end
+
+on_worker_boot do
+  ActiveRecord::Base.establish_connection
 end
 
 # Allow puma to be restarted by `rails restart` command.

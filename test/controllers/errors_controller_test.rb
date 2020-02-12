@@ -24,4 +24,16 @@ class ErrorsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
   end
+
+  test 'returns unsupportedRequestError for unknown BBB api commands' do
+    get '/bigbluebutton/api/unsupportedRequest'
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
+    assert_equal 'unsupportedRequest', response_xml.at_xpath('/response/messageKey').text
+    assert_equal 'This request is not supported.', response_xml.at_xpath('/response/message').text
+
+    assert_response :success
+  end
 end

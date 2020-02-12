@@ -22,6 +22,12 @@ Layout/LineLength:
   Max: 128
 Metrics:
   Enabled: false
+Naming/AccessorMethodName:
+  Exclude:
+    - app/controllers/bigbluebutton_api_controller.rb
+Naming/PredicateName:
+  Exclude:
+    - app/controllers/bigbluebutton_api_controller.rb
 Rails:
   Enabled: true
 Rails/DynamicFindBy:
@@ -45,15 +51,11 @@ Style/MethodCallWithArgsParentheses:
     - raise
     - source
     - throw
+  Exclude:
+    - "**/*.xml.builder"
 Style/SymbolArray:
   MinSize: 6
 Style/TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: consistent_comma
 Style/TrailingCommaInHashLiteral:
   EnforcedStyleForMultiline: consistent_comma
-Naming/AccessorMethodName:
-  # Allows method names to match api request names (get...)
-  Enabled: false
-Naming/PredicateName:
-  # Allows method names to match api request names (is..)
-  Enabled: false

@@ -3,6 +3,8 @@ language: ruby
 cache: bundler
 rvm:
   - 2.6.5
+services:
+  - postgresql
 
 before_install:
   - gem install bundler
@@ -12,4 +14,4 @@ jobs:
     - name: rubocop & rails test
       script:
         - bundle exec rubocop
-        - bundle exec rails test
+        - bundle exec rails test:db

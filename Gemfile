@@ -14,10 +14,14 @@ gem 'puma', '~> 4.1'
 # Use Active Model has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 
+# Redis connection setup for live session (server and meeting) tracking
 gem 'connection_pool', '~> 2.2.2'
 gem 'hiredis', '~> 0.6.3'
 gem 'redis', '~> 4.1.3'
 gem 'redis-namespace', '~> 1.7.0'
+
+# Use postgresql as the database for Active Record
+gem 'pg'
 
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '>= 1.4.2', require: false
@@ -31,6 +35,12 @@ gem 'tabulo', '~> 2.3.0'
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
+
+  # Allow using sqlite as the database for Active Record in development/test env
+  gem 'sqlite3'
+
+  gem 'dotenv-rails'
+  gem 'factory_bot_rails'
 end
 
 group :development do

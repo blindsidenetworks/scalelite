@@ -372,4 +372,327 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, params).to_s
   end
+
+  # getRecordings
+
+  test 'getRecordings with no parameters returns checksum error' do
+    get bigbluebutton_api_get_recordings_url
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'checksumError'
+  end
+
+  test 'getRecordings with invalid checksum returns checksum error' do
+    get bigbluebutton_api_get_recordings_url, params: "checksum=#{'x' * 40}"
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'checksumError'
+  end
+
+  test 'getRecordings with only checksum returns all recordings' do
+    create_list(:recording, 3)
+
+    params = encode_bbb_params('getRecordings', '')
+    get bigbluebutton_api_get_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 3
+  end
+
+  test 'getRecordings fetches recording by meeting id' do
+    r = create(:recording, :published, participants: 3)
+    podcast = create(:playback_format, recording: r, format: 'podcast')
+    presentation = create(:playback_format, recording: r, format: 'presentation')
+
+    params = encode_bbb_params('getRecordings', { meetingID: r.meeting_id }.to_query)
+    get bigbluebutton_api_get_recordings_url, params: params
+    url_prefix = "#{@request.protocol}#{@request.host}"
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 1
+    assert_select 'response>recordings>recording' do |rec_el|
+      assert_select rec_el, 'recordID', r.record_id
+      assert_select rec_el, 'meetingID', r.meeting_id
+      assert_select rec_el, 'internalMeetingID', r.record_id
+      assert_select rec_el, 'name', r.name
+      assert_select rec_el, 'published', 'true'
+      assert_select rec_el, 'state', 'published'
+      assert_select rec_el, 'startTime', (r.starttime.to_r * 1000).to_i.to_s
+      assert_select rec_el, 'endTime', (r.endtime.to_r * 1000).to_i.to_s
+      assert_select rec_el, 'participants', '3'
+
+      assert_select rec_el, 'playback>format', r.playback_formats.count
+      assert_select rec_el, 'playback>format' do |format_els|
+        format_els.each do |format_el|
+          format_type = css_select(format_el, 'type')
+          pf = nil
+          case format_type.first.content
+          when 'podcast' then pf = podcast
+          when 'presentation' then pf = presentation
+          else flunk("Unexpected playback format: #{format_type.first.content}")
+          end
+
+          assert_select format_el, 'type', pf.format
+          assert_select format_el, 'url', "#{url_prefix}#{pf.url}"
+          assert_select format_el, 'length', pf.length.to_s
+          assert_select format_el, 'processingTime', pf.processing_time.to_s
+
+          imgs = css_select(format_el, 'preview>images>image')
+          assert_equal imgs.length, pf.thumbnails.count
+          imgs.each_with_index do |img, i|
+            t = thumbnails("fred_room_#{pf.format}_thumb#{i + 1}")
+            assert_equal img['alt'], t.alt
+            assert_equal img['height'], t.height.to_s
+            assert_equal img['width'], t.width.to_s
+            assert_equal img.content, "#{url_prefix}#{t.url}"
+          end
+        end
+      end
+    end
+  end
+
+  test 'getRecordings allows multiple comma-separated meeting IDs' do
+    create_list(:recording, 5)
+    r1 = create(:recording)
+    r2 = create(:recording)
+
+    params = encode_bbb_params('getRecordings', {
+      meetingID: [r1.meeting_id, r2.meeting_id].join(','),
+    }.to_query)
+    get bigbluebutton_api_get_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 2
+  end
+
+  test 'getRecordings does case-sensitive match on recording id' do
+    r = create(:recording)
+    params = encode_bbb_params('getRecordings', { recordID: r.record_id.upcase }.to_query)
+    get bigbluebutton_api_get_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>messageKey', 'noRecordings'
+    assert_select 'response>recordings>recording', 0
+  end
+
+  test 'getRecordings does prefix match on recording id' do
+    create_list(:recording, 5)
+    r = create(:recording, meeting_id: 'bulk-prefix-match')
+    create_list(:recording, 19, meeting_id: 'bulk-prefix-match')
+    params = encode_bbb_params('getRecordings', { recordID: r.record_id[0, 40] }.to_query)
+    get bigbluebutton_api_get_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 20
+    assert_select 'recording>meetingID', r.meeting_id
+  end
+
+  test 'getRecordings allows multiple comma-separated recording IDs' do
+    create_list(:recording, 5)
+    r1 = create(:recording)
+    r2 = create(:recording)
+
+    params = encode_bbb_params('getRecordings', {
+      recordID: [r1.record_id, r2.record_id].join(','),
+    }.to_query)
+    get bigbluebutton_api_get_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 2
+  end
+
+  # publishRecordings
+
+  test 'publishRecordings with no parameters returns checksum error' do
+    get bigbluebutton_api_publish_recordings_url
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'checksumError'
+  end
+
+  test 'publishRecordings with invalid checksum returns checksum error' do
+    get bigbluebutton_api_publish_recordings_url, params: "checksum=#{'x' * 40}"
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'checksumError'
+  end
+
+  test 'publishRecordings requires recordID parameter' do
+    params = encode_bbb_params('publishRecordings', { publish: 'true' }.to_query)
+    get bigbluebutton_api_publish_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'missingParamRecordID'
+  end
+
+  test 'publishRecordings requires publish parameter' do
+    r = create(:recording)
+    params = encode_bbb_params('publishRecordings', { recordID: r.record_id }.to_query)
+    get bigbluebutton_api_publish_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'missingParamPublish'
+  end
+
+  test 'publishRecordings updates published property to false' do
+    r = create(:recording, :published)
+    assert_equal r.published, true
+
+    params = encode_bbb_params('publishRecordings', { recordID: r.record_id, publish: 'false' }.to_query)
+    get bigbluebutton_api_publish_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>published', 'false'
+
+    r.reload
+    assert_equal r.published, false
+  end
+
+  test 'publishRecordings updates published property to true' do
+    r = create(:recording, :unpublished)
+    assert_equal r.published, false
+
+    params = encode_bbb_params('publishRecordings', { recordID: r.record_id, publish: 'true' }.to_query)
+    get bigbluebutton_api_publish_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>published', 'true'
+
+    r.reload
+    assert_equal r.published, true
+  end
+
+  test 'publishRecordings returns error if no recording found' do
+    create(:recording)
+
+    params = encode_bbb_params('publishRecordings', { recordID: 'not-a-real-record-id', publish: 'true' }.to_query)
+    get bigbluebutton_api_publish_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'notFound'
+  end
+
+  # updateRecordings
+
+  test 'updateRecordings with no parameters returns checksum error' do
+    get bigbluebutton_api_update_recordings_url
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'checksumError'
+  end
+
+  test 'updateRecordings with invalid checksum returns checksum error' do
+    get bigbluebutton_api_update_recordings_url, params: "checksum=#{'x' * 40}"
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'checksumError'
+  end
+
+  test 'updateRecordings requires recordID parameter' do
+    params = encode_bbb_params('updateRecordings', '')
+    get bigbluebutton_api_update_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'missingParamRecordID'
+  end
+
+  test 'updateRecordings adds a new meta parameter' do
+    r = create(:recording)
+
+    meta_params = { 'newparam' => 'newvalue' }
+    params = encode_bbb_params('updateRecordings', {
+      recordID: r.record_id,
+    }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+    assert_difference 'Metadatum.count', 1 do
+      get bigbluebutton_api_update_recordings_url, params: params
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>updated', 'true'
+
+    meta_params.each do |k, v|
+      m = r.metadata.find_by(key: k)
+      assert_not m.nil?
+      assert m.value, v
+    end
+  end
+
+  test 'updateRecordings updates an existing meta parameter' do
+    r = create(:recording_with_metadata, meta_params: { 'gl-listed' => 'true' })
+
+    meta_params = { 'gl-listed' => 'false' }
+    params = encode_bbb_params('updateRecordings', {
+      recordID: r.record_id,
+    }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+    assert_no_difference 'Metadatum.count' do
+      get bigbluebutton_api_update_recordings_url, params: params
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>updated', 'true'
+
+    m = r.metadata.find_by(key: 'gl-listed')
+    assert_equal m.value, meta_params['gl-listed']
+  end
+
+  test 'updateRecordings deletes an existing meta parameter' do
+    r = create(:recording_with_metadata, meta_params: { 'gl-listed' => 'true' })
+
+    meta_params = { 'gl-listed' => '' }
+    params = encode_bbb_params('updateRecordings', {
+      recordID: r.record_id,
+    }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+    assert_difference 'Metadatum.count', -1 do
+      get bigbluebutton_api_update_recordings_url, params: params
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>updated', 'true'
+
+    assert_raises ActiveRecord::RecordNotFound do
+      r.metadata.find_by!(key: 'gl-listed')
+    end
+  end
+
+  test 'updateRecordings updates metadata on multiple recordings' do
+    r1 = create(
+      :recording_with_metadata,
+      meta_params: { 'isBreakout' => 'false', 'meetingName' => "Fred's Room", 'gl-listed' => 'false' }
+    )
+    r2 = create(:recording)
+
+    meta_params = { 'newkey' => 'newvalue', 'gl-listed' => '' }
+    params = encode_bbb_params('updateRecordings', {
+      recordID: "#{r1.record_id},#{r2.record_id}",
+    }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+    # Add 2 metadata, delete 1 existing
+    assert_difference(
+      'r1.metadata.count' => 0,
+      'r2.metadata.count' => 1,
+      'Metadatum.count' => 1
+    ) do
+      get bigbluebutton_api_update_recordings_url, params: params
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>updated', 'true'
+
+    assert_nil r1.metadata.find_by(key: 'gl-listed')
+    assert_nil r2.metadata.find_by(key: 'gl-listed')
+    assert_equal r1.metadata.find_by(key: 'newkey').value, 'newvalue'
+    assert_equal r2.metadata.find_by(key: 'newkey').value, 'newvalue'
+  end
 end
