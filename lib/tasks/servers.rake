@@ -64,7 +64,7 @@ namespace :servers do
       puts("Clearing Meeting id=#{meeting.id}")
       meeting.destroy!
 
-      get_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id))
+      get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id))
     rescue ApplicationRedisRecord::RecordNotDestroyed => e
       puts("WARNING: Could not destroy meeting id=#{meeting.id}: #{e}")
     rescue StandardError => e

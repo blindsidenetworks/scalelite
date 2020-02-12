@@ -31,7 +31,7 @@ namespace :poll do
     Rails.logger.debug('Polling servers')
     Server.all.each do |server|
       Rails.logger.debug("Polling Server id=#{server.id}")
-      resp = get_req(encode_bbb_uri('getMeetings', server.url, server.secret))
+      resp = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
       meetings = resp.xpath('/response/meetings/meeting')
       server.load = meetings.length
       server.online = true
@@ -57,7 +57,7 @@ namespace :poll do
     Meeting.all.each do |meeting|
       server = meeting.server
       Rails.logger.debug("Polling Meeting id=#{meeting.id} on Server id=#{server.id}")
-      get_req(encode_bbb_uri('getMeetingInfo', server.url, server.secret, meetingID: meeting.id))
+      get_post_req(encode_bbb_uri('getMeetingInfo', server.url, server.secret, meetingID: meeting.id))
     rescue BBBErrors::BBBError => e
       unless e.message_key == 'notFound'
         Rails.logger.warn("Unexpected BigBlueButton error polling Meeting id=#{meeting.id} on Server id=#{server.id}: #{e}")

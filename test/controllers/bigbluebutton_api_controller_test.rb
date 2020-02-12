@@ -233,7 +233,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       meetingID: 'test-meeting-1',
     }
 
-    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
+    stub_request(:post, encode_bbb_uri('create', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 

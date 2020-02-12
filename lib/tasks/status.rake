@@ -8,7 +8,7 @@ task status: :environment do
 
   servers_info = []
   Server.all.each do |server|
-    response = get_req(encode_bbb_uri('getMeetings', server.url, server.secret))
+    response = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
     meetings = response.xpath('/response/meetings/meeting')
 
     server_users = 0

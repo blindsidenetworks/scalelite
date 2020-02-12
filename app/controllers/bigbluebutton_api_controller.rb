@@ -40,7 +40,7 @@ class BigBlueButtonApiController < ApplicationController
 
     begin
       # Send a GET request to the server
-      response = get_req(uri)
+      response = get_post_req(uri)
     rescue BBBError
       # Reraise the error
       raise
@@ -74,7 +74,7 @@ class BigBlueButtonApiController < ApplicationController
 
     begin
       # Send a GET request to the server
-      response = get_req(uri)
+      response = get_post_req(uri)
     rescue BBBError
       # Reraise the error
       raise
@@ -109,7 +109,7 @@ class BigBlueButtonApiController < ApplicationController
 
       begin
         # Send a GET request to the server
-        response = get_req(uri)
+        response = get_post_req(uri)
 
         # Skip over if no meetings on this server
         server_meetings = response.xpath('/response/meetings/meeting')
@@ -153,8 +153,8 @@ class BigBlueButtonApiController < ApplicationController
     uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params)
 
     begin
-      # Send a GET request to the server
-      response = get_req(uri)
+      # Send a GET/POST request to the server
+      response = get_post_req(uri, request.post? ? request.body.read : '')
 
       # TODO: handle create post for preupload presentations
     rescue BBBError
@@ -188,7 +188,7 @@ class BigBlueButtonApiController < ApplicationController
 
     begin
       # Send a GET request to the server
-      response = get_req(uri)
+      response = get_post_req(uri)
     rescue BBBError => e
       if e.message_key == 'notFound'
         # If the meeting is not found, delete the meeting from the load balancer database
