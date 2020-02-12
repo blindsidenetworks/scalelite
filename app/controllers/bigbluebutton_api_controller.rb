@@ -248,11 +248,41 @@ class BigBlueButtonApiController < ApplicationController
       query = Recording.where(record_id: params[:recordID].split(','), state: 'published')
       raise BBBError.new('notFound', 'We could not find recordings') if query.none?
 
-      query.where.not(published: publish).update_all(published: publish)
+      query.where.not(published: publish).update_all(published: publish) # rubocop:disable Rails/SkipsModelValidations
     end
 
     @published = publish
     render(:publish_recordings)
+  end
+
+  def update_recordings
+    raise BBBError.new('missingParamRecordID', 'You must specify a recordID.') if params[:recordID].blank?
+
+    add_metadata = {}
+    remove_metadata = []
+    params.each do |key, value|
+      next unless key.start_with?('meta_')
+
+      key = key[5..-1].downcase
+
+      if value.blank?
+        remove_metadata << key
+      else
+        add_metadata[key] = value
+      end
+    end
+
+    logger.debug("Adding metadata: #{add_metadata}")
+    logger.debug("Removing metadata: #{remove_metadata}")
+
+    record_ids = params[:recordID].split(',')
+    Metadatum.transaction do
+      Metadatum.upsert_by_record_id(record_ids, add_metadata)
+      Metadatum.delete_by_record_id(record_ids, remove_metadata)
+    end
+
+    @updated = !(add_metadata.empty? && remove_metadata.empty?)
+    render(:update_recordings)
   end
 
   private

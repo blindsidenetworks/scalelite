@@ -29,5 +29,19 @@ FactoryBot.define do
       published { false }
       state { 'published' }
     end
+
+    factory :recording_with_metadata do
+      transient do
+        meta_count { 3 }
+        meta_params { {} }
+      end
+
+      after(:create) do |recording, evaluator|
+        create_list(:metadatum, evaluator.meta_count, recording: recording)
+        evaluator.meta_params.each do |key, value|
+          create(:metadatum, recording: recording, key: key, value: value)
+        end
+      end
+    end
   end
 end

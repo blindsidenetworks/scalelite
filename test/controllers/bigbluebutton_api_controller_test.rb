@@ -567,7 +567,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'publishRecordings returns error if no recording found' do
-    r = create(:recording)
+    create(:recording)
 
     params = encode_bbb_params('publishRecordings', { recordID: 'not-a-real-record-id', publish: 'true' }.to_query)
     get bigbluebutton_api_publish_recordings_url, params: params
@@ -575,5 +575,124 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select 'response>returncode', 'FAILED'
     assert_select 'response>messageKey', 'notFound'
+  end
+
+  # updateRecordings
+
+  test 'updateRecordings with no parameters returns checksum error' do
+    get bigbluebutton_api_update_recordings_url
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'checksumError'
+  end
+
+  test 'updateRecordings with invalid checksum returns checksum error' do
+    get bigbluebutton_api_update_recordings_url, params: "checksum=#{'x' * 40}"
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'checksumError'
+  end
+
+  test 'updateRecordings requires recordID parameter' do
+    params = encode_bbb_params('updateRecordings', '')
+    get bigbluebutton_api_update_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'missingParamRecordID'
+  end
+
+  test 'updateRecordings adds a new meta parameter' do
+    r = create(:recording)
+
+    meta_params = { 'newparam' => 'newvalue' }
+    params = encode_bbb_params('updateRecordings', {
+      recordID: r.record_id,
+    }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+    assert_difference 'Metadatum.count', 1 do
+      get bigbluebutton_api_update_recordings_url, params: params
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>updated', 'true'
+
+    meta_params.each do |k, v|
+      m = r.metadata.find_by(key: k)
+      assert_not m.nil?
+      assert m.value, v
+    end
+  end
+
+  test 'updateRecordings updates an existing meta parameter' do
+    r = create(:recording_with_metadata, meta_params: { 'gl-listed' => 'true' })
+
+    meta_params = { 'gl-listed' => 'false' }
+    params = encode_bbb_params('updateRecordings', {
+      recordID: r.record_id,
+    }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+    assert_no_difference 'Metadatum.count' do
+      get bigbluebutton_api_update_recordings_url, params: params
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>updated', 'true'
+
+    m = r.metadata.find_by(key: 'gl-listed')
+    assert_equal m.value, meta_params['gl-listed']
+  end
+
+  test 'updateRecordings deletes an existing meta parameter' do
+    r = create(:recording_with_metadata, meta_params: { 'gl-listed' => 'true' })
+
+    meta_params = { 'gl-listed' => '' }
+    params = encode_bbb_params('updateRecordings', {
+      recordID: r.record_id,
+    }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+    assert_difference 'Metadatum.count', -1 do
+      get bigbluebutton_api_update_recordings_url, params: params
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>updated', 'true'
+
+    assert_raises ActiveRecord::RecordNotFound do
+      r.metadata.find_by!(key: 'gl-listed')
+    end
+  end
+
+  test 'updateRecordings updates metadata on multiple recordings' do
+    r1 = create(
+      :recording_with_metadata,
+      meta_params: { 'isBreakout' => 'false', 'meetingName' => "Fred's Room", 'gl-listed' => 'false' }
+    )
+    r2 = create(:recording)
+
+    meta_params = { 'newkey' => 'newvalue', 'gl-listed' => '' }
+    params = encode_bbb_params('updateRecordings', {
+      recordID: "#{r1.record_id},#{r2.record_id}",
+    }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+    # Add 2 metadata, delete 1 existing
+    assert_difference(
+      'r1.metadata.count' => 0,
+      'r2.metadata.count' => 1,
+      'Metadatum.count' => 1
+    ) do
+      get bigbluebutton_api_update_recordings_url, params: params
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>updated', 'true'
+
+    assert_nil r1.metadata.find_by(key: 'gl-listed')
+    assert_nil r2.metadata.find_by(key: 'gl-listed')
+    assert_equal r1.metadata.find_by(key: 'newkey').value, 'newvalue'
+    assert_equal r2.metadata.find_by(key: 'newkey').value, 'newvalue'
   end
 end
