@@ -2,9 +2,6 @@ default: &default
   pool: <%= ENV.fetch('RAILS_MAX_THREADS') { 5 } %>
   timeout: 5000
   adapter: postgresql
-  host: <%= ENV['DB_HOST'] %>
-  username: <%= ENV['DB_USERNAME'] %>
-  password: <%= ENV['DB_PASSWORD'] %>
   encoding: unicode
 
 development:
@@ -20,4 +17,4 @@ test:
 
 production:
   <<: *default
-  database: <%= ENV['DB_NAME'] || 'scalelite' %>
+  database: scalelite
