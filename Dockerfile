@@ -37,8 +37,8 @@ USER scalelite:scalelite
 ENV RAILS_ENV=production RAILS_LOG_TO_STDOUT=1
 COPY --from=builder --chown=scalelite:scalelite /srv/scalelite ./
 
-ARG build_number
-ENV BUILD_NUMBER=$build_number
+ARG BUILD_NUMBER
+ENV BUILD_NUMBER=${BUILD_NUMBER}
 
 FROM application AS poller
 
