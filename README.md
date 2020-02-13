@@ -3,19 +3,6 @@ Simple BigBlueButton capacity scaling
 
 ## Configuration
 
-### Redis Connection (`config/redis_store.yml`)
-
-The `config/redis_store.yml` allows specifying per-environment configuration for the Redis server.
-The file is similar in structure to the `config/database.yml` file used by ActiveRecord.
-By default, a minimal configuration is shipped which will connect to a Redis server on localhost in development, and use "fakeredis" (an in-memory Redis emulator) to run tests without requiring a Redis server.
-The default production configuration allows specifying the Redis server connection to use via an environment variable, see below.
-You may use this configuration file to set any of the options listed in the [Redis initializer](https://rubydoc.info/github/redis/redis-rb/master/Redis#initialize-instance_method).
-Additionally, these options can be set:
-
-* `pool`: The number of connections in the pool (should match number of threads). Defaults to `RAILS_MAX_THREADS` environment variable, otherwise 5.
-* `pool_timeout`: Amount of time (seconds) to wait if all connections in the pool are in use. Defaults to 5.
-* `namespace`: An optional prefix to apply to all keys stored in Redis.
-
 ### Environment Variables
 
 #### Required
@@ -23,7 +10,8 @@ Additionally, these options can be set:
 * `URL_HOST`: The hostname that the application API enpoint is accessible from. Used to protect against DNS rebinding attacks.
 * `SECRET_KEY_BASE`: A secret used internally by Rails. Should be unique per deployment. Generate with `rake secret`.
 * `LOADBALANCER_SECRET`: The shared secret that applications will use when calling BigBlueButton APIs on the load balancer. Generate with `openssl rand -hex 32`
-* `REDIS_URL`: URL for connecting to the Redis server, see the [Redis gem documentation](https://rubydoc.info/github/redis/redis-rb/master/Redis#initialize-instance_method). Note that instead of using this environment variable, you can configure the redis server in `config/redis_store.yml`.
+* `DATABASE_URL`: URL for connecting to the PostgreSQL database, see the [Rails documentation](https://guides.rubyonrails.org/configuring.html#configuring-a-database). Note that instead of using this environment variable, you can configure the database server in `config/database.yml`.
+* `REDIS_URL`: URL for connecting to the Redis server, see the [Redis gem documentation](https://rubydoc.info/github/redis/redis-rb/master/Redis#initialize-instance_method). Note that instead of using this environment variable, you can configure the redis server in `config/redis_store.yml` (see below).
 
 #### Optional
 
@@ -36,6 +24,22 @@ Additionally, these options can be set:
 * `BUILD_NUMBER`: An additional build version to report in the BigBlueButton top-level API endpoint. The Docker image has this preset to a value determined at image build time.
 * `RAILS_LOG_TO_STDOUT`: Log to STDOUT instead of a file. Recommended for deployments with a service manager (e.g. systemd) or in Docker. The Docker image sets this by default.
 * `REDIS_POOL`: Configure the Redis connection pool size. Defaults to `RAILS_MAX_THREADS`.
+
+### Redis Connection (`config/redis_store.yml`)
+
+For a deployment using docker, you should configure the Redis Connection using the `REDIS_URL` environment variable instead, see above.
+
+The `config/redis_store.yml` allows specifying per-environment configuration for the Redis server.
+The file is similar in structure to the `config/database.yml` file used by ActiveRecord.
+By default, a minimal configuration is shipped which will connect to a Redis server on localhost in development, and use "fakeredis" (an in-memory Redis emulator) to run tests without requiring a Redis server.
+The default production configuration allows specifying the Redis server connection to use via an environment variable, see below.
+You may use this configuration file to set any of the options listed in the [Redis initializer](https://rubydoc.info/github/redis/redis-rb/master/Redis#initialize-instance_method).
+Additionally, these options can be set:
+
+* `pool`: The number of connections in the pool (should match number of threads). Defaults to `RAILS_MAX_THREADS` environment variable, otherwise 5.
+* `pool_timeout`: Amount of time (seconds) to wait if all connections in the pool are in use. Defaults to 5.
+* `namespace`: An optional prefix to apply to all keys stored in Redis.
+
 
 ## Server Management
 
