@@ -34,6 +34,7 @@ rails_test:
   variables:
     POSTGRES_USER: scalelite
     POSTGRES_PASSWORD: ""
+    POSTGRES_HOST_AUTH_METHOD: trust
     DATABASE_URL: postgres://scalelite@postgres/scalelite_test
   script:
     - bundle exec rails test:db
@@ -69,6 +70,7 @@ docker:
         --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
         --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
         --tag $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+        --tag blindsidenetwks/scalelite:$CI_COMMIT_REF_SLUG-api
         .
     - docker build
         --target poller
@@ -78,7 +80,23 @@ docker:
         --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
         --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
         --tag $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
+        --tag blindsidenetwks/scalelite:$CI_COMMIT_REF_SLUG-poller
+        .
+    - docker build
+        --target bbb-playback
+        --build-arg BUILDKIT_INLINE_CACHE=1
+        --cache-from $CI_REGISTRY_IMAGE/bbb-playback:$CI_COMMIT_REF_SLUG
+        --tag $CI_REGISTRY_IMAGE/bbb-playback:$CI_COMMIT_REF_SLUG
+        .
+    - docker build
+        --target nginx
+        --build-arg BUILDKIT_INLINE_CACHE=1
+        --cache-from $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
+        --tag $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
+        --tag blindsidenetwks/scalelite:$CI_COMMIT_REF_SLUG-nginx
         .
     - docker push $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
     - docker push $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
     - docker push $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/bbb-playback:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
