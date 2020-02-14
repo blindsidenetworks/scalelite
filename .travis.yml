@@ -8,10 +8,36 @@ services:
 
 before_install:
   - gem install bundler
+  - |
+    if [ -z "$DOCKER_REPO_SLUG" ]; then
+      export DOCKER_REPO_SLUG=${TRAVIS_REPO_SLUG}
+    fi
+
+    if [ -z "$TRAVIS_TAG" ]; then
+      export BUILD_NUMBER="${TRAVIS_BRANCH} ($(eval git rev-parse --short=7 HEAD))"
+      export DOCKER_TAGNAME=${TRAVIS_BRANCH}
+    else
+      export BUILD_NUMBER=${TRAVIS_TAG}
+      export DOCKER_TAGNAME=${TRAVIS_TAG}
+    fi
 
 jobs:
   include:
-    - name: rubocop & rails test
+    - stage: test
+      name: rubocop & rails test
       script:
         - bundle exec rubocop
         - bundle exec rails test:db
+
+    - stage: build
+      if: env(DOCKER_USERNAME) IS present AND env(DOCKER_PASSWORD) IS present
+      name: docker build
+      script:
+        - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+        - docker build --build-arg build_number="${BUILD_NUMBER}" -t ${DOCKER_REPO_SLUG}:${DOCKER_TAGNAME} .
+        - docker push ${DOCKER_REPO_SLUG}:${DOCKER_TAGNAME}
+        - |
+          if [ ! -z "$TRAVIS_TAG" ]; then
+            docker tag ${DOCKER_REPO_SLUG}:${DOCKER_TAGNAME} ${DOCKER_REPO_SLUG}:latest
+            docker push ${DOCKER_REPO_SLUG}:latest
+          fi
