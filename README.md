@@ -124,6 +124,27 @@ Disable a server and clear all meeting state.
 This method is used to recover from a crashed BigBlueButton server.
 After the meeting state is cleared, anyone who tries to join a meeting that was previously on this server will instead be directed to a new meeting on a different server.
 
+### Add multiple servers through a config file
+
+```sh
+./bin/rake servers:addAll[file]
+```
+
+Adds all the servers defined in a YAML file passed as an argument. The file passed in should have the following format:
+
+```yaml
+servers:
+  - url: "bbb1.example.com"
+    secret: "1bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+  - url: "bbb2.example.com"
+    secret: "2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+  - url: "bbb3.example.com"
+    secret: "3bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+```
+
+The command will print out each added server's `url` and `id` once it has been successfully added.
+Note that all servers are added in the disabled state; see "Enable a server" above to enable them.
+
 ## Monitoring
 
 ### Check the status of the entire deployment

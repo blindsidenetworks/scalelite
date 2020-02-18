@@ -74,4 +74,14 @@ namespace :servers do
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
   end
+
+  desc 'Adds multiple BigBlueButton servers defined in a YAML file passed as an argument'
+  task :addAll, [:path] => :environment do |_t, args|
+    servers = YAML.load_file(args.path)['servers']
+    servers.each do |server|
+      created = Server.create!(url: server['url'], secret: server['secret'])
+      puts "server: #{created.url}"
+      puts "id: #{created.id}"
+    end
+  end
 end
