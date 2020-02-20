@@ -1,6 +1,6 @@
 [BigBlueButton](https://docs.bigbluebutton.org/) is an open source web conferencing system for online learning.  
 
-# Single BigBlueButton server
+# BigBlueButton
 
 A single BigBlueButton server that meets the [minimum configuration](http://docs.bigbluebutton.org/2.2/install.html#minimum-server-requirements) supports around 150 concurrent users, which may be 3 meetings of 50 users, 5 meetings of 30 users, and so on.  Currently, the BigBlueButton project recommends that no single meeting exceed 100 users.
 
@@ -12,7 +12,7 @@ A single BigBlueButton server that meets the [minimum configuration](http://docs
 
 Still, for many cases, the capacity of a single BigBlueButton server is sufficient.  However, what if a school wants to support 1,500 simultaneous users across 50 classes?  A single BigBlueButton server cannot handle load.
 
-# Pool of BigBlueButton servers
+# Scalelite
 
 Scalelite is an open source load balancer for BigBlueButton.  As a load balancer, Scalelite can manage a pool of BigBlueButton servers and, to the front-end application using BigBlueButton -- such as Moodle or Greenlight -- Scalelite can make that pool appear as a single, very scalable BigBlueButton server.
 
