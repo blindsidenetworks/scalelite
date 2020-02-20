@@ -4,6 +4,12 @@
 
 A single BigBlueButton server that meets the [minimum configuration](http://docs.bigbluebutton.org/2.2/install.html#minimum-server-requirements) supports around 150 concurrent users, which may be 3 meetings of 50 users, 5 meetings of 30 users, and so on.  Currently, the BigBlueButton project recommends that no single meeting exceed 100 users.
 
+
+<p align="center">
+  <img src="/images/simple.png"/>
+</p><br>
+
+
 Still, for many cases, the capacity of a single BigBlueButton server is sufficient.  However, what if a school wants to support 1,500 simultaneous users across 50 classes?  A single BigBlueButton server cannot handle load.
 
 # Pool of BigBlueButton servers
@@ -17,6 +23,10 @@ For example, where a single BigBlueButton server can support 150 users, a pool 1
 A pool of BigBlueButton servers can generate many recordings.  Scalelite's can consolidate these recordings together, index them, and, and respond very efficiently to incoming [getRecordings](https://docs.bigbluebutton.org/dev/api.html#getrecordings) API calls.  
 
 Scalelite is a Ruby on Rails application.  To run Scalelite and its other components, we recommend you also use the [scalelite-run](https://github.com/blindsidenetworks/scalelite-run) project.  This project uses Docker and `docker-compose` to easily setup and run the components on a server.
+
+<p align="center">
+  <img src="/images/scalelite.png"/>
+</p><br>
 
 # Configuration
 
