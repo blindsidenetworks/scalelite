@@ -4,26 +4,26 @@
 
 A single BigBlueButton server that meets the [minimum configuration](http://docs.bigbluebutton.org/2.2/install.html#minimum-server-requirements) supports around 150 concurrent users.  
 
-For many schools and organizations, that capacity fits nicely with their needs.  They may need to hold 3 simultaneous meetings of 50 users, or 5 simultaneous meetings of 30 users, and so on.  Currently, the BigBlueButton project recommends that no single meeting exceed 100 users.
+For many schools and organizations, this capacity covers their needs.  They may need, for example, to hold 3 simultaneous meetings of 50 users, or 5 simultaneous meetings of 30 users, and so on.  Currently, the BigBlueButton project recommends that no single meeting exceed 100 users.
 
 
 <p align="center">
   <img src="/images/simple.png"/>
 </p><br>
 
-However, what if a school wants to support 1,500 users across 50 simultaneous classes?  A single BigBlueButton server cannot handle load.
+However, what if a school wants to support 1,500 users across 50 simultaneous classes?  A single BigBlueButton server cannot handle load.  But with sufficient BigBlueButton servers and Scalelite, you could handle such a load.
 
 # Scalelite
 
-Scalelite is an load balancer that can manage a pool of BigBlueButton servers and, to the front-end application using BigBlueButton -- such as [Moodle](https://moodle.org/plugins/mod_bigbluebuttonbn) or [Greenlight](https://github.com/bigbluebutton/greenlight) -- Scalelite can make the pool appear as a single (very scalable) BigBlueButton server.
+Scalelite is an load balancer that manages a pool of BigBlueButton servers and, to any BigBlueButton front-end, such as [Moodle](https://moodle.org/plugins/mod_bigbluebuttonbn) or [Greenlight](https://github.com/bigbluebutton/greenlight), makes the pool of BigBlueButton servers appear as a single (very scalable) BigBlueButton server.
 
-Scalelite continually polls each server in the pool to ensure its online and ready to receive meeting requests.  It uses this information to also determine the least loaded server in the pool.  With this information, when Scalelite receives an incoming [create](http://docs.bigbluebutton.org/dev/api.html#create) API request, Scalelite automatically starts the new meeting on the least loaded server in the pool.  In this regard, Scalelite can balance the meeting load over the pool.
+Scalelite perodically polls each server in the pool to ensure its online, ready to receive [API](http://docs.bigbluebutton.org/dev/api.html) requests, and determine its current load.  With this information, when Scalelite receives an incoming API call to [create](http://docs.bigbluebutton.org/dev/api.html#create) a new meeting, it places the new meeting on the least loaded server in the pool.  In this way, Scalelite can balance the load of meeting requests evenly across the pool.
 
-Want to support 1,500 users across 50 simultaneous meetings.  Using Scalelite, you can create a pool of 10 BigBlueButton servers (which you can quickly setup using [bbb-install.sh](https://github.com/bigbluebutton/bbb-install) to handle that capacity.  If you want a larger (or smaller) capacity, you can add/remove servers from the pool.
+For example, if you create pool of 10 BigBlueButton servers (which you can quickly setup using [bbb-install.sh](https://github.com/bigbluebutton/bbb-install), you should be able to support 1,500 simultaneous users across many meetings (again, we recommend no single meeting exceed 100 users).  If you want a larger (or smaller) capacity, you can add (or remove) servers from the pool.
 
-Running a pool of BigBlueButton servers will create more recordings than a single server.  Scalelite can consolidate these recordings together, index them, and, and respond very efficiently to incoming [getRecordings](https://docs.bigbluebutton.org/dev/api.html#getrecordings) API calls (this piece is currently under development).  
+Scalelite can manage a large pool of recordings.  Many BigBlueButton servers will create many recordings.  Scalelite can consolidate these recordings together, index them, and, when receiving an incoming [getRecordings](https://docs.bigbluebutton.org/dev/api.html#getrecordings), respond much more quickly than a standard BigBlueButton server.  (This piece is currently under development).  
 
-Scalelite is a Ruby on Rails application.  To run Scalelite and its other components, we recommend you also use the [scalelite-run](https://github.com/blindsidenetworks/scalelite-run) project.  This project uses Docker and `docker-compose` to easily setup and run all the Scalelite components on a single server.
+Scalelite is a Ruby on Rails application.  To run Scalelite and its other components, we recommend you use the [scalelite-run](https://github.com/blindsidenetworks/scalelite-run) project, which uses Docker and `docker-compose` to run all the Scalelite components as docker containerss in a single server.
 
 <p align="center">
   <img src="/images/scalelite.png"/>
@@ -31,7 +31,13 @@ Scalelite is a Ruby on Rails application.  To run Scalelite and its other compon
 
 # Configuration
 
-This section covers the common environment variables
+For setting up the BigBlueButton servers, we recommend using [bbb-install.sh](https://github.com/bigbluebutton/bbb-install) as it can automate the steps to install, configure (with SSL + Let's Encrypt), and update the server when [new versions](https://github.com/bigbluebutton/bigbluebutton/releases) of BigBlueButton are released.
+
+To help users behind who are behind restrictive firewalls to send/receive media (audio, video, and screen share) to your BigBlueButton server, you should setup a TURN server and configure each BigBlueButton server to use it.  Again, [bbb-install.sh](https://github.com/bigbluebutton/bbb-install#install-a-turn-server) can automate this process for you.
+
+To install and run Scalelite, see [scalelite-run](https://github.com/blindsidenetworks/scalelite-run).
+
+This section covers the environment variables used by Scalelite.
 
 ## Environment Variables
 
@@ -73,7 +79,12 @@ Additionally, these options can be set:
 
 # Administration
 
-Scalelite comes with a set of commands to manage the pool of BigBlueButton servers.
+Scalelite comes with a set of commands to 
+
+  * Add/remove BigBlueButton servers from the pool
+  * Trigger an immediate poll of all BigBlueButton servers
+  * Change the state of any BigBlueButton server to being `available` and `unavailable` (don't try to put new meetings on the server)
+  * Monitor the load of all BigBlueButton servers
 
 ## Server Management
 
