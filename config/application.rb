@@ -43,5 +43,8 @@ module Scalelite
     config.x.build_number = ENV['BUILD_NUMBER']
 
     config.x.loadbalancer_secret = ENV['LOADBALANCER_SECRET']
+
+    # Defaults to 0 since nil/"".to_i = 0
+    config.x.max_meeting_duration = ENV['MAX_MEETING_DURATION'].to_i
   end
 end

@@ -148,6 +148,13 @@ class BigBlueButtonApiController < ApplicationController
     logger.debug("Incrementing server #{server.id} load by 1")
     server.increment_load(1)
 
+    # Set/Overite duration if MAX_MEETING_DURATION is set and it's greater than params[:duration] (if passed)
+    unless Rails.configuration.x.max_meeting_duration.zero? ||
+           (params[:duration].present? && params[:duration].to_i < Rails.configuration.x.max_meeting_duration)
+      logger.debug("Setting duration to #{Rails.configuration.x.max_meeting_duration}")
+      params[:duration] = Rails.configuration.x.max_meeting_duration
+    end
+
     logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
     # Pass along all params except the built in rails ones
     uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params)
