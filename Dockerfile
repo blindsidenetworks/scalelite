@@ -69,10 +69,14 @@ COPY --from=builder --chown=scalelite:scalelite /srv/scalelite ./
 ARG BUILD_NUMBER
 ENV BUILD_NUMBER=${BUILD_NUMBER}
 
+FROM application AS recording-importer
+ENV RECORDING_IMPORT_POLL=true
+CMD [ "bin/start-recording-importer" ]
+
 FROM application AS poller
-ENTRYPOINT [ "bin/start-poller" ]
+CMD [ "bin/start-poller" ]
 
 FROM application AS api
 EXPOSE 3000
-ENTRYPOINT [ "bin/start" ]
+CMD [ "bin/start" ]
 

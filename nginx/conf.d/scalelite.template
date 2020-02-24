@@ -1,5 +1,5 @@
 server {
-	server_name $NGINX_HOSTNAME;
+	server_name $URL_HOST;
 
 	listen 80;
 	listen [::]:80;

@@ -1,7 +1,7 @@
 access_log stderr combined;
 
 server {
-	server_name $NGINX_HOSTNAME;
+	server_name $URL_HOST;
 
 	listen 80;
 	listen [::]:80;
@@ -10,7 +10,7 @@ server {
 }
 
 server {
-	server_name $NGINX_HOSTNAME;
+	server_name $URL_HOST;
 
 	# generated 2020-02-14, Mozilla Guideline v5.4, nginx 1.16.1, OpenSSL 1.1.1d, intermediate configuration
 	# https://ssl-config.mozilla.org/#server=nginx&version=1.16.1&config=intermediate&openssl=1.1.1d&guideline=5.4
@@ -18,8 +18,8 @@ server {
 	listen 443 ssl http2;
 	listen [::]:443 ssl http2;
 
-	ssl_certificate /etc/letsencrypt/live/$NGINX_HOSTNAME/fullchain.pem;
-	ssl_certificate_key /etc/letsencrypt/live/$NGINX_HOSTNAME/privkey.pem;
+	ssl_certificate /etc/nginx/ssl/live/$URL_HOST/fullchain.pem;
+	ssl_certificate_key /etc/nginx/ssl/live/$URL_HOST/privkey.pem;
 	ssl_session_timeout 1d;
 	ssl_session_cache shared:SSL:10m;
 	ssl_session_tickets off;
