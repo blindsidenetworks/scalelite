@@ -56,47 +56,57 @@ docker:
   extends: .docker
   script:
     - docker build
-        --target builder
-        --build-arg BUILDKIT_INLINE_CACHE=1
-        --build-arg BUILD_NUMBER="${CI_COMMIT_TAG:-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}}"
-        --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
-        --tag $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
-        .
+      --target builder
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --build-arg BUILD_NUMBER="${CI_COMMIT_TAG:-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}}"
+      --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/builder:git-$CI_COMMIT_SHA
+      .
     - docker build
-        --target api
-        --build-arg BUILDKIT_INLINE_CACHE=1
-        --build-arg BUILD_NUMBER="${CI_COMMIT_TAG:-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}}"
-        --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
-        --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
-        --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
-        --tag $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
-        --tag blindsidenetwks/scalelite:$CI_COMMIT_REF_SLUG-api
-        .
+      --target api
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --build-arg BUILD_NUMBER="${CI_COMMIT_TAG:-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}}"
+      --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+      --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+      --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA
+      --tag blindsidenetwks/scalelite:$CI_COMMIT_REF_SLUG-api
+      .
     - docker build
-        --target poller
-        --build-arg BUILDKIT_INLINE_CACHE=1
-        --build-arg BUILD_NUMBER="${CI_COMMIT_TAG:-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}}"
-        --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
-        --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
-        --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
-        --tag $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
-        --tag blindsidenetwks/scalelite:$CI_COMMIT_REF_SLUG-poller
-        .
+      --target poller
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --build-arg BUILD_NUMBER="${CI_COMMIT_TAG:-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}}"
+      --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+      --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+      --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
+      --tag blindsidenetwks/scalelite:$CI_COMMIT_REF_SLUG-poller
+      .
     - docker build
-        --target bbb-playback
-        --build-arg BUILDKIT_INLINE_CACHE=1
-        --cache-from $CI_REGISTRY_IMAGE/bbb-playback:$CI_COMMIT_REF_SLUG
-        --tag $CI_REGISTRY_IMAGE/bbb-playback:$CI_COMMIT_REF_SLUG
-        .
+      --target bbb-playback
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --cache-from $CI_REGISTRY_IMAGE/bbb-playback:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/bbb-playback:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/bbb-playback:git-$CI_COMMIT_SHA
+      .
     - docker build
-        --target nginx
-        --build-arg BUILDKIT_INLINE_CACHE=1
-        --cache-from $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
-        --tag $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
-        --tag blindsidenetwks/scalelite:$CI_COMMIT_REF_SLUG-nginx
-        .
+      --target nginx
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --cache-from $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
+      --tag blindsidenetwks/scalelite:$CI_COMMIT_REF_SLUG-nginx
+      .
     - docker push $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/builder:git-$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_IMAGE/bbb-playback:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/bbb-playback:git-$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
