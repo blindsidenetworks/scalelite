@@ -189,6 +189,9 @@ class BigBlueButtonApiController < ApplicationController
     begin
       # Send a GET request to the server
       response = get_post_req(uri)
+
+      # Remove the meeting from the database
+      meeting.destroy!
     rescue BBBError => e
       if e.message_key == 'notFound'
         # If the meeting is not found, delete the meeting from the load balancer database
@@ -197,6 +200,8 @@ class BigBlueButtonApiController < ApplicationController
       end
       # Reraise the error
       raise e
+    rescue RecordNotDestroyed => e
+      logger.warn("Error #{e} deleting meeting #{params[:meetingID]} from server #{server.id}")
     rescue StandardError => e
       logger.warn("Error #{e} accessing meeting #{params[:meetingID]} on server #{server.id}.")
       raise InternalError, 'Unable to access meeting on server.'
