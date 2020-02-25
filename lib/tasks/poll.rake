@@ -42,7 +42,10 @@ namespace :poll do
     ensure
       begin
         server.save!
-        Rails.logger.info("Server id=#{server.id} load: #{server.load.nil? ? 'unavailable' : server.load}")
+        Rails.logger.info(
+          "Server id=#{server.id} #{server.online ? 'online' : 'offline'} " \
+          "load: #{server.load.nil? ? 'unavailable' : server.load}"
+        )
       rescue ApplicationRedisRecord::RecordNotSaved => e
         Rails.logger.warn("Unable to update Server id=#{server.id}: #{e}")
       end
