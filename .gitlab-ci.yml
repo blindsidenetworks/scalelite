@@ -53,6 +53,7 @@ rails_test:
 
 docker:
   extends: .docker
+  resource_group: docker-registry
   script:
     - docker build
       --target builder
