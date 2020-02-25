@@ -33,9 +33,8 @@ rails_test:
     - postgres:11
   variables:
     POSTGRES_USER: scalelite
-    POSTGRES_PASSWORD: ""
-    POSTGRES_HOST_AUTH_METHOD: trust
-    DATABASE_URL: postgres://scalelite@postgres/scalelite_test
+    POSTGRES_PASSWORD: scalelitepw
+    DATABASE_URL: postgres://scalelite:scalelitepw@postgres/scalelite_test
   script:
     - bundle exec rails test:db
 
