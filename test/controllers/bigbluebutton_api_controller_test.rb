@@ -253,6 +253,121 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, server1.load
   end
 
+  test 'sets the duration param to MAX_MEETING_DURATION if set' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+
+    create_params = {
+      meetingID: 'test-meeting-1',
+    }
+
+    params = {
+      duration: 3600,
+      meetingID: 'test-meeting-1',
+    }
+
+    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
+      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+
+    Rails.configuration.x.stub(:max_meeting_duration, 3600) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_create_url, params: create_params
+      end
+
+      response_xml = Nokogiri::XML(@response.body)
+
+      assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    end
+  end
+
+  test 'sets the duration param to MAX_MEETING_DURATION if passed duration is greater than MAX_MEETING_DURATION' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+
+    create_params = {
+      duration: 5000,
+      meetingID: 'test-meeting-1',
+    }
+
+    params = {
+      duration: 3600,
+      meetingID: 'test-meeting-1',
+    }
+
+    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
+      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+
+    Rails.configuration.x.stub(:max_meeting_duration, 3600) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_create_url, params: create_params
+      end
+
+      response_xml = Nokogiri::XML(@response.body)
+
+      assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    end
+  end
+
+  test 'sets the duration param to MAX_MEETING_DURATION if passed duration is 0' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+
+    create_params = {
+      duration: 0,
+      meetingID: 'test-meeting-1',
+    }
+
+    params = {
+      duration: 3600,
+      meetingID: 'test-meeting-1',
+    }
+
+    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
+      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+
+    Rails.configuration.x.stub(:max_meeting_duration, 3600) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_create_url, params: create_params
+      end
+
+      response_xml = Nokogiri::XML(@response.body)
+
+      assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    end
+  end
+
+  test 'does not set the duration param to MAX_MEETING_DURATION if passed duration is less than MAX_MEETING_DURATION' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+
+    create_params = {
+      duration: 1200,
+      meetingID: 'test-meeting-1',
+    }
+
+    params = {
+      duration: 1200,
+      meetingID: 'test-meeting-1',
+    }
+
+    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
+      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+
+    Rails.configuration.x.stub(:max_meeting_duration, 3600) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_create_url, params: create_params
+      end
+
+      response_xml = Nokogiri::XML(@response.body)
+
+      assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    end
+  end
+
   # end
 
   test 'responds with MissingMeetingIDError if meeting ID is not passed to end' do
