@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec tini -- bundle exec rake recordings:watch["$RECORDING_IMPORT_POLL","$RECORDING_IMPORT_POLL_INTERVAL"]

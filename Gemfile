@@ -32,6 +32,9 @@ gem 'bootsnap', '>= 1.4.2', require: false
 # Generates a terminal table
 gem 'tabulo', '~> 2.3.0'
 
+# Used by recording watch task. Version limit is for compat with rails auto-reloader.
+gem 'listen', '>= 3.0.5', '< 3.2'
+
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
@@ -44,7 +47,6 @@ group :development, :test do
 end
 
 group :development do
-  gem 'listen', '>= 3.0.5', '< 3.2'
   gem 'rubocop', '~> 0.79.0', require: false
   gem 'rubocop-rails', '~> 2.4.0', require: false
   # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring

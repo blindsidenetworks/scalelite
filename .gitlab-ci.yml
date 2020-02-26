@@ -1,6 +1,7 @@
 stages:
   - test
   - build
+  - publish
 
 variables:
   RUBY_VERSION: "2.6"
@@ -33,8 +34,8 @@ rails_test:
     - postgres:11
   variables:
     POSTGRES_USER: scalelite
-    POSTGRES_PASSWORD: ""
-    DATABASE_URL: postgres://scalelite@postgres/scalelite_test
+    POSTGRES_PASSWORD: scalelitepw
+    DATABASE_URL: postgres://scalelite:scalelitepw@postgres/scalelite_test
   script:
     - bundle exec rails test:db
 
@@ -53,32 +54,96 @@ rails_test:
 
 docker:
   extends: .docker
+  resource_group: docker-registry
   script:
     - docker build
-        --target builder
-        --build-arg BUILDKIT_INLINE_CACHE=1
-        --build-arg BUILD_NUMBER="${CI_COMMIT_TAG:-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}}"
-        --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
-        --tag $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
-        .
+      --target builder
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --build-arg BUILD_NUMBER="${CI_COMMIT_TAG:-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}}"
+      --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/builder:git-$CI_COMMIT_SHA
+      .
     - docker build
-        --target api
-        --build-arg BUILDKIT_INLINE_CACHE=1
-        --build-arg BUILD_NUMBER="${CI_COMMIT_TAG:-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}}"
-        --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
-        --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
-        --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
-        --tag $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
-        .
+      --target api
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --build-arg BUILD_NUMBER="${CI_COMMIT_TAG:-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}}"
+      --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+      --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA
+      .
     - docker build
-        --target poller
-        --build-arg BUILDKIT_INLINE_CACHE=1
-        --build-arg BUILD_NUMBER="${CI_COMMIT_TAG:-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}}"
-        --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
-        --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
-        --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
-        --tag $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
-        .
+      --target poller
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --build-arg BUILD_NUMBER="${CI_COMMIT_TAG:-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}}"
+      --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+      --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+      --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
+      .
+    - docker build
+      --target recording-importer
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --build-arg BUILD_NUMBER="${CI_COMMIT_TAG:-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHORT_SHA}}"
+      --cache-from $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+      --cache-from $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+      --cache-from $CI_REGISTRY_IMAGE/recording-importer:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/recording-importer:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA
+      .
+    - docker build
+      --target bbb-playback
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --cache-from $CI_REGISTRY_IMAGE/bbb-playback:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/bbb-playback:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/bbb-playback:git-$CI_COMMIT_SHA
+      .
+    - docker build
+      --target nginx
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --cache-from $CI_REGISTRY_IMAGE/bbb-playback:$CI_COMMIT_REF_SLUG
+      --cache-from $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
+      .
     - docker push $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/builder:git-$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/recording-importer:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/bbb-playback:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/bbb-playback:git-$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
+
+publish_dockerhub:
+  extends: .docker
+  stage: publish
+  interruptible: false
+  resource_group: dockerhub
+  variables:
+    GIT_STRATEGY: none
+  only:
+    refs:
+      - master
+    variables:
+      - $DOCKERHUB_IMAGE
+  script:
+    - docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASSWORD
+    - docker pull $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-api
+    - docker tag $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-poller
+    - docker tag $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-recording-importer
+    - docker tag $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-nginx
+    - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-api
+    - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-poller
+    - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-recording-importer
+    - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-nginx
