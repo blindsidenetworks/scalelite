@@ -47,6 +47,9 @@ module Scalelite
     # Secret used to verify /bigbluebutton/api requests
     config.x.loadbalancer_secret = ENV['LOADBALANCER_SECRET']
 
+    # Defaults to 0 since nil/"".to_i = 0
+    config.x.max_meeting_duration = ENV['MAX_MEETING_DURATION'].to_i
+
     # Directory to monitor for recordings transferred from BigBlueButton servers
     config.x.recording_spool_dir = File.absolute_path(
       ENV.fetch('RECORDING_SPOOL_DIR') { '/var/bigbluebutton/spool' }
