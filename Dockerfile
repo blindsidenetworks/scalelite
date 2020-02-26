@@ -54,7 +54,7 @@ RUN apk add --no-cache \
     && ( echo 'install: --no-document' ; echo 'update: --no-document' ) >>/etc/gemrc
 USER scalelite:scalelite
 COPY --chown=scalelite:scalelite Gemfile* ./
-RUN bundle config build.nokogiri --user-system-libraries \
+RUN bundle config build.nokogiri --use-system-libraries \
     && bundle install --deployment --without development:test -j4 \
     && rm -rf vendor/bundle/ruby/*/cache \
     && find vendor/bundle/ruby/*/gems/ \( -name '*.c' -o -name '*.o' \) -delete
