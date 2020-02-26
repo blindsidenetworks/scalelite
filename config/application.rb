@@ -38,10 +38,26 @@ module Scalelite
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
 
+    # Read the file config/redis_store.yml as per-environment configuration with erb
     config.x.redis_store = config_for(:redis_store)
 
+    # Build number returned in the /bigbluebutton/api response
     config.x.build_number = ENV['BUILD_NUMBER']
 
+    # Secret used to verify /bigbluebutton/api requests
     config.x.loadbalancer_secret = ENV['LOADBALANCER_SECRET']
+
+    # Directory to monitor for recordings transferred from BigBlueButton servers
+    config.x.recording_spool_dir = File.absolute_path(
+      ENV.fetch('RECORDING_SPOOL_DIR') { '/var/bigbluebutton/spool' }
+    )
+    # Working directory for temporary files when extracting recordings
+    config.x.recording_work_dir = File.absolute_path(
+      ENV.fetch('RECORDING_WORK_DIR') { '/var/bigbluebutton/recording/scalelite' }
+    )
+    # Published recording directory
+    config.x.recording_publish_dir = File.absolute_path(
+      ENV.fetch('RECORDING_PUBLISH_DIR') { '/var/bigbluebutton/published' }
+    )
   end
 end

@@ -1,47 +1,45 @@
-[BigBlueButton](https://docs.bigbluebutton.org/) is an open source web conferencing system for online learning.  Scalelite is an open source load balancer for BigBlueButton.
-
-# BigBlueButton
-
-A single BigBlueButton server that meets the [minimum configuration](http://docs.bigbluebutton.org/2.2/install.html#minimum-server-requirements) supports around 150 concurrent users.  
-
-For many schools and organizations, this capacity covers their needs.  They may need, for example, to hold 3 simultaneous meetings of 50 users, or 5 simultaneous meetings of 30 users, and so on.  Currently, the BigBlueButton project recommends that no single meeting exceed 100 users.
-
-
-<p align="center">
-  <img src="/images/simple.png"/>
-</p><br>
-
-However, what if a school wants to support 1,500 users across 50 simultaneous classes?  A single BigBlueButton server cannot handle load.  But with sufficient BigBlueButton servers and Scalelite, you could handle such a load.
-
 # Scalelite
 
-Scalelite is an load balancer that manages a pool of BigBlueButton servers and, to any BigBlueButton front-end, such as [Moodle](https://moodle.org/plugins/mod_bigbluebuttonbn) or [Greenlight](https://github.com/bigbluebutton/greenlight), makes the pool of BigBlueButton servers appear as a single (very scalable) BigBlueButton server.
+[BigBlueButton](https://docs.bigbluebutton.org/) is an open source web conferencing system for online learning.
 
-Scalelite perodically polls each server in the pool to ensure its online, ready to receive [API](http://docs.bigbluebutton.org/dev/api.html) requests, and determine its current load.  With this information, when Scalelite receives an incoming API call to [create](http://docs.bigbluebutton.org/dev/api.html#create) a new meeting, it places the new meeting on the least loaded server in the pool.  In this way, Scalelite can balance the load of meeting requests evenly across the pool.
+Scalelite is an open source load balancer that manages a pool of BigBlueButton servers and, to any BigBlueButton front-end, such as [Moodle](https://moodle.org/plugins/mod_bigbluebuttonbn) or [Greenlight](https://github.com/bigbluebutton/greenlight), makes the pool of BigBlueButton servers appear as a single (very scalable) BigBlueButton server.
 
-For example, if you create pool of 10 BigBlueButton servers (which you can quickly setup using [bbb-install.sh](https://github.com/bigbluebutton/bbb-install), you should be able to support 1,500 simultaneous users across many meetings (again, we recommend no single meeting exceed 100 users).  If you want a larger (or smaller) capacity, you can add (or remove) servers from the pool.
+A single BigBlueButton server that meets the [minimum configuration](http://docs.bigbluebutton.org/2.2/install.html#minimum-server-requirements) supports around 150 concurrent users.  
+For many schools and organizations, this capacity covers their needs.
+They may need, for example, to hold 3 simultaneous meetings of 50 users, or 5 simultaneous meetings of 30 users, and so on.
+Currently, the BigBlueButton project recommends that no single meeting exceed 100 users.
 
-Scalelite can manage a large pool of recordings.  Many BigBlueButton servers will create many recordings.  Scalelite can consolidate these recordings together, index them, and, when receiving an incoming [getRecordings](https://docs.bigbluebutton.org/dev/api.html#getrecordings), respond much more quickly than a standard BigBlueButton server.  (This piece is currently under development).  
+However, what if a school wants to support 1,500 users across 50 simultaneous classes?
+A single BigBlueButton server cannot handle load.
+But with sufficient BigBlueButton servers and Scalelite, you could handle such a load.
 
-Scalelite is a Ruby on Rails application.  To run Scalelite and its other components, we recommend you use the [scalelite-run](https://github.com/blindsidenetworks/scalelite-run) project, which uses Docker and `docker-compose` to run all the Scalelite components as docker containerss in a single server.
+For example, if you create pool of 10 BigBlueButton servers (which you can quickly setup using [bbb-install.sh](https://github.com/bigbluebutton/bbb-install), you should be able to support 1,500 simultaneous users across many meetings (again, we recommend no single meeting exceed 100 users).
+If you want a larger (or smaller) capacity, you can add (or remove) servers from the pool.
 
-<p align="center">
-  <img src="/images/scalelite.png"/>
-</p><br>
+Scalelite perodically polls each server in the pool to ensure its online, ready to receive [API](http://docs.bigbluebutton.org/dev/api.html) requests, and determine its current load.
+With this information, when Scalelite receives an incoming API call to [create](http://docs.bigbluebutton.org/dev/api.html#create) a new meeting, it places the new meeting on the least loaded server in the pool.
+In this way, Scalelite can balance the load of meeting requests evenly across the pool.
 
-# Configuration
+Scalelite can manage a large pool of recordings.
+Many BigBlueButton servers will create many recordings.
+Scalelite can consolidate these recordings together, index them, and, when receiving an incoming [getRecordings](https://docs.bigbluebutton.org/dev/api.html#getrecordings), respond much more quickly than a standard BigBlueButton server.
+
+## Deployment
 
 For setting up the BigBlueButton servers, we recommend using [bbb-install.sh](https://github.com/bigbluebutton/bbb-install) as it can automate the steps to install, configure (with SSL + Let's Encrypt), and update the server when [new versions](https://github.com/bigbluebutton/bigbluebutton/releases) of BigBlueButton are released.
 
-To help users behind who are behind restrictive firewalls to send/receive media (audio, video, and screen share) to your BigBlueButton server, you should setup a TURN server and configure each BigBlueButton server to use it.  Again, [bbb-install.sh](https://github.com/bigbluebutton/bbb-install#install-a-turn-server) can automate this process for you.
+To help users behind who are behind restrictive firewalls to send/receive media (audio, video, and screen share) to your BigBlueButton server, you should setup a TURN server and configure each BigBlueButton server to use it.
+Again, [bbb-install.sh](https://github.com/bigbluebutton/bbb-install#install-a-turn-server) can automate this process for you.
 
-To install and run Scalelite, see [scalelite-run](https://github.com/blindsidenetworks/scalelite-run).
+An example Scalelite deployment will look like this:
 
-This section covers the environment variables used by Scalelite.
+![](images/scalelite.png)
 
-## Environment Variables
+## Configuration
 
-### Required
+### Environment Variables
+
+#### Required
 
 * `URL_HOST`: The hostname that the application API endpoint is accessible from. Used to protect against DNS rebinding attacks.
 * `SECRET_KEY_BASE`: A secret used internally by Rails. Should be unique per deployment. Generate with `rake secret`.
@@ -49,7 +47,16 @@ This section covers the environment variables used by Scalelite.
 * `DATABASE_URL`: URL for connecting to the PostgreSQL database, see the [Rails documentation](https://guides.rubyonrails.org/configuring.html#configuring-a-database). Note that instead of using this environment variable, you can configure the database server in `config/database.yml`.
 * `REDIS_URL`: URL for connecting to the Redis server, see the [Redis gem documentation](https://rubydoc.info/github/redis/redis-rb/master/Redis#initialize-instance_method). Note that instead of using this environment variable, you can configure the redis server in `config/redis_store.yml` (see below).
 
-### Optional
+#### Docker-Specific
+
+These variables are used by the service startup scripts in the Docker images, but are not used if you are deploying the application in a different way.
+
+* `NGINX_SSL`: Set this variable to enable the "nginx" image to listen on SSL. If you enable this, then you must bind mount the files `/etc/nginx/ssl/live/$URL_HOST/fullchain.pem` and `/etc/nginx/ssl/live/$URL_HOST/privkey.pem` (containing the certificate plus intermediates and the private key respectively) into the Docker image. Alternately, you can mount the entire `/etc/letsencrypt` directory from certbot to `/etc/nginx/ssl` instead.
+* `POLL_INTERVAL`: Used by the "poller" image to set the interval at which BigBlueButton servers are polled, in seconds. Defaults to 60.
+* `RECORDING_IMPORT_POLL`: Whether or not to poll the recording spool directory for new recordings. Defaults to "true". If the recording poll directory is on a local filesystem where inotify works, you can set this to "false" to reduce CPU overhead.
+* `RECORDING_IMPORT_POLL_INTERVAL`: How often to check the recording spool directory for new recordings, in seconds (when running in poll mode). Defaults to 60.
+
+#### Optional
 
 * `PORT`: Set the TCP port number to listen on. Defaults to 3000.
 * `BIND`: Instead of setting a port, you can set a URL to bind to. This allows using a Unix socket. See [The Puma documentation](https://puma.io/puma/Puma/DSL.html#bind-instance_method) for details.
@@ -60,8 +67,11 @@ This section covers the environment variables used by Scalelite.
 * `BUILD_NUMBER`: An additional build version to report in the BigBlueButton top-level API endpoint. The Docker image has this preset to a value determined at image build time.
 * `RAILS_LOG_TO_STDOUT`: Log to STDOUT instead of a file. Recommended for deployments with a service manager (e.g. systemd) or in Docker. The Docker image sets this by default.
 * `REDIS_POOL`: Configure the Redis connection pool size. Defaults to `RAILS_MAX_THREADS`.
+* `RECORDING_SPOOL_DIR`: Directory where transferred recording files are placed. Defaults to `/var/bigbluebutton/spool`
+* `RECORDING_WORK_DIR`: Directory where temporary files from recording transfer/import are extracted. Defaults to `/var/bigbluebutton/recording/scalelite`
+* `RECORDING_PUBLISH_DIR`: Directory where published recording files are placed to make them available to the web server. Defaults to `/var/bigbluebutton/published`
 
-## Redis Connection (`config/redis_store.yml`)
+### Redis Connection (`config/redis_store.yml`)
 
 For a deployment using docker, you should configure the Redis Connection using the `REDIS_URL` environment variable instead, see above.
 
@@ -76,17 +86,14 @@ Additionally, these options can be set:
 * `pool_timeout`: Amount of time (seconds) to wait if all connections in the pool are in use. Defaults to 5.
 * `namespace`: An optional prefix to apply to all keys stored in Redis.
 
+## Administration
 
-# Administration
+Scalelite comes with a set of commands to
 
-Scalelite comes with a set of commands to 
-
-  * Add/remove BigBlueButton servers from the pool
-  * Trigger an immediate poll of all BigBlueButton servers
-  * Change the state of any BigBlueButton server to being `available` and `unavailable` (don't try to put new meetings on the server)
-  * Monitor the load of all BigBlueButton servers
-
-## Server Management
+* Add/remove BigBlueButton servers from the pool
+* Trigger an immediate poll of all BigBlueButton servers
+* Change the state of any BigBlueButton server to being `available` and `unavailable` (don't try to put new meetings on the server)
+* Monitor the load of all BigBlueButton servers
 
 Server management is provided using rake tasks which update server information in Redis.
 
@@ -175,11 +182,11 @@ After the meeting state is cleared, anyone who tries to join a meeting that was 
 ./bin/rake poll:all
 ```
 
-When you a server to the pool, it may take upwards of 60 seconds (default value for `INTERVAL` for the background server polling process) before Scalelite marks the server as `online`.  You can run the above task to have it poll the server right away without waiting.
-
-## Monitoring
+When you a server to the pool, it may take upwards of 60 seconds (default value for `INTERVAL` for the background server polling process) before Scalelite marks the server as `online`.
+You can run the above task to have it poll the server right away without waiting.
 
 ### Check the status of the entire deployment
+
 ```sh
 ./bin/rake status
 ```
@@ -187,7 +194,7 @@ When you a server to the pool, it may take upwards of 60 seconds (default value 
 This will print a table displaying a list of all servers and some basic statistics that can be used for monitoring the overall status of the deployment
 
 ```
-     HOSTNAME        STATE   STATUS  MEETINGS  USERS  LARGEST MEETING  VIDEOS 
- bbb1.example.com  enabled   online        12     25                7      15 
- bbb2.example.com  enabled   online         4     14                4       5 
+     HOSTNAME        STATE   STATUS  MEETINGS  USERS  LARGEST MEETING  VIDEOS
+ bbb1.example.com  enabled   online        12     25                7      15
+ bbb2.example.com  enabled   online         4     14                4       5
 ```

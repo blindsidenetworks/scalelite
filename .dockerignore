@@ -22,3 +22,6 @@ Dockerfile
 .travis.yml
 spec
 test
+
+# Deployment files
+bigbluebutton

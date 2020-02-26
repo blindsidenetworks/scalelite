@@ -1,0 +1,8 @@
+server {
+	server_name $URL_HOST;
+
+	listen 80;
+	listen [::]:80;
+
+	include conf.d/scalelite.common;
+}
