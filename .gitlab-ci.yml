@@ -1,6 +1,7 @@
 stages:
   - test
   - build
+  - publish
 
 variables:
   RUBY_VERSION: "2.6"
@@ -72,7 +73,6 @@ docker:
       --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
       --tag $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
       --tag $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA
-      --tag blindsidenetwks/scalelite:$CI_COMMIT_REF_SLUG-api
       .
     - docker build
       --target poller
@@ -83,7 +83,6 @@ docker:
       --cache-from $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
       --tag $CI_REGISTRY_IMAGE/poller:$CI_COMMIT_REF_SLUG
       --tag $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
-      --tag blindsidenetwks/scalelite:$CI_COMMIT_REF_SLUG-poller
       .
     - docker build
       --target recording-importer
@@ -94,7 +93,6 @@ docker:
       --cache-from $CI_REGISTRY_IMAGE/recording-importer:$CI_COMMIT_REF_SLUG
       --tag $CI_REGISTRY_IMAGE/recording-importer:$CI_COMMIT_REF_SLUG
       --tag $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA
-      --tag blindsidenetwks/scalelite:$CI_COMMIT_REF_SLUG-recording-importer
       .
     - docker build
       --target bbb-playback
@@ -109,7 +107,6 @@ docker:
       --cache-from $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
       --tag $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
       --tag $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
-      --tag blindsidenetwks/scalelite:$CI_COMMIT_REF_SLUG-nginx
       .
     - docker push $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
     - docker push $CI_REGISTRY_IMAGE/builder:git-$CI_COMMIT_SHA
@@ -123,3 +120,30 @@ docker:
     - docker push $CI_REGISTRY_IMAGE/bbb-playback:git-$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
     - docker push $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
+
+publish_dockerhub:
+  extends: .docker
+  stage: publish
+  interruptible: false
+  resource_group: dockerhub
+  variables:
+    GIT_STRATEGY: none
+  only:
+    refs:
+      - master
+    variables:
+      - $DOCKERHUB_IMAGE
+  script:
+    - docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASSWORD
+    - docker pull $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-api
+    - docker tag $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-poller
+    - docker tag $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-recording-importer
+    - docker tag $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-nginx
+    - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-api
+    - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-poller
+    - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-recording-importer
+    - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-nginx
