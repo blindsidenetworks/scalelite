@@ -21,7 +21,7 @@ server {
 	ssl_certificate /etc/nginx/ssl/live/$URL_HOST/fullchain.pem;
 	ssl_certificate_key /etc/nginx/ssl/live/$URL_HOST/privkey.pem;
 	ssl_session_timeout 1d;
-	ssl_session_cache shared:SSL:10m;
+	ssl_session_cache shared:ScaleliteSSL:10m;
 	ssl_session_tickets off;
 
 	ssl_dhparam /etc/nginx/dhparam.pem;
