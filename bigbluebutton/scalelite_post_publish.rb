@@ -55,7 +55,7 @@ begin
   puts('Creating recording archive')
   FileUtils.mkdir_p(work_dir)
   FileUtils.cd(published_dir) do
-    system('tar', '--verbose', '--create', '--file', archive_file, *format_dirs) \
+    system('tar', '--create', '--file', archive_file, *format_dirs) \
       || raise('Failed to create recording archive')
   end
 
