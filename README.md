@@ -35,6 +35,10 @@ An example Scalelite deployment will look like this:
 
 ![](images/scalelite.png)
 
+## Getting Help
+
+For help with setup and deployment of `Scalelite`, contact us at [Blindside Networks](https://blindsidenetworks.com/scaling-bigbluebutton/).
+
 ## Configuration
 
 ### Environment Variables
