@@ -121,20 +121,29 @@ docker:
     - docker push $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
     - docker push $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
 
-publish_dockerhub:
+.dockerhub:
   extends: .docker
-  stage: publish
-  interruptible: false
   resource_group: dockerhub
+  interruptible: false
+  stage: publish
   variables:
     GIT_STRATEGY: none
   only:
+    variables:
+      - $DOCKERHUB_USER
+      - $DOCKERHUB_PASSWORD
+  before_script:
+    - docker info
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASSWORD
+
+publish_dockerhub:
+  extends: .dockerhub
+  only:
     refs:
       - master
-    variables:
-      - $DOCKERHUB_IMAGE
+      - tags
   script:
-    - docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASSWORD
     - docker pull $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA
     - docker pull $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
     - docker pull $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA
@@ -147,3 +156,23 @@ publish_dockerhub:
     - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-poller
     - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-recording-importer
     - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_SLUG-nginx
+
+publish_dockerhub_latest:
+  extends: .dockerhub
+  only:
+    refs:
+      - tags
+  when: manual
+  script:
+    - docker pull $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:latest-api
+    - docker tag $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:latest-poller
+    - docker tag $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:latest-recording-importer
+    - docker tag $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:latest-nginx
+    - docker push $DOCKERHUB_IMAGE:latest-api
+    - docker push $DOCKERHUB_IMAGE:latest-poller
+    - docker push $DOCKERHUB_IMAGE:latest-recording-importer
+    - docker push $DOCKERHUB_IMAGE:latest-nginx
