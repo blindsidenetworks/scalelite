@@ -88,7 +88,7 @@ class Recording < ApplicationRecord
         logger.debug(recording.inspect)
 
         metadata_params.each do |metadatum_params|
-          metadatum = recording.metadata.find_or_initialize_by(key: m[:key])
+          metadatum = recording.metadata.find_or_initialize_by(key: metadata_params[:key])
           metadatum.assign_attributes(metadatum_params)
           metadatum.save!
           logger.debug(metadatum.inspect)
