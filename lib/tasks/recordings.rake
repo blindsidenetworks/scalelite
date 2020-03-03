@@ -16,6 +16,7 @@ namespace :recordings do
         RecordingImporter.import(file)
       rescue StandardError => e
         Rails.logger.error("Failed to import recording: #{e}")
+        Rails.logger.warn(e.full_message(highlight: false, order: :top))
       end
     end
     listener.only(/\.tar$/)
