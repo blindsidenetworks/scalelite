@@ -1,0 +1,17 @@
+[Unit]
+Description=Scalelite API
+After=network-online.target
+Wants=network-online.target
+Wants=scalelite.target
+PartOf=scalelite.target
+
+[Service]
+Environment=DOCKER_IMAGE=blindsidenetwks/scalelite:master-api
+ExecStartPre=-/usr/bin/docker kill scalelite-api
+ExecStartPre=-/usr/bin/docker rm scalelite-api
+ExecStartPre=/usr/bin/docker pull $DOCKER_IMAGE
+ExecStart=/usr/bin/docker run --name scalelite-api --env-file /etc/default/scalelite --network scalelite $DOCKER_IMAGE
+
+[Install]
+WantedBy=multi-user.target
+

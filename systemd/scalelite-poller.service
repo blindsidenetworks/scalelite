@@ -1,0 +1,17 @@
+[Unit]
+Description=Scalelite Poller
+After=network-online.target
+Wants=network-online.target
+Wants=scalelite.target
+PartOf=scalelite.target
+
+[Service]
+Environment=DOCKER_IMAGE=blindsidenetwks/scalelite:master-poller
+ExecStartPre=-/usr/bin/docker kill scalelite-poller
+ExecStartPre=-/usr/bin/docker rm scalelite-poller
+ExecStartPre=/usr/bin/docker pull $DOCKER_IMAGE
+ExecStart=/usr/bin/docker run --name scalelite-poller --env-file /etc/default/scalelite --network scalelite $DOCKER_IMAGE
+
+[Install]
+WantedBy=multi-user.target
+

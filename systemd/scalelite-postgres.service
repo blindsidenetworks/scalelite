@@ -1,0 +1,14 @@
+[Unit]
+Description=Scalelite PostgreSQL
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStartPre=-/usr/bin/docker kill scalelite-postgres
+ExecStartPre=-/usr/bin/docker rm scalelite-postgres
+ExecStartPre=/usr/bin/docker pull postgres:12
+ExecStart=/usr/bin/docker run --name scalelite-postgres --env-file /etc/default/scalelite --mount source=scalelite-postgres-data,target=/var/lib/postgresql/data --network scalelite postgres:12
+
+[Install]
+WantedBy=multi-user.target
+

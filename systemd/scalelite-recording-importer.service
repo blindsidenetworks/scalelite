@@ -1,0 +1,17 @@
+[Unit]
+Description=Scalelite Recording Importer
+After=network-online.target
+Wants=network-online.target
+Wants=scalelite.target
+PartOf=scalelite.target
+
+[Service]
+Environment=DOCKER_IMAGE=blindsidenetwks/scalelite:master-recording-importer
+ExecStartPre=-/usr/bin/docker kill scalelite-recording-importer
+ExecStartPre=-/usr/bin/docker rm scalelite-recording-importer
+ExecStartPre=/usr/bin/docker pull $DOCKER_IMAGE
+ExecStart=/usr/bin/docker run --name scalelite-recording-importer --env-file /etc/default/scalelite --network scalelite --mount type=bind,source=/mnt/var/bigbluebutton,target=/var/bigbluebutton $DOCKER_IMAGE
+
+[Install]
+WantedBy=multi-user.target
+

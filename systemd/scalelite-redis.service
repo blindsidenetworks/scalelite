@@ -1,0 +1,15 @@
+[Unit]
+Description=Scalelite Redis
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=/etc/default/scalelite
+ExecStartPre=-/usr/bin/docker kill scalelite-redis
+ExecStartPre=-/usr/bin/docker rm scalelite-redis
+ExecStartPre=/usr/bin/docker pull redis:5-buster
+ExecStart=/usr/bin/docker run --name scalelite-redis --mount source=scalelite-redis-data,target=/data --network scalelite redis:5-buster
+
+[Install]
+WantedBy=multi-user.target
+
