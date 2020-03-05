@@ -302,11 +302,12 @@ class BigBlueButtonApiController < ApplicationController
   def delete_recordings
     raise BBBError.new('missingParamRecordID', 'You must specify a recordID.') if params[:recordID].blank?
 
-    Recording.transaction do
-      query = Recording.where(record_id: params[:recordID].split(','))
-      raise BBBError.new('notFound', 'We could not find recordings') if query.none?
+    query = Recording.where(record_id: params[:recordID].split(',')).load
+    raise BBBError.new('notFound', 'We could not find recordings') if query.none?
 
-      query.each do |rec|
+    query.each do |rec|
+      # Start transaction + lock record
+      rec.with_lock do
         logger.debug("Deleting recording: #{rec.record_id}")
         # TODO: check the unpublished dir when it is implemented
         FileUtils.rm_r(Dir.glob(File.join(Rails.configuration.x.recording_publish_dir, '/*/', rec.record_id)))
