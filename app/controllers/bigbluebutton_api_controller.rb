@@ -258,11 +258,46 @@ class BigBlueButtonApiController < ApplicationController
 
     publish = params[:publish].casecmp('true').zero?
 
-    Recording.transaction do
-      query = Recording.where(record_id: params[:recordID].split(','), state: 'published')
-      raise BBBError.new('notFound', 'We could not find recordings') if query.none?
+    query = Recording.where(record_id: params[:recordID].split(','), state: 'published').load
+    raise BBBError.new('notFound', 'We could not find recordings') if query.none?
 
-      query.where.not(published: publish).update_all(published: publish) # rubocop:disable Rails/SkipsModelValidations
+    query.where.not(published: publish).each do |rec|
+      rec.with_lock do
+        logger.debug("Setting published=#{publish} for recording: #{rec.record_id}")
+
+        target_dir = publish ? Rails.configuration.x.recording_publish_dir : Rails.configuration.x.recording_unpublish_dir
+        current_dir = publish ? Rails.configuration.x.recording_unpublish_dir : Rails.configuration.x.recording_publish_dir
+
+        rec.playback_formats.each do |playback|
+          recording_path = File.join(current_dir, playback.format, rec.record_id)
+
+          in_current = Dir.glob(recording_path).present?
+          in_target = Dir.glob(File.join(target_dir, playback.format, rec.record_id)).present?
+
+          # Next playback if already in correct place
+          next if !in_current && in_target
+
+          # If no recording files exists in either directory, raise not found
+          raise StandardError, 'Recording has no recording files' if !in_current && !in_target
+
+          # If recording files are in both directories
+          if in_current && in_target
+            Rails.logger.info("Recording #{rec.record_id} files found in both directories. Removing #{recording_path}")
+            FileUtils.rm_r(recording_path)
+            next
+          end
+
+          # Recording files are in current_dir and not in target_dir
+          format_dir = File.join(target_dir, playback.format)
+          FileUtils.mkdir_p(format_dir)
+          FileUtils.mv(recording_path, format_dir)
+        end
+
+        rec.update(published: publish)
+      rescue StandardError => e
+        logger.warn("Error #{e} setting published=#{publish} recording #{rec.record_id}")
+        raise InternalError, 'Unable to publish/unpublish recording.'
+      end
     end
 
     @published = publish
