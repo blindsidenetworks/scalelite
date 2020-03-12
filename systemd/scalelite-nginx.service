@@ -1,0 +1,17 @@
+[Unit]
+Description=Scalelite Nginx
+After=network-online.target
+Wants=network-online.target
+Before=scalelite.target
+PartOf=scalelite.target
+After=scalelite-api.service
+Requires=scalelite-api.service
+After=remote-fs.target
+[Service]
+EnvironmentFile=/etc/default/scalelite
+ExecStartPre=-/usr/bin/docker kill scalelite-nginx
+ExecStartPre=-/usr/bin/docker rm scalelite-nginx
+ExecStartPre=/usr/bin/docker pull blindsidenetwks/scalelite:${SCALELITE_TAG}-nginx
+ExecStart=/usr/bin/docker run --name scalelite-nginx --env-file /etc/default/scalelite --network scalelite --publish 80:80 --publish 443:443 --mount type=bind,source=${SCALELITE_RECORDING_DIR}/published,target=/var/bigbluebutton/published,readonly $SCALELITE_NGINX_EXTRA_OPTS blindsidenetwks/scalelite:${SCALELITE_TAG}-nginx
+[Install]
+WantedBy=scalelite.target
