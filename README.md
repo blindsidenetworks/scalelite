@@ -10,13 +10,13 @@ They may need, for example, to hold 3 simultaneous meetings of 50 users, or 5 si
 Currently, the BigBlueButton project recommends that no single meeting exceed 100 users.
 
 However, what if a school wants to support 1,500 users across 50 simultaneous classes?
-A single BigBlueButton server cannot handle load.
+A single BigBlueButton server cannot handle such a load.
 But with sufficient BigBlueButton servers and Scalelite, you could handle such a load.
 
-For example, if you create pool of 10 BigBlueButton servers (which you can quickly setup using [bbb-install.sh](https://github.com/bigbluebutton/bbb-install), you should be able to support 1,500 simultaneous users across many meetings (again, we recommend no single meeting exceed 100 users).
+For example, if you create a pool of 10 BigBlueButton servers (which you can quickly setup using [bbb-install.sh](https://github.com/bigbluebutton/bbb-install)), you should be able to support 1,500 simultaneous users across many meetings (again, we recommend no single meeting exceed 100 users).
 If you want a larger (or smaller) capacity, you can add (or remove) servers from the pool.
 
-Scalelite perodically polls each server in the pool to ensure its online, ready to receive [API](http://docs.bigbluebutton.org/dev/api.html) requests, and determine its current load.
+Scalelite periodically polls each server in the pool to ensure it is online, ready to receive [API](http://docs.bigbluebutton.org/dev/api.html) requests and determine its current load.
 With this information, when Scalelite receives an incoming API call to [create](http://docs.bigbluebutton.org/dev/api.html#create) a new meeting, it places the new meeting on the least loaded server in the pool.
 In this way, Scalelite can balance the load of meeting requests evenly across the pool.
 
@@ -24,20 +24,55 @@ Scalelite can manage a large pool of recordings.
 Many BigBlueButton servers will create many recordings.
 Scalelite can consolidate these recordings together, index them, and, when receiving an incoming [getRecordings](https://docs.bigbluebutton.org/dev/api.html#getrecordings), respond much more quickly than a standard BigBlueButton server.
 
+## Getting Help
+
+For commercial help with setup and deployment of Scalelite, contact us at [Blindside Networks](https://blindsidenetworks.com/scaling-bigbluebutton/).
+
 ## Deployment
 
-For setting up the BigBlueButton servers, we recommend using [bbb-install.sh](https://github.com/bigbluebutton/bbb-install) as it can automate the steps to install, configure (with SSL + Let's Encrypt), and update the server when [new versions](https://github.com/bigbluebutton/bigbluebutton/releases) of BigBlueButton are released.
+**Before you begin:** The Scalelite installation process requires advanced technical knowledge. If you are a beginner, you will have a difficult time getting any part of this deployment correct. If you require help, see [Getting Help](#getting-help)
 
-To help users behind who are behind restrictive firewalls to send/receive media (audio, video, and screen share) to your BigBlueButton server, you should setup a TURN server and configure each BigBlueButton server to use it.
-Again, [bbb-install.sh](https://github.com/bigbluebutton/bbb-install#install-a-turn-server) can automate this process for you.
+There are several components required to get Scalelite up and running:
+1. Multiple BigBlueButton Servers
+2. Scalelite LoadBalancer Server
+3. NFS Shared Volume
+4. PostgreSQL Database
+5. Redis Cache 
 
 An example Scalelite deployment will look like this:
 
 ![](images/scalelite.png)
 
-## Getting Help
+### Setting up BigBlueButton Servers
+For setting up the BigBlueButton servers, we recommend using [bbb-install.sh](https://github.com/bigbluebutton/bbb-install) as it can automate the steps to install, configure (with SSL + Let's Encrypt), and update the server when [new versions](https://github.com/bigbluebutton/bigbluebutton/releases) of BigBlueButton are released.
 
-For help with setup and deployment of `Scalelite`, contact us at [Blindside Networks](https://blindsidenetworks.com/scaling-bigbluebutton/).
+To help users who are behind restrictive firewalls to send/receive media (audio, video, and screen share) to your BigBlueButton server, you should setup a TURN server and configure each BigBlueButton server to use it.
+Again, [bbb-install.sh](https://github.com/bigbluebutton/bbb-install#install-a-turn-server) can automate this process for you.
+
+
+### Deploying Scalelite Docker Containers
+
+See [Deploying Scalelite Docker Containers](docker-README.md)
+
+### Setting up a shared volume for recordings
+
+See [Setting up a shared volume for recordings](sharedvolume-README.md)
+
+### Setting up a PostgreSQL Database
+
+Setting up a PostgreSQL Database depends heavily on the infrastructure you use to setup Scalelite. We recommend you refer to your infrastructure provider's documentation.
+
+Ensure the `DATABASE_URL` that you set in `/etc/default/scalelite` (from the [previous step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your PostgreSQL Database. 
+
+For more configuration options, see [configuration](#Configuration).
+
+### Setting up a Redis Cache
+
+Setting up a Redis Cache depends heavily on the infrastructure you use to setup Scalelite. We recommend you refer to your infrastructure provider's documentation.
+
+Ensure the `REDIS_URL` that you set in `/etc/default/scalelite` (from the [previous step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your Redis Cache. 
+
+For more configuration options, see [configuration](#Configuration).
 
 ## Configuration
 
