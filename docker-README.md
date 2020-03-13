@@ -33,7 +33,7 @@ SCALELITE_NGINX_EXTRA_OPTS=--mount type=bind,source=/etc/letsencrypt,target=/etc
 Add the following lines to configure the docker image tag to use and the location of the recording directory to mount into the containers:
 
 ```
-SCALELITE_TAG=v1.0
+SCALELITE_TAG=v1
 SCALELITE_RECORDING_DIR=/mnt/scalelite-recordings/var/bigbluebutton
 ```
 
