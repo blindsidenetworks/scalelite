@@ -810,4 +810,65 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal r1.metadata.find_by(key: 'newkey').value, 'newvalue'
     assert_equal r2.metadata.find_by(key: 'newkey').value, 'newvalue'
   end
+
+  # deleteRecordings
+
+  test 'deleteRecordings with no parameters returns checksum error' do
+    get bigbluebutton_api_delete_recordings_url
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'checksumError'
+  end
+
+  test 'deleteRecordings with invalid checksum returns checksum error' do
+    get bigbluebutton_api_delete_recordings_url, params: "checksum=#{'x' * 40}"
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'checksumError'
+  end
+
+  test 'deleteRecordings requires recordID parameter' do
+    params = encode_bbb_params('deleteRecordings', '')
+    get bigbluebutton_api_delete_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'missingParamRecordID'
+  end
+
+  test 'deleteRecordings responds with notFound if passed invalid recordIDs' do
+    params = encode_bbb_params('deleteRecordings', 'recordID=123')
+    get bigbluebutton_api_delete_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'notFound'
+  end
+
+  test 'deleteRecordings deletes the recording from the database if passed recordID' do
+    r = create(:recording)
+
+    params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
+    get bigbluebutton_api_delete_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>deleted', 'true'
+
+    assert_not Recording.exists?(record_id: r.record_id)
+  end
+
+  test 'deleteRecordings handles multiple recording IDs passed' do
+    r = create(:recording)
+    r1 = create(:recording)
+    r2 = create(:recording)
+
+    params = encode_bbb_params('deleteRecordings', { recordID: [r.record_id, r1.record_id, r2.record_id].join(',') } .to_query)
+    get bigbluebutton_api_delete_recordings_url, params: params
+    assert_response :success
+
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>deleted', 'true'
+
+    assert_not Recording.exists?(record_id: r.record_id)
+    assert_not Recording.exists?(record_id: r1.record_id)
+    assert_not Recording.exists?(record_id: r2.record_id)
+  end
 end
