@@ -1,0 +1,15 @@
+[Unit]
+Description=Scalelite Meeting Status Poller
+After=network-online.target
+Wants=network-online.target
+Before=scalelite.target
+PartOf=scalelite.target
+After=scalelite-api.service
+[Service]
+EnvironmentFile=/etc/default/scalelite
+ExecStartPre=-/usr/bin/docker kill scalelite-poller
+ExecStartPre=-/usr/bin/docker rm scalelite-poller
+ExecStartPre=/usr/bin/docker pull blindsidenetwks/scalelite:${SCALELITE_TAG}-poller
+ExecStart=/usr/bin/docker run --name scalelite-poller --env-file /etc/default/scalelite --network scalelite blindsidenetwks/scalelite:${SCALELITE_TAG}-poller
+[Install]
+WantedBy=scalelite.target

@@ -1,0 +1,16 @@
+[Unit]
+Description=Scalelite Recording Importer
+After=network-online.target
+Wants=network-online.target
+Before=scalelite.target
+PartOf=scalelite.target
+After=scalelite-api.service
+After=remote-fs.target
+[Service]
+EnvironmentFile=/etc/default/scalelite
+ExecStartPre=-/usr/bin/docker kill scalelite-recording-importer
+ExecStartPre=-/usr/bin/docker rm scalelite-recording-importer
+ExecStartPre=/usr/bin/docker pull blindsidenetwks/scalelite:${SCALELITE_TAG}-recording-importer
+ExecStart=/usr/bin/docker run --name scalelite-recording-importer --env-file /etc/default/scalelite --network scalelite --mount type=bind,source=${SCALELITE_RECORDING_DIR},target=/var/bigbluebutton blindsidenetwks/scalelite:${SCALELITE_TAG}-recording-importer
+[Install]
+WantedBy=scalelite.target
