@@ -6,14 +6,14 @@ To install the several components required by Scalelite, Docker must be installe
 
 To install Docker, please follow the instructions provided by Docker on their website: 
 
-https://docs.docker.com/install/
+https://docs.docker.com/install/linux/docker-ce/ubuntu/
 
 ## Common configuration for Docker host system
 For communication between Scalelite containers, a private network should be created. To create a network with the default bridged mode, run:
 
 `docker network create scalelite`
 
-Create the file `/etc/default/scalelite` with the environment variables to configure the application. Reference the [Configuration](#configuration) section for details as needed. For most deployments, you will need to include the following variables at a minimum. 
+Create the file `/etc/default/scalelite` with the environment variables to configure the application. Reference the [Configuration](README.md#configuration) section for details as needed. For most deployments, you will need to include the following variables at a minimum. 
 
 ```
 URL_HOST
@@ -33,7 +33,7 @@ SCALELITE_NGINX_EXTRA_OPTS=--mount type=bind,source=/etc/letsencrypt,target=/etc
 Add the following lines to configure the docker image tag to use and the location of the recording directory to mount into the containers:
 
 ```
-SCALELITE_TAG=v1
+SCALELITE_TAG=v1.0
 SCALELITE_RECORDING_DIR=/mnt/scalelite-recordings/var/bigbluebutton
 ```
 
@@ -99,7 +99,7 @@ WantedBy=scalelite.target
 
 And enable it by running systemctl 
 
-`enable scalelite-nginx.service`
+`systemctl enable scalelite-nginx.service`
 
 You can now restart all scalelite services by running
 

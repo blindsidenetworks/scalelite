@@ -49,11 +49,6 @@ For setting up the BigBlueButton servers, we recommend using [bbb-install.sh](ht
 To help users who are behind restrictive firewalls to send/receive media (audio, video, and screen share) to your BigBlueButton server, you should setup a TURN server and configure each BigBlueButton server to use it.
 Again, [bbb-install.sh](https://github.com/bigbluebutton/bbb-install#install-a-turn-server) can automate this process for you.
 
-
-### Deploying Scalelite Docker Containers
-
-See [Deploying Scalelite Docker Containers](docker-README.md)
-
 ### Setting up a shared volume for recordings
 
 See [Setting up a shared volume for recordings](sharedvolume-README.md)
@@ -62,7 +57,7 @@ See [Setting up a shared volume for recordings](sharedvolume-README.md)
 
 Setting up a PostgreSQL Database depends heavily on the infrastructure you use to setup Scalelite. We recommend you refer to your infrastructure provider's documentation.
 
-Ensure the `DATABASE_URL` that you set in `/etc/default/scalelite` (from the [previous step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your PostgreSQL Database. 
+Ensure the `DATABASE_URL` that you set in `/etc/default/scalelite` (in the [next step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your PostgreSQL Database. 
 
 For more configuration options, see [configuration](#Configuration).
 
@@ -70,9 +65,13 @@ For more configuration options, see [configuration](#Configuration).
 
 Setting up a Redis Cache depends heavily on the infrastructure you use to setup Scalelite. We recommend you refer to your infrastructure provider's documentation.
 
-Ensure the `REDIS_URL` that you set in `/etc/default/scalelite` (from the [previous step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your Redis Cache. 
+Ensure the `REDIS_URL` that you set in `/etc/default/scalelite` (in the [next step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your Redis Cache. 
 
 For more configuration options, see [configuration](#Configuration).
+
+### Deploying Scalelite Docker Containers
+
+See [Deploying Scalelite Docker Containers](docker-README.md)
 
 ## Configuration
 
@@ -137,7 +136,7 @@ Scalelite comes with a set of commands to
 
 Server management is provided using rake tasks which update server information in Redis.
 
-In a Docker deployment, these should be run from in the Docker container. You can enter the Docker container using a command like `docker exec -it <container name> /bin/sh`
+In a Docker deployment, these should be run from in the Docker container. You can enter the Docker container using a command like `docker exec -it scalelite-api /bin/sh`
 
 ### Show configured server details
 
