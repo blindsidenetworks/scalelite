@@ -62,5 +62,10 @@ module Scalelite
     config.x.recording_publish_dir = File.absolute_path(
       ENV.fetch('RECORDING_PUBLISH_DIR') { '/var/bigbluebutton/published' }
     )
+
+    # Unpublished recording directory
+    config.x.recording_unpublish_dir = File.absolute_path(
+      ENV.fetch('RECORDING_UNPUBLISH_DIR') { '/var/bigbluebutton/unpublished' }
+    )
   end
 end
