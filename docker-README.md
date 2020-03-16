@@ -67,8 +67,7 @@ EnvironmentFile=/etc/default/scalelite
 ExecStartPre=-/usr/bin/docker kill scalelite-api
 ExecStartPre=-/usr/bin/docker rm scalelite-api
 ExecStartPre=/usr/bin/docker pull blindsidenetwks/scalelite:${SCALELITE_TAG}-api
-ExecStart=/usr/bin/docker run --name scalelite-api --env-file /etc/default/scalelite --network scalelite blindsidenetwks/scalelite:${SCALELITE_TAG}-api
-[Install]
+ExecStart=/usr/bin/docker run --name scalelite-api --env-file /etc/default/scalelite --network scalelite --mount type=bind,source=${SCALELITE_RECORDING_DIR},target=/var/bigbluebutton blindsidenetwks/scalelite:${SCALELITE_TAG}-api[Install]
 WantedBy=scalelite.target
 ```
 And enable it by running 
