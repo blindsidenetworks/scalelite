@@ -196,11 +196,11 @@ class BigBlueButtonApiController < ApplicationController
                          meetingID: params[:meetingID], password: params[:password])
 
     begin
-      # Send a GET request to the server
-      response = get_post_req(uri)
-
       # Remove the meeting from the database
       meeting.destroy!
+
+      # Send a GET request to the server
+      response = get_post_req(uri)
     rescue BBBError => e
       if e.message_key == 'notFound'
         # If the meeting is not found, delete the meeting from the load balancer database
