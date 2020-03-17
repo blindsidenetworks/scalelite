@@ -17,6 +17,8 @@ Rails.application.routes.draw do
     get 'deleteRecordings', to: 'bigbluebutton_api#delete_recordings', as: :delete_recordings
   end
 
+  get 'health_check', to: 'health_check#all'
+
   match '*any', via: :all, to: 'errors#unsupported_request'
   root to: 'errors#unsupported_request', via: :all
 end
