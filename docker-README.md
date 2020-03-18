@@ -13,7 +13,7 @@ For communication between Scalelite containers, a private network should be crea
 
 `docker network create scalelite`
 
-Create the file `/etc/default/scalelite` with the environment variables to configure the application. Reference the [Configuration](README.md#configuration) section for details as needed. For most deployments, you will need to include the following variables at a minimum. 
+Create a file `/etc/default/scalelite` with the environment variables to configure the application. Reference the [Configuration](README.md#configuration) section for details as needed. For most deployments, you will need to include the following variables at a minimum. 
 
 ```
 URL_HOST
@@ -23,13 +23,6 @@ DATABASE_URL
 REDIS_URL
 ```
 
-If Scalelite is responsible for serving via HTTPS, you must add the following lines to enable HTTPs configuration:
-
-```
-NGINX_SSL=true
-SCALELITE_NGINX_EXTRA_OPTS=--mount type=bind,source=/etc/letsencrypt,target=/etc/nginx/ssl,readonly
-```
-
 Add the following lines to configure the docker image tag to use and the location of the recording directory to mount into the containers:
 
 ```
@@ -37,65 +30,30 @@ SCALELITE_TAG=v1
 SCALELITE_RECORDING_DIR=/mnt/scalelite-recordings/var/bigbluebutton
 ```
 
-Next you should create the file `/etc/systemd/system/scalelite.target` with the following contents. This unit is a helper to allow starting and stopping all of the Scalelite containers together.
+**If Scalelite is responsible for serving via HTTPS**, you must add the following lines to enable HTTPs configuration:
 
 ```
-[Unit]
-Description=Scalelite
-[Install]
-WantedBy=multi-user.target
+NGINX_SSL=true
+SCALELITE_NGINX_EXTRA_OPTS=--mount type=bind,source=/etc/letsencrypt,target=/etc/nginx/ssl,readonly
 ```
+
+Next you should Create a file `/etc/systemd/system/scalelite.target` with the content found in the [scalelite.target](systemd/scalelite.target) file. This unit is a helper to allow starting and stopping all of the Scalelite containers together.
 
 And enable the target by running
 
 `systemctl enable scalelite.target`
 
 ## Web Frontend (scalelite-api and scalelite-nginx)
+
 The scalelite-api container holds the application code responsible for responding to BigBlueButton API requests. The scalelite-nginx container is responsible for SSL termination (if configured) and for serving recording playback files. Both containers must be colocated on the same host. For a high availability deployment, you can run multiple instances on different hosts behind an external HTTP load balancer.
 
-Create the systemd unit file `/etc/systemd/system/scalelite-api.service`
+Create a systemd unit file `/etc/systemd/system/scalelite-api.service` with the content found in the [scalelite-api.service](systemd/scalelite-api.service) file.
 
-```
-[Unit]
-Description=Scalelite API
-After=network-online.target
-Wants=network-online.target
-Before=scalelite.target
-PartOf=scalelite.target
-[Service]
-EnvironmentFile=/etc/default/scalelite
-ExecStartPre=-/usr/bin/docker kill scalelite-api
-ExecStartPre=-/usr/bin/docker rm scalelite-api
-ExecStartPre=/usr/bin/docker pull blindsidenetwks/scalelite:${SCALELITE_TAG}-api
-ExecStart=/usr/bin/docker run --name scalelite-api --env-file /etc/default/scalelite --network scalelite --mount type=bind,source=${SCALELITE_RECORDING_DIR},target=/var/bigbluebutton blindsidenetwks/scalelite:${SCALELITE_TAG}-api
-[Install]
-WantedBy=scalelite.target
-```
 And enable it by running 
 
 `systemctl enable scalelite-api.service`
 
-Create the systemd unit file `/etc/systemd/system/scalelite-nginx.service`
-
-```
-[Unit]
-Description=Scalelite Nginx
-After=network-online.target
-Wants=network-online.target
-Before=scalelite.target
-PartOf=scalelite.target
-After=scalelite-api.service
-Requires=scalelite-api.service
-After=remote-fs.target
-[Service]
-EnvironmentFile=/etc/default/scalelite
-ExecStartPre=-/usr/bin/docker kill scalelite-nginx
-ExecStartPre=-/usr/bin/docker rm scalelite-nginx
-ExecStartPre=/usr/bin/docker pull blindsidenetwks/scalelite:${SCALELITE_TAG}-nginx
-ExecStart=/usr/bin/docker run --name scalelite-nginx --env-file /etc/default/scalelite --network scalelite --publish 80:80 --publish 443:443 --mount type=bind,source=${SCALELITE_RECORDING_DIR}/published,target=/var/bigbluebutton/published,readonly $SCALELITE_NGINX_EXTRA_OPTS blindsidenetwks/scalelite:${SCALELITE_TAG}-nginx
-[Install]
-WantedBy=scalelite.target
-```
+Create a systemd unit file `/etc/systemd/system/scalelite-nginx.service` with the content found in the [scalelite-nginx.service](systemd/scalelite-nginx.service) file.
 
 And enable it by running systemctl 
 
@@ -111,36 +69,21 @@ Afterwards, check the status with
 
 to verify that the containers started correctly.
 
-If this is a fresh install or you have not previously loaded the database schema into PostgreSQL, you can do that now by running this command:
+## Initialize the scalelite-api Database
+
+If this is a fresh install, you can load the database schema insto PostgreSQL by running this command:
 
 `docker exec -it scalelite-api bin/rake db:setup`
 
 You should restart all Scalelite services again afterwards by running 
+
 `systemctl restart scalelite.target`
 
 ## Meeting Status Poller (scalelite-poller)
 The scalelite-poller container runs a process that periodically checks the reachability and load of BigBlueButton servers, and detects when meetings have ended.
 Only a single poller is required in a deployment, but running multiple pollers will not cause any errors. It can be colocated on the same host system as the web frontend.
 
-Create the systemd unit file `/etc/systemd/system/scalelite-poller.service`
-
-```
-[Unit]
-Description=Scalelite Meeting Status Poller
-After=network-online.target
-Wants=network-online.target
-Before=scalelite.target
-PartOf=scalelite.target
-After=scalelite-api.service
-[Service]
-EnvironmentFile=/etc/default/scalelite
-ExecStartPre=-/usr/bin/docker kill scalelite-poller
-ExecStartPre=-/usr/bin/docker rm scalelite-poller
-ExecStartPre=/usr/bin/docker pull blindsidenetwks/scalelite:${SCALELITE_TAG}-poller
-ExecStart=/usr/bin/docker run --name scalelite-poller --env-file /etc/default/scalelite --network scalelite blindsidenetwks/scalelite:${SCALELITE_TAG}-poller
-[Install]
-WantedBy=scalelite.target
-```
+Create a systemd unit file `/etc/systemd/system/scalelite-poller.service` with the content found in the [scalelite-poller.service](systemd/scalelite-poller.service) file.
 
 And enable it by running 
 
@@ -167,28 +110,10 @@ If you are not doing a high-availability deployment of Scalelite, then you **MAY
 
 You **MAY** colocate the recording importer and meeting status poller on the same host.
 
-Create the systemd unit file `/etc/systemd/system/scalelite-recording-importer.service`
-
-```
-[Unit]
-Description=Scalelite Recording Importer
-After=network-online.target
-Wants=network-online.target
-Before=scalelite.target
-PartOf=scalelite.target
-After=scalelite-api.service
-After=remote-fs.target
-[Service]
-EnvironmentFile=/etc/default/scalelite
-ExecStartPre=-/usr/bin/docker kill scalelite-recording-importer
-ExecStartPre=-/usr/bin/docker rm scalelite-recording-importer
-ExecStartPre=/usr/bin/docker pull blindsidenetwks/scalelite:${SCALELITE_TAG}-recording-importer
-ExecStart=/usr/bin/docker run --name scalelite-recording-importer --env-file /etc/default/scalelite --network scalelite --mount type=bind,source=${SCALELITE_RECORDING_DIR},target=/var/bigbluebutton blindsidenetwks/scalelite:${SCALELITE_TAG}-recording-importer
-[Install]
-WantedBy=scalelite.target
-```
+Create a systemd unit file `/etc/systemd/system/scalelite-recording-importer.service` with the content found in the [scalelite-recording-importer.service](systemd/scalelite-recording-importer.service) file.
 
 And enable it by running 
+
 `systemctl enable scalelite-recording-importer.service`
 
 You can now restart all scalelite services by running
