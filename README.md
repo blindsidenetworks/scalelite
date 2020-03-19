@@ -55,10 +55,12 @@ For **each** BigBlueButton server, the minimum requirements can be found [here](
 For the external Postgres Database, the minimum recommended server requirements are:
 - 2 CPU Cores
 - 2 GB Memory
+- 20 GB Disk Space (should be good for tens of thousands of recordings)
 
 For the external Redis Cache, the minimum recommended server requirements are:
 - 2 CPU Cores
 - 0.5GB Memory
+- **Persistence must be enabled**
 
 ### Setup a pool of BigBlueButton Server
 

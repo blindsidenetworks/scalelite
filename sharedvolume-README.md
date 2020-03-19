@@ -63,6 +63,8 @@ work_dir: /var/bigbluebutton/recording/scalelite
 spool_dir: /mnt/scalelite-recordings/var/bigbluebutton/spool
 ```
 
+**Next step is only needed if you have existing recordings on your BigBlueButton server**
+
 Once the configuration is performed, you can run the provided `scalelite_batch_import.sh` script to transfer any existing recordings from the BigBlueButton server to Scalelite.
 
-Once the recording transfer has been tested, you can enable recording automatic deletion on the BigBlueButton server to remove the local copies of the recordings and free up disk space. 
+Once the recording transfer has been tested, you can **optionally** enable recording automatic deletion on the BigBlueButton server to remove the local copies of the recordings and free up disk space. 
