@@ -13,7 +13,7 @@ For communication between Scalelite containers, a private network should be crea
 
 `docker network create scalelite`
 
-Create a file `/etc/default/scalelite` with the environment variables to configure the application. Reference the [Configuration](README.md#configuration) section for details as needed. For most deployments, you will need to include the following variables at a minimum. 
+Create a file `/etc/default/scalelite` with the environment variables to configure the application. Reference the [Required Configuration](README.md#required) section for details as needed. For most deployments, you will need to include the following variables at a minimum. 
 
 ```
 URL_HOST

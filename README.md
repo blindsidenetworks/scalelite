@@ -108,10 +108,10 @@ To switch your Front-End application to use Scalelite instead of a single BigBlu
 #### Required
 
 * `URL_HOST`: The hostname that the application API endpoint is accessible from. Used to protect against DNS rebinding attacks.
-* `SECRET_KEY_BASE`: A secret used internally by Rails. Should be unique per deployment. Generate with `rake secret`.
+* `SECRET_KEY_BASE`: A secret used internally by Rails. Should be unique per deployment. Generate with `bundle exec rake secret` or `openssl ran -hex 64`.
 * `LOADBALANCER_SECRET`: The shared secret that applications will use when calling BigBlueButton APIs on the load balancer. Generate with `openssl rand -hex 32`
-* `DATABASE_URL`: URL for connecting to the PostgreSQL database, see the [Rails documentation](https://guides.rubyonrails.org/configuring.html#configuring-a-database). Note that instead of using this environment variable, you can configure the database server in `config/database.yml`.
-* `REDIS_URL`: URL for connecting to the Redis server, see the [Redis gem documentation](https://rubydoc.info/github/redis/redis-rb/master/Redis#initialize-instance_method). Note that instead of using this environment variable, you can configure the redis server in `config/redis_store.yml` (see below).
+* `DATABASE_URL`: URL for connecting to the PostgreSQL database, see the [Rails documentation](https://guides.rubyonrails.org/configuring.html#configuring-a-database). The URL should be in the form of `postgresql://username:password@connection_url`. Note that instead of using this environment variable, you can configure the database server in `config/database.yml`.
+* `REDIS_URL`: URL for connecting to the Redis server, see the [Redis gem documentation](https://rubydoc.info/github/redis/redis-rb/master/Redis#initialize-instance_method). The URL should be in the form of `redis://username:password@connection_url`. Note that instead of using this environment variable, you can configure the redis server in `config/redis_store.yml` (see below). 
 
 #### Docker-Specific
 
