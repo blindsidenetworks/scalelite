@@ -33,10 +33,32 @@ namespace :poll do
       Rails.logger.debug("Polling Server id=#{server.id}")
       resp = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
       meetings = resp.xpath('/response/meetings/meeting')
-      server.load = meetings.length
-      server.online = true
+
+      if server.online
+        # Update the load if the server is currently online
+        server.load = meetings.length
+      else
+        # Only bring the server online if the number of successful requests is >= the acceptable threshold
+        next if server.increment_healthy < Rails.configuration.x.server_healthy_threshold
+
+        Rails.logger.info("Server id=#{server.id} is healthy. Bringing back online...")
+        server.reset_counters
+        server.enabled = true
+        server.load = meetings.length
+        server.online = true
+      end
     rescue StandardError => e
       Rails.logger.warn("Failed to get server id=#{server.id} status: #{e}")
+
+      next unless server.online # Only check healthiness if server is currently online
+
+      # Only take the server offline if the number of failed requests is >= the acceptable threshold
+      next if server.increment_unhealthy < Rails.configuration.x.server_unhealthy_threshold
+
+      Rails.logger.warn("Server id=#{server.id} is unhealthy. Panicking and setting offline...")
+      Rake::Task['servers:panic'].invoke(server.id) # Panic server to clear meetings
+      server.reset_counters
+      server.enabled = false
       server.load = nil
       server.online = false
     ensure

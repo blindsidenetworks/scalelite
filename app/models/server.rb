@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Server < ApplicationRedisRecord
-  define_attribute_methods :id, :url, :secret, :enabled, :load, :online
+  define_attribute_methods :id, :url, :secret, :enabled, :load, :online, :healthy_counter, :unhealthy_counter
 
   # Unique ID for this server
   application_redis_attr :id
@@ -20,6 +20,12 @@ class Server < ApplicationRedisRecord
 
   # Whether the server is considered online (checked when server polled)
   attr_reader :online
+
+  # Counter for number of times a request succeeds for an offline server
+  attr_reader :healthy_counter
+
+  # Counter for number of times a request fails for an online server
+  attr_reader :unhealthy_counter
 
   def online=(value)
     value = !!value
@@ -93,6 +99,28 @@ class Server < ApplicationRedisRecord
       self.load = redis.zadd('server_load', amount, id, xx: true, incr: true)
       clear_attribute_changes([:load])
       load
+    end
+  end
+
+  # Apply a concurrency-safe increment to the healthy counter by 1
+  def increment_healthy
+    with_connection do |redis|
+      redis.hincrby(id, 'healthy_counter', 1)
+    end
+  end
+
+  # Apply a concurrency-safe increment to the healthy counter by 1
+  def increment_unhealthy
+    with_connection do |redis|
+      redis.hincrby(id, 'unhealthy_counter', 1)
+    end
+  end
+
+  # Resets both healthy and unhealthy counter to 0
+  # Done once the server has changed from online to offline or vice versa
+  def reset_counters
+    with_connection do |redis|
+      redis.hmset(id, 'healthy_counter', 0, 'unhealthy_counter', 0)
     end
   end
 
@@ -189,8 +217,8 @@ class Server < ApplicationRedisRecord
         end
 
         hash['id'] = id
-        hash['enabled'] = enabled
-        hash['load'] = load if enabled
+        hash['enabled'] = true
+        hash['load'] = load
         hash['online'] = (hash['online'] == 'true')
         servers << new.init_with_attributes(hash)
       end
