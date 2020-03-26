@@ -88,7 +88,7 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def get_meetings
-    # Get all available servers
+    # Get all servers
     servers = Server.all
 
     logger.warn('No servers are currently available') if servers.empty?
@@ -105,6 +105,8 @@ class BigBlueButtonApiController < ApplicationController
 
     # Make individual getMeetings call for each server and append result to all_meetings
     servers.each do |server|
+      next unless server.online # only send getMeetings requests to servers that are online
+
       uri = encode_bbb_uri('getMeetings', server.url, server.secret)
 
       begin
