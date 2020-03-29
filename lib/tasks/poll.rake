@@ -28,9 +28,9 @@ namespace :poll do
   task servers: :environment do
     include ApiHelper
 
-    weight_videos = ENV.has_key?('LOAD_WEIGHT_VIDEOS') ? ENV['LOAD_WEIGHT_VIDEOS'].to_i : 100
-    weight_users = ENV.has_key?('LOAD_WEIGHT_USERS') ? ENV['LOAD_WEIGHT_USERS'].to_i : 10
-    weight_meetings = ENV.has_key?('LOAD_WEIGHT_MEETINGS') ? ENV['LOAD_WEIGHT_MEETINGS'].to_i : 1
+    weight_videos = ENV.key?('LOAD_WEIGHT_VIDEOS') ? ENV['LOAD_WEIGHT_VIDEOS'].to_i : 100
+    weight_users = ENV.key?('LOAD_WEIGHT_USERS') ? ENV['LOAD_WEIGHT_USERS'].to_i : 10
+    weight_meetings = ENV.key?('LOAD_WEIGHT_MEETINGS') ? ENV['LOAD_WEIGHT_MEETINGS'].to_i : 1
 
     Rails.logger.debug('Polling servers')
     Server.all.each do |server|
