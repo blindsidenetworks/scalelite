@@ -28,6 +28,10 @@ namespace :poll do
   task servers: :environment do
     include ApiHelper
 
+    weight_videos = ENV.has_key?('LOAD_WEIGHT_VIDEOS') ? ENV['LOAD_WEIGHT_VIDEOS'].to_i : 100
+    weight_users = ENV.has_key?('LOAD_WEIGHT_USERS') ? ENV['LOAD_WEIGHT_USERS'].to_i : 10
+    weight_meetings = ENV.has_key?('LOAD_WEIGHT_MEETINGS') ? ENV['LOAD_WEIGHT_MEETINGS'].to_i : 1
+
     Rails.logger.debug('Polling servers')
     Server.all.each do |server|
       Rails.logger.debug("Polling Server id=#{server.id}")
@@ -46,7 +50,7 @@ namespace :poll do
         video_streams += streams.present? ? streams.text.to_i : 0
       end
 
-      server.load = video_streams * 100 + server_users * 10 + meetings.length
+      server.load = video_streams * weight_videos + server_users * weight_users + meetings.length * weight_meetings
       server.online = true
     rescue StandardError => e
       Rails.logger.warn("Failed to get server id=#{server.id} status: #{e}")

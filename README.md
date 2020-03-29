@@ -138,6 +138,9 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `RECORDING_WORK_DIR`: Directory where temporary files from recording transfer/import are extracted. Defaults to `/var/bigbluebutton/recording/scalelite`
 * `RECORDING_PUBLISH_DIR`: Directory where published recording files are placed to make them available to the web server. Defaults to `/var/bigbluebutton/published`
 * `RECORDING_UNPUBLISH_DIR`: Directory where unpublished recording files are placed to make them unavailable to the web server. Defaults to `/var/bigbluebutton/unpublished`
+* `LOAD_WEIGHT_VIDEOS`: Integer factor the number of video streams on a server are multiplied with in load calculation. Defaults to 100.
+* `LOAD_WEIGHT_USERS`: Integer factor the number of video streams on a server are multiplied with in load calculation. Defaults to 10.
+* `LOAD_WEIGHT_MEETINGS`: Integer factor the number of video streams on a server are multiplied with in load calculation. Defaults to 1.
 
 ### Redis Connection (`config/redis_store.yml`)
 
