@@ -33,7 +33,20 @@ namespace :poll do
       Rails.logger.debug("Polling Server id=#{server.id}")
       resp = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
       meetings = resp.xpath('/response/meetings/meeting')
-      server.load = meetings.length
+
+      server_users = 0
+      video_streams = 0
+
+      meetings.each do |meeting|
+        count = meeting.at_xpath('participantCount')
+        users = count.present? ? count.text.to_i : 0
+        server_users += users
+
+        streams = meeting.at_xpath('videoCount')
+        video_streams += streams.present? ? streams.text.to_i : 0
+      end
+
+      server.load = video_streams * 100 + server_users * 10 + meetings.length
       server.online = true
     rescue StandardError => e
       Rails.logger.warn("Failed to get server id=#{server.id} status: #{e}")
