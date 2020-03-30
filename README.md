@@ -181,6 +181,7 @@ id: 2d2d674a-c6bb-48f3-8ad4-68f33a80a5b7
         secret: 2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535
         enabled
         load: 21.0
+        load multiplier: 2.0
         online
 ```
 
@@ -194,11 +195,14 @@ Particular information to note:
 ### Add a server
 
 ```sh
-./bin/rake servers:add[url,secret]
+./bin/rake servers:add[url,secret,loadMultiplier]
 ```
 
 The `url` value is the complete URL to the BigBlueButton API endpoint of the server. The `/api` on the end is required.
 You can find the BigBlueButton server's URL and Secret by running `bbb-conf --secret` on the BigBlueButton server.
+
+The `loadMultiplier` is optional, it defaults to `1`. When adding a loadMultiplier to the server, the load will be multiplied
+using this number.
 
 This command will print out the ID of the newly created server, and `OK` if it was successful.
 Note that servers are added in the disabled state; see "Enable a server" below to enable it.

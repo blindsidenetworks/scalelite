@@ -10,14 +10,27 @@ task servers: :environment do
     puts("\tsecret: #{server.secret}")
     puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
     puts("\tload: #{server.load.presence || 'unavailable'}")
+    puts("\tload multiplier: #{server.loadMultiplier}")
     puts("\t#{server.online ? 'online' : 'offline'}")
   end
 end
 
 namespace :servers do
   desc 'Add a new BigBlueButton server (it will be added disabled)'
-  task :add, [:url, :secret] => :environment do |_t, args|
-    server = Server.create!(url: args.url, secret: args.secret)
+  task :add, [:url, :secret, :loadMultiplier] => :environment do |_t, args|
+    if !args.url.present? || !args.secret.present?
+      puts 'Error: Please input at least a URL and a secret!'
+      exit 1
+    end
+    __loadMultiplier = 1.0
+    if args.loadMultiplier.present?
+      __loadMultiplier = args.loadMultiplier.to_d
+      if __loadMultiplier == 0
+        puts 'WARNING! Load-multiplier was not readable or 0, so it is now 1'
+        __loadMultiplier = 1.0
+      end
+    end
+    server = Server.create!(url: args.url, secret: args.secret, loadMultiplier: __loadMultiplier)
     puts 'OK'
     puts "id: #{server.id}"
   end

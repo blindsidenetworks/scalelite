@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Server < ApplicationRedisRecord
-  define_attribute_methods :id, :url, :secret, :enabled, :load, :online
+  define_attribute_methods :id, :url, :secret, :enabled, :load, :online, :loadMultiplier
 
   # Unique ID for this server
   application_redis_attr :id
@@ -20,6 +20,9 @@ class Server < ApplicationRedisRecord
 
   # Whether the server is considered online (checked when server polled)
   attr_reader :online
+
+  # Special load multiplier for this server to enable server-weight
+  application_redis_attr :loadMultiplier
 
   def online=(value)
     value = !!value
@@ -46,6 +49,7 @@ class Server < ApplicationRedisRecord
         redis.hset(server_key, 'url', url) if url_changed?
         redis.hset(server_key, 'secret', secret) if secret_changed?
         redis.hset(server_key, 'online', online ? 'true' : 'false') if online_changed?
+        redis.hset(server_key, 'loadMultiplier', loadMultiplier) if loadMultiplier_changed?
         redis.sadd('servers', id) if id_changed?
         if enabled_changed?
           if enabled
@@ -90,7 +94,7 @@ class Server < ApplicationRedisRecord
   # Does nothing is the server is not available (enabled and online)
   def increment_load(amount)
     with_connection do |redis|
-      self.load = redis.zadd('server_load', amount, id, xx: true, incr: true)
+      self.load = redis.zadd('server_load', amount * loadMultiplier.to_d, id, xx: true, incr: true)
       clear_attribute_changes([:load])
       load
     end
