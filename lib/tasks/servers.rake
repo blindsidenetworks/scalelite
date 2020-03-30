@@ -23,7 +23,7 @@ namespace :servers do
       exit(1)
     end
     tmp_load_multiplier = 1.0
-    if !args.load_multiplier.nil?
+    unless args.load_multiplier.nil?
       tmp_load_multiplier = args.load_multiplier.to_d
       if tmp_load_multiplier.zero?
         puts('WARNING! Load-multiplier was not readable or 0, so it is now 1')
@@ -92,7 +92,7 @@ namespace :servers do
   task :loadMultiplier, [:id, :load_multiplier] => :environment do |_t, args|
     server = Server.find(args.id)
     tmp_load_multiplier = 1.0
-    if !args.load_multiplier.nil?
+    unless args.load_multiplier.nil?
       tmp_load_multiplier = args.load_multiplier.to_d
       if tmp_load_multiplier.zero?
         puts('WARNING! Load-multiplier was not readable or 0, so it is now 1')
