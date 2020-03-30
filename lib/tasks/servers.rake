@@ -87,4 +87,22 @@ namespace :servers do
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
   end
+
+  desc 'Set the load-multiplier of a BigBlueButton server'
+  task :loadMultiplier, [:id,:loadMultiplier] => :environment do |_t, args|
+    server = Server.find(args.id)
+    __loadMultiplier = 1.0
+    if args.loadMultiplier.present?
+      __loadMultiplier = args.loadMultiplier.to_d
+      if __loadMultiplier == 0
+        puts 'WARNING! Load-multiplier was not readable or 0, so it is now 1'
+        __loadMultiplier = 1.0
+      end
+    end
+    server.loadMultiplier = __loadMultiplier
+    server.save!
+    puts('OK')
+  rescue ApplicationRedisRecord::RecordNotFound
+    puts("ERROR: No server found with id: #{args.id}")
+  end
 end

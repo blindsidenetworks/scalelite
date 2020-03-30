@@ -248,6 +248,16 @@ Disable a server and clear all meeting state.
 This method is used to recover from a crashed BigBlueButton server.
 After the meeting state is cleared, anyone who tries to join a meeting that was previously on this server will instead be directed to a new meeting on a different server.
 
+### Edit the load-multiplier of a server
+
+```sh
+./bin/rake servers:loadMultiplier[id,newLoadMultiplier]
+```
+
+Set a new load-multiplier of a BigBlueButton server.
+Default is `1`. After changing the server needs to be polled at least once to see
+the new load.
+
 ### Poll all servers
 
 ```sh
