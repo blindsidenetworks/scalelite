@@ -10,29 +10,29 @@ task servers: :environment do
     puts("\tsecret: #{server.secret}")
     puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
     puts("\tload: #{server.load.presence || 'unavailable'}")
-    puts("\tload multiplier: #{server.loadMultiplier}")
+    puts("\tload multiplier: #{server.load_multiplier}")
     puts("\t#{server.online ? 'online' : 'offline'}")
   end
 end
 
 namespace :servers do
   desc 'Add a new BigBlueButton server (it will be added disabled)'
-  task :add, [:url, :secret, :loadMultiplier] => :environment do |_t, args|
-    if !args.url.present? || !args.secret.present?
-      puts 'Error: Please input at least a URL and a secret!'
-      exit 1
+  task :add, [:url, :secret, :load_multiplier] => :environment do |_t, args|
+    if args.url.nil? || args.secret.nil?
+      puts('Error: Please input at least a URL and a secret!')
+      exit(1)
     end
-    __loadMultiplier = 1.0
-    if args.loadMultiplier.present?
-      __loadMultiplier = args.loadMultiplier.to_d
-      if __loadMultiplier == 0
-        puts 'WARNING! Load-multiplier was not readable or 0, so it is now 1'
-        __loadMultiplier = 1.0
+    tmp_load_multiplier = 1.0
+    if args.load_multiplier.blank?
+      tmp_load_multiplier = args.load_multiplier.to_d
+      if tmp_load_multiplier.zero?
+        puts('WARNING! Load-multiplier was not readable or 0, so it is now 1')
+        tmp_load_multiplier = 1.0
       end
     end
-    server = Server.create!(url: args.url, secret: args.secret, loadMultiplier: __loadMultiplier)
-    puts 'OK'
-    puts "id: #{server.id}"
+    server = Server.create!(url: args.url, secret: args.secret, load_multiplier: tmp_load_multiplier)
+    puts('OK')
+    puts("id: #{server.id}")
   end
 
   desc 'Remove a BigBlueButton server'
@@ -89,17 +89,17 @@ namespace :servers do
   end
 
   desc 'Set the load-multiplier of a BigBlueButton server'
-  task :loadMultiplier, [:id,:loadMultiplier] => :environment do |_t, args|
+  task :loadMultiplier, [:id, :load_multiplier] => :environment do |_t, args|
     server = Server.find(args.id)
-    __loadMultiplier = 1.0
-    if args.loadMultiplier.present?
-      __loadMultiplier = args.loadMultiplier.to_d
-      if __loadMultiplier == 0
-        puts 'WARNING! Load-multiplier was not readable or 0, so it is now 1'
-        __loadMultiplier = 1.0
+    tmp_load_multiplier = 1.0
+    if args.load_multiplier.blank?
+      tmp_load_multiplier = args.load_multiplier.to_d
+      if tmp_load_multiplier.zero?
+        puts('WARNING! Load-multiplier was not readable or 0, so it is now 1')
+        tmp_load_multiplier = 1.0
       end
     end
-    server.loadMultiplier = __loadMultiplier
+    server.load_multiplier = tmp_load_multiplier
     server.save!
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
