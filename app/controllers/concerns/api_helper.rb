@@ -13,15 +13,18 @@ module ApiHelper
   def verify_checksum
     raise ChecksumError unless params[:checksum].present? && params[:checksum].length == CHECKSUM_LENGTH
 
-    check_string = request.query_string.gsub(
-      /&checksum=#{params[:checksum]}|checksum=#{params[:checksum]}&|checksum=#{params[:checksum]}/,
-      ''
+    # Camel case (ex) get_meetings to getMeetings to match BBB server
+    check_string = action_name.camelcase(:lower)
+    check_string += request.query_string.gsub(
+      /&checksum=#{params[:checksum]}|checksum=#{params[:checksum]}&|checksum=#{params[:checksum]}/, ''
     )
 
-    # Camel case (ex) get_meetings to getMeetings to match BBB server
-    checksum = Digest::SHA1.hexdigest(action_name.camelcase(:lower) + check_string + Rails.configuration.x.loadbalancer_secret)
+    return if Rails.configuration.x.loadbalancer_secrets.any? do |secret|
+      checksum = Digest::SHA1.hexdigest(check_string + secret)
+      ActiveSupport::SecurityUtils.fixed_length_secure_compare(checksum, params[:checksum])
+    end
 
-    raise ChecksumError unless ActiveSupport::SecurityUtils.fixed_length_secure_compare(checksum, params[:checksum])
+    raise ChecksumError
   end
 
   # Encode URI and append checksum
