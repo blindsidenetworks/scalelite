@@ -16,7 +16,6 @@ else
 	echo "Using non-SSL configuration template."
 	nginx_template=/etc/nginx/conf.d/scalelite.template
 fi
-
 envsubst '$URL_HOST' <$nginx_template >/etc/nginx/conf.d/scalelite.conf
 unset nginx_template
 
