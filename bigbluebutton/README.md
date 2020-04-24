@@ -34,7 +34,7 @@ All of the following example commands assume you are running as the `bigbluebutt
 You will need to create the `.ssh` directory if it doesn't exist:
 
 ```sh
-mkdir -p ~/.ssh ; chown 0600 ~/.ssh
+mkdir -p ~/.ssh ; chmod 0700 ~/.ssh
 ```
 
 Create a new SSH key for the recording transfer to use:
