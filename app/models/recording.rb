@@ -59,7 +59,8 @@ class Recording < ApplicationRecord
     # Playback format
     playback_format_params = {}
     playback_xml = recording_xml.at_xpath('playback')
-    link = playback_xml.at_xpath('link')&.text
+    link_raw = playback_xml.at_xpath('link')&.text
+    link = link_raw.strip
     playback_format_params[:format] = playback_xml.at_xpath('format')&.text
     duration = playback_xml.at_xpath('duration')&.text
     playback_format_params[:length] = (duration.to_f / 60_000).round if duration.present?
@@ -74,7 +75,7 @@ class Recording < ApplicationRecord
           width: image_xml['width']&.to_i,
           height: image_xml['height']&.to_i,
           alt: image_xml['alt'],
-          url: URI(image_xml.text).path,
+          url: URI(image_xml.text.strip).path,
           sequence: i,
         }
       end
