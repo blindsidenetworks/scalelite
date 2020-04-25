@@ -4,6 +4,6 @@ server {
 	listen 80 default_server;
 	listen [::]:80 default_server;
 
-	include conf.d/scalelite.common;
 	include conf.d/scalelite/*;
+	include conf.d/scalelite.common;
 }
