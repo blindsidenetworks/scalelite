@@ -5,6 +5,7 @@ server {
 	listen [::]:80 default_server;
 
 	include conf.d/scalelite.common;
+	include conf.d/scalelite/*;
 }
 
 server {
@@ -27,4 +28,5 @@ server {
 	ssl_prefer_server_ciphers off;
 
 	include conf.d/scalelite.common;
+	include conf.d/scalelite/*;
 }
