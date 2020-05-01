@@ -209,8 +209,7 @@ Particular information to note:
 The `url` value is the complete URL to the BigBlueButton API endpoint of the server. The `/api` on the end is required.
 You can find the BigBlueButton server's URL and Secret by running `bbb-conf --secret` on the BigBlueButton server.
 
-The `loadMultiplier` is optional, it defaults to `1`. When adding a loadMultiplier to the server, the load will be multiplied
-using this number.
+The `loadMultiplier` can be used to give individual servers a higher or lower priority over other servers. A higher loadMultiplier should be placed on the weaker servers. If not passed, it defaults to a value of `1`.
 
 This command will print out the ID of the newly created server, and `OK` if it was successful.
 Note that servers are added in the disabled state; see "Enable a server" below to enable it.
@@ -262,9 +261,11 @@ After the meeting state is cleared, anyone who tries to join a meeting that was 
 ./bin/rake servers:loadMultiplier[id,newLoadMultiplier]
 ```
 
-Set a new load-multiplier of a BigBlueButton server.
-Default is `1`. After changing the server needs to be polled at least once to see
-the new load.
+Sets the load_multiplier for a BigBlueButton server.
+
+The `loadMultiplier` can be used to give individual servers a higher or lower priority over other servers. A higher loadMultiplier should be placed on the weaker servers.
+
+After changing the server needs to be polled at least once to see the new load.
 
 ### Poll all servers
 
