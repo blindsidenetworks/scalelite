@@ -36,7 +36,7 @@ namespace :poll do
 
       if server.online
         # Update the load if the server is currently online
-        server.load = meetings.length
+        server.load = meetings.length * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
       else
         # Only bring the server online if the number of successful requests is >= the acceptable threshold
         next if server.increment_healthy < Rails.configuration.x.server_healthy_threshold
