@@ -50,6 +50,14 @@ module Scalelite
     # Defaults to 0 since nil/"".to_i = 0
     config.x.max_meeting_duration = ENV['MAX_MEETING_DURATION'].to_i
 
+    # Number of times poller needs to successfully reach offline server for it to
+    # be considered online again
+    config.x.server_healthy_threshold = ENV.fetch('SERVER_HEALTHY_THRESHOLD', '1').to_i
+
+    # Number of times poller needs to fail to reach online server for it to panic the server
+    # and set it to offline
+    config.x.server_unhealthy_threshold = ENV.fetch('SERVER_UNHEALTHY_THRESHOLD', '2').to_i
+
     # Directory to monitor for recordings transferred from BigBlueButton servers
     config.x.recording_spool_dir = File.absolute_path(
       ENV.fetch('RECORDING_SPOOL_DIR') { '/var/bigbluebutton/spool' }
