@@ -182,7 +182,6 @@ publish_dockerhub_v1:
   only:
     refs:
       - tags
-  when: manual
   script:
     - docker pull $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA
     - docker pull $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
