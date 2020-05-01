@@ -99,9 +99,9 @@ class Server < ApplicationRedisRecord
   # Apply a concurrency-safe adjustment to the server load
   # Does nothing is the server is not available (enabled and online)
   def increment_load(amount)
-    load_multiplier = load_multiplier.nil? ? 1.0 : load_multiplier
+    multiplier = load_multiplier.nil? ? 1.0 : load_multiplier
     with_connection do |redis|
-      self.load = redis.zadd('server_load', amount * load_multiplier.to_d, id, xx: true, incr: true)
+      self.load = redis.zadd('server_load', amount * multiplier.to_d, id, xx: true, incr: true)
       clear_attribute_changes([:load])
       load
     end
