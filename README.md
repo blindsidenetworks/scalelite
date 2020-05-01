@@ -155,6 +155,14 @@ Additionally, these options can be set:
 * `pool_timeout`: Amount of time (seconds) to wait if all connections in the pool are in use. Defaults to 5.
 * `namespace`: An optional prefix to apply to all keys stored in Redis.
 
+## Upgrading
+
+Upgrading Scalelite to the latest version can be done using one command: 
+
+`systemctl restart scalelite.target`
+
+To confirm that you have the latest version, enter `http(s)://<scalelite-hostname>/bigbluebutton/api` in your browser and confirm that the value inside the `<build><\build>` tag is equal to the new version.
+
 ## Administration
 
 Scalelite comes with a set of commands to
