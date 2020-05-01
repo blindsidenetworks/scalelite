@@ -253,6 +253,27 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, server1.load
   end
 
+  test 'increments the server load by the value of load_multiplier' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0, load_multiplier: 7.0)
+
+    params = {
+      meetingID: 'test-meeting-1',
+    }
+
+    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
+      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_create_url, params: params
+    end
+
+    # Reload
+    server1 = Server.find(server1.id)
+    assert_equal 7, server1.load
+  end
+
   test 'creates the room successfully using POST' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
