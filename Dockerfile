@@ -20,6 +20,7 @@ FROM alpine AS nginx
 RUN apk add --no-cache nginx tini gettext \
     && ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log
+RUN rm /etc/nginx/conf.d/default.conf
 COPY --from=bbb-playback /etc/bigbluebutton/nginx /etc/bigbluebutton/nginx/
 COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback/
 COPY nginx /etc/nginx/
@@ -63,7 +64,7 @@ RUN rm -rf nginx
 
 FROM base AS application
 USER scalelite:scalelite
-ENV URL_HOST=localhost RAILS_ENV=production RAILS_LOG_TO_STDOUT=1
+ENV RAILS_ENV=production RAILS_LOG_TO_STDOUT=1
 COPY --from=builder --chown=scalelite:scalelite /srv/scalelite ./
 
 ARG BUILD_NUMBER
@@ -79,4 +80,3 @@ CMD [ "bin/start-poller" ]
 FROM application AS api
 EXPOSE 3000
 CMD [ "bin/start" ]
-

@@ -44,7 +44,7 @@ namespace :poll do
         Rails.logger.info("Server id=#{server.id} is healthy. Bringing back online...")
         server.reset_counters
         server.enabled = true
-        server.load = meetings.length
+        server.load = meetings.length * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
         server.online = true
       end
     rescue StandardError => e

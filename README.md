@@ -107,7 +107,7 @@ To switch your Front-End application to use Scalelite instead of a single BigBlu
 
 #### Required
 
-* `URL_HOST`: The hostname that the application API endpoint is accessible from. Used to protect against DNS rebinding attacks.
+* `URL_HOST`: The hostname that the application API endpoint is accessible from. Used to protect against DNS rebinding attacks. Should be left blank if deploying Scalelite behind a Network Loadbalancer.
 * `SECRET_KEY_BASE`: A secret used internally by Rails. Should be unique per deployment. Generate with `bundle exec rake secret` or `openssl rand -hex 64`.
 * `LOADBALANCER_SECRET`: The shared secret that applications will use when calling BigBlueButton APIs on the load balancer. Generate with `openssl rand -hex 32`
 * `DATABASE_URL`: URL for connecting to the PostgreSQL database, see the [Rails documentation](https://guides.rubyonrails.org/configuring.html#configuring-a-database). The URL should be in the form of `postgresql://username:password@connection_url`. Note that instead of using this environment variable, you can configure the database server in `config/database.yml`.
@@ -156,6 +156,14 @@ Additionally, these options can be set:
 * `pool_timeout`: Amount of time (seconds) to wait if all connections in the pool are in use. Defaults to 5.
 * `namespace`: An optional prefix to apply to all keys stored in Redis.
 
+## Upgrading
+
+Upgrading Scalelite to the latest version can be done using one command: 
+
+`systemctl restart scalelite.target`
+
+To confirm that you have the latest version, enter `http(s)://<scalelite-hostname>/bigbluebutton/api` in your browser and confirm that the value inside the `<build><\build>` tag is equal to the new version.
+
 ## Administration
 
 Scalelite comes with a set of commands to
@@ -183,6 +191,7 @@ id: 2d2d674a-c6bb-48f3-8ad4-68f33a80a5b7
         secret: 2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535
         enabled
         load: 21.0
+        load multiplier: 2.0
         online
 ```
 
@@ -196,11 +205,14 @@ Particular information to note:
 ### Add a server
 
 ```sh
-./bin/rake servers:add[url,secret]
+./bin/rake servers:add[url,secret,loadMultiplier]
 ```
 
 The `url` value is the complete URL to the BigBlueButton API endpoint of the server. The `/api` on the end is required.
 You can find the BigBlueButton server's URL and Secret by running `bbb-conf --secret` on the BigBlueButton server.
+
+The `loadMultiplier` is optional, it defaults to `1`. When adding a loadMultiplier to the server, the load will be multiplied
+using this number.
 
 This command will print out the ID of the newly created server, and `OK` if it was successful.
 Note that servers are added in the disabled state; see "Enable a server" below to enable it.
@@ -245,6 +257,16 @@ Note that the server won't be used for new meetings until after the next time th
 Disable a server and clear all meeting state.
 This method is used to recover from a crashed BigBlueButton server.
 After the meeting state is cleared, anyone who tries to join a meeting that was previously on this server will instead be directed to a new meeting on a different server.
+
+### Edit the load-multiplier of a server
+
+```sh
+./bin/rake servers:loadMultiplier[id,newLoadMultiplier]
+```
+
+Set a new load-multiplier of a BigBlueButton server.
+Default is `1`. After changing the server needs to be polled at least once to see
+the new load.
 
 ### Poll all servers
 

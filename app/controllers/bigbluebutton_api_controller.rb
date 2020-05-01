@@ -88,7 +88,7 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def get_meetings
-    # Get all available servers
+    # Get all servers
     servers = Server.all
 
     logger.warn('No servers are currently available') if servers.empty?
@@ -105,6 +105,8 @@ class BigBlueButtonApiController < ApplicationController
 
     # Make individual getMeetings call for each server and append result to all_meetings
     servers.each do |server|
+      next unless server.online # only send getMeetings requests to servers that are online
+
       uri = encode_bbb_uri('getMeetings', server.url, server.secret)
 
       begin
@@ -196,11 +198,11 @@ class BigBlueButtonApiController < ApplicationController
                          meetingID: params[:meetingID], password: params[:password])
 
     begin
-      # Send a GET request to the server
-      response = get_post_req(uri)
-
       # Remove the meeting from the database
       meeting.destroy!
+
+      # Send a GET request to the server
+      response = get_post_req(uri)
     rescue BBBError => e
       if e.message_key == 'notFound'
         # If the meeting is not found, delete the meeting from the load balancer database

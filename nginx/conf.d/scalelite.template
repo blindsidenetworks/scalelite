@@ -1,8 +1,9 @@
+access_log stderr combined;
+
 server {
-	server_name $URL_HOST;
+	listen 80 default_server;
+	listen [::]:80 default_server;
 
-	listen 80;
-	listen [::]:80;
-
+	include conf.d/scalelite/*;
 	include conf.d/scalelite.common;
 }

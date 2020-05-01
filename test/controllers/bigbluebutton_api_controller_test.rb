@@ -134,8 +134,8 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   # getMeetings
 
   test 'responds with the correct meetings' do
-    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1)
-    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1)
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true)
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true)
 
     stub_request(:get, encode_bbb_uri('getMeetings', server1.url, server1.secret))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
@@ -165,6 +165,34 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
     assert_equal 'noMeetings', response_xml.at_xpath('/response/messageKey').text
     assert_equal 'No meetings were found on this server.', response_xml.at_xpath('/response/message').text
+  end
+
+  test 'only makes a request to online servers' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true)
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true)
+    server3 = Server.create(url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1,
+                            online: false)
+
+    stub_request(:get, encode_bbb_uri('getMeetings', server1.url, server1.secret))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
+                       '<meeting>test-meeting-1<meeting></meetings></response>')
+    stub_request(:get, encode_bbb_uri('getMeetings', server2.url, server2.secret))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
+                       '<meeting>test-meeting-2<meeting></meetings></response>')
+    stub_request(:get, encode_bbb_uri('getMeetings', server3.url, server3.secret))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
+                    '<meeting>test-meeting-3<meeting></meetings></response>')
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_get_meetings_url
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert response_xml.xpath('//meeting[text()="test-meeting-1"]').present?
+    assert response_xml.xpath('//meeting[text()="test-meeting-2"]').present?
+    assert_not response_xml.xpath('//meeting[text()="test-meeting-3"]').present?
   end
 
   # /create
