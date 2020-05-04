@@ -27,6 +27,8 @@ COPY nginx /etc/nginx/
 EXPOSE 80
 EXPOSE 443
 ENV NGINX_HOSTNAME=localhost
+ENV GID=997
+ENV UID=997
 CMD [ "/etc/nginx/start", "-g", "daemon off;" ]
 
 FROM alpine AS base
@@ -39,9 +41,9 @@ RUN apk add --no-cache \
     ruby-bundler \
     ruby-json \
     tini \
-    tzdata \
-    && addgroup scalelite \
-    && adduser -h /srv/scalelite -G scalelite -D scalelite
+    tzdata 
+RUN addgroup -S -g 997 scalelite \
+    && adduser -S -G scalelite -u 997 -s /bin/false -h /srv/scalelite scalelite
 WORKDIR /srv/scalelite
 
 FROM base as builder
