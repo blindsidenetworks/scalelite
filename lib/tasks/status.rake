@@ -3,11 +3,8 @@
 require 'ostruct'
 
 desc('List all BigBlueButton servers and all meetings currently running')
-task status: :environment do
-  include ApiHelper
-
-  servers_info = []
-  Server.all.each do |server|
+  @servers_info = []
+  def Get_Status(server)
     begin
       response = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
       meetings = response.xpath('/response/meetings/meeting')
@@ -34,7 +31,7 @@ task status: :environment do
     end
 
     # Convert to openstruct to allow dot syntax usage
-    servers_info.push(OpenStruct.new(
+    @servers_info.push(OpenStruct.new(
                         hostname: URI.parse(server.url).host,
                         state: server.enabled ? 'enabled' : 'disabled',
                         status: server.online ? 'online' : 'offline',
@@ -44,8 +41,17 @@ task status: :environment do
                         videos: video_streams
                       ))
   end
+  
+task status: :environment do
+  include ApiHelper
 
-  table = Tabulo::Table.new(servers_info, border: :blank) do |t|
+  threads = []
+  Server.all.each do |server|
+    threads << Thread.new { Get_Status(server) }
+  end
+  threads.each(&:join)
+
+  table = Tabulo::Table.new(@servers_info, border: :blank) do |t|
     t.add_column('HOSTNAME', &:hostname)
     t.add_column('STATE', &:state)
     t.add_column('STATUS', &:status)
