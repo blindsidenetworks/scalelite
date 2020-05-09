@@ -5,7 +5,6 @@ require 'ostruct'
 desc('List all BigBlueButton servers and all meetings currently running')
 
 @servers_info = []
-
 def Get_Status(server)
   begin
     response = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
@@ -31,17 +30,18 @@ def Get_Status(server)
     video_streams = 0
     users_in_largest_meeting = 0
   end
+  
 
-  # Convert to openstruct to allow dot syntax usage
-  @servers_info.push(OpenStruct.new(
-    hostname: URI.parse(server.url).host,
-    state: server.enabled ? "enabled" : "disabled",
-    status: server.online ? "online" : "offline",
-    meetings: meetings.length,
-    users: server_users,
-    largest: users_in_largest_meeting,
-    videos: video_streams,
-  ))
+    # Convert to openstruct to allow dot syntax usage
+    @servers_info.push(OpenStruct.new(
+      hostname: URI.parse(server.url).host,
+      state: server.enabled ? 'enabled' : 'disabled',
+      status: server.online ? 'online' : 'offline',
+      meetings: meetings.length,
+      users: server_users,
+      largest: users_in_largest_meeting,
+      videos: video_streams
+    ))
 end
 
 task status: :environment do
