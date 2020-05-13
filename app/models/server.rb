@@ -41,7 +41,10 @@ class Server < ApplicationRedisRecord
       raise RecordNotSaved.new('Cannot update id field', self) if id_changed?
 
       # Default values
-      self.id = SecureRandom.uuid if id.nil?
+      host = URI.parse(url).host.downcase
+      if id.nil?
+        self.id = ENV['USE_UUID'] ? SecureRandom.uuid : host
+      end
       self.online = false if online.nil?
 
       # Ignore load changes (would re-add to server_load set) unless enabled
