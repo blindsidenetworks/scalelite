@@ -43,6 +43,9 @@ task status: :environment do
                         largest: users_in_largest_meeting,
                         videos: video_streams
                       ))
+
+    # Sort list of servers
+    servers_info = servers_info.sort { |a, b| a[:hostname] <=> b[:hostname] }
   end
 
   table = Tabulo::Table.new(servers_info, border: :blank) do |t|
