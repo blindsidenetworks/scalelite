@@ -45,7 +45,7 @@ task status: :environment do
                       ))
 
     # Sort list of servers
-    servers_info = servers_info.sort { |a, b| a[:hostname] <=> b[:hostname] }
+    servers_info = servers_info.sort_by(&:hostname)
   end
 
   table = Tabulo::Table.new(servers_info, border: :blank) do |t|
