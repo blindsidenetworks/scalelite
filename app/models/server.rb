@@ -129,6 +129,20 @@ class Server < ApplicationRedisRecord
     end
   end
 
+  # Resets healthy counter to 0
+  def reset_healthy_counter
+    with_connection do |redis|
+      redis.hmset(id, 'healthy_counter', 0)
+    end
+  end
+
+  # Resets unhealthy counter to 0
+  def reset_unhealthy_counter
+    with_connection do |redis|
+      redis.hmset(id, 'unhealthy_counter', 0)
+    end
+  end
+
   # Find a server by ID
   def self.find(id)
     with_connection do |redis|

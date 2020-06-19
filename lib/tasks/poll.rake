@@ -34,6 +34,9 @@ namespace :poll do
       resp = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
       meetings = resp.xpath('/response/meetings/meeting')
 
+      # Reset unhealthy counter so that only consecutive unhealthy calls are counted
+      server.reset_unhealthy_counter
+
       if server.online
         # Update the load if the server is currently online
         server.load = meetings.length * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
@@ -48,6 +51,9 @@ namespace :poll do
       end
     rescue StandardError => e
       Rails.logger.warn("Failed to get server id=#{server.id} status: #{e}")
+
+      # Reset healthy counter so that only consecutive healthy calls are counted
+      server.reset_healthy_counter
 
       next unless server.online # Only check healthiness if server is currently online
 
