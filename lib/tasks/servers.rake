@@ -65,11 +65,12 @@ namespace :servers do
   end
 
   desc 'Mark a BigBlueButton server as unavailable, and clear all meetings from it'
-  task :panic, [:id] => :environment do |_t, args|
+  task :panic, [:id, :keep_enabled] => :environment do |_t, args|
+    args.with_defaults(keep_enabled: false)
     include ApiHelper
 
     server = Server.find(args.id)
-    server.enabled = false
+    server.enabled = args.keep_enabled
     server.save!
 
     meetings = Meeting.all.select { |m| m.server_id == server.id }
