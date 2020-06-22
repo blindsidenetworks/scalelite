@@ -61,7 +61,7 @@ namespace :poll do
       next if server.increment_unhealthy < Rails.configuration.x.server_unhealthy_threshold
 
       Rails.logger.warn("Server id=#{server.id} is unhealthy. Panicking and setting offline...")
-      Rake::Task['servers:panic'].invoke(server.id) # Panic server to clear meetings
+      Rake::Task['servers:panic'].invoke(server.id, true) # Panic server to clear meetings
       server.reset_counters
       server.load = nil
       server.online = false
