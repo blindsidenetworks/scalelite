@@ -186,7 +186,12 @@ Scalelite comes with a set of commands to
 
 Server management is provided using rake tasks which update server information in Redis.
 
-In a Docker deployment, these should be run from in the Docker container. You can enter the Docker container using a command like `docker exec -it scalelite-api /bin/sh`
+In a Docker deployment, these should be run from in the Docker container.
+You can enter the container using a command like `docker exec -it scalelite-api /bin/sh`
+or execute rake directly using `docker exec -it scalelite-api bin/rake …`.
+
+All server commands can be used with either a specific server ID or a regular expressions matching the URL as argument.
+
 
 ### Show configured server details
 
@@ -204,6 +209,18 @@ id: 2d2d674a-c6bb-48f3-8ad4-68f33a80a5b7
         load: 21.0
         load multiplier: 2.0
         online
+```
+
+as with all commands, you can search for specific servers using:
+
+```sh
+./bin/rake servers:[bbb.*\\.example\\.com]
+```
+
+or
+
+```sh
+./bin/rake servers:[bbb0\[1-5\].example.com]
 ```
 
 Particular information to note:

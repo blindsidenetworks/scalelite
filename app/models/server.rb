@@ -161,6 +161,33 @@ class Server < ApplicationRedisRecord
     end
   end
 
+  # Find a server by ID or URL
+  def self.find_all(search)
+    servers = []
+    with_connection do |redis|
+      ids = redis.smembers('servers')
+      raise RecordNotFound.new('No servers conficured', name, nil) if ids.blank?
+
+      search_regexp = Regexp.new(search)
+
+      ids.each do |id|
+        hash, enabled, load = redis.pipelined do
+          redis.hgetall(key(id))
+          redis.sismember('server_enabled', id)
+          redis.zscore('server_load', id)
+        end
+        next if hash.blank? || (search != id && !search_regexp.match?(hash['url']))
+
+        hash['id'] = id
+        hash['enabled'] = enabled
+        hash['load'] = load if enabled
+        hash['online'] = (hash['online'] == 'true')
+        servers << new.init_with_attributes(hash)
+      end
+    end
+    servers
+  end
+
   # Find the server with the lowest load (for creating a new meeting)
   def self.find_available
     with_connection do |redis|
