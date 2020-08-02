@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 class ServersController < ApplicationController
+  # include ApiHelper # TODO figure out how to protect this route
+
+  # before_action :verify_checksum, except: :index
+
   def index
     builder = Nokogiri::XML::Builder.new do |xml|
       xml.response do
