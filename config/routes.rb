@@ -16,13 +16,18 @@ Rails.application.routes.draw do
     get 'updateRecordings', to: 'bigbluebutton_api#update_recordings', as: :update_recordings
     get 'deleteRecordings', to: 'bigbluebutton_api#delete_recordings', as: :delete_recordings
   end
+  
+  scope 'api', format: false, defaults: { format: 'xml' } do
+    get '/', to: 'servers#index'
+    get 'servers', to: 'servers#all'
+    get 'servers/add', to: 'servers#add'
+    get 'servers/remove', to: 'servers#remove'
+    get 'servers/enable', to: 'servers#enable'
+    get 'servers/disable', to: 'servers#disable'
+    get 'servers/setLoadMultiplier', to: 'servers#set_load_multiplier'
+  end
 
   get 'health_check', to: 'health_check#all'
-
-  get 'api', to: 'servers#index'
-  get 'api/servers', to: 'servers#all'
-  get 'api/servers/add', to: 'servers#add'
-  get 'api/servers/remove', to: 'servers#remove'
 
   match '*any', via: :all, to: 'errors#unsupported_request'
   root to: 'errors#unsupported_request', via: :all

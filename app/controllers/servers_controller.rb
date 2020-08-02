@@ -13,7 +13,7 @@ class ServersController < ApplicationController
 
   def all
     begin
-      servers = get_servers
+      servers = Server.all
       
       builder = Nokogiri::XML::Builder.new do |xml|
         xml.response do
@@ -98,9 +98,74 @@ class ServersController < ApplicationController
     render(xml: builder)
   end
 
-  private
-  def get_servers
-    servers = Server.all
-    return servers
+  def enable
+    params.require(:serverID)
+    
+    begin
+      server = Server.find(params['serverID'])
+      server.enabled = true
+      server.save!    
+    rescue ApplicationRedisRecord::RecordNotFound
+      raise InternalError, 'Error enabling the server.'
+    end
+
+    builder = Nokogiri::XML::Builder.new do |xml|
+      xml.response do
+        xml.returncode('SUCCESS')
+      end
+    end
+
+    render(xml: builder)
+  end
+
+
+  def disable
+    params.require(:serverID)
+    
+    begin
+      server = Server.find(params['serverID'])
+      server.enabled = false
+      server.save!    
+    rescue ApplicationRedisRecord::RecordNotFound
+      raise InternalError, 'Error disabling the server.'
+    end
+
+    builder = Nokogiri::XML::Builder.new do |xml|
+      xml.response do
+        xml.returncode('SUCCESS')
+      end
+    end
+
+    render(xml: builder)
+  end
+
+  def set_load_multiplier
+    params.require(:serverID)
+    params.require(:loadMultiplier)
+    
+    tmp_load_multiplier = 1.0
+    unless params['loadMultiplier'].nil?
+      tmp_load_multiplier = params['loadMultiplier'].to_d
+      if tmp_load_multiplier.zero?
+        puts('WARNING! Load-multiplier was not readable or 0, so it is now 1')
+        tmp_load_multiplier = 1.0
+      end
+    end
+
+    begin
+      server = Server.find(params['serverID'])
+      server.load_multiplier = tmp_load_multiplier
+      server.save!  
+    rescue ApplicationRedisRecord::RecordNotFound
+      raise InternalError, 'Error changing load multiplier for the server.'
+    end
+
+    builder = Nokogiri::XML::Builder.new do |xml|
+      xml.response do
+        xml.returncode('SUCCESS')
+      end
+    end
+
+    render(xml: builder)
   end
 end
