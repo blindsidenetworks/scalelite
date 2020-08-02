@@ -21,6 +21,8 @@ Rails.application.routes.draw do
 
   get 'api', to: 'servers#index'
   get 'api/servers', to: 'servers#all'
+  get 'api/servers/add', to: 'servers#add'
+  get 'api/servers/remove', to: 'servers#remove'
 
   match '*any', via: :all, to: 'errors#unsupported_request'
   root to: 'errors#unsupported_request', via: :all
