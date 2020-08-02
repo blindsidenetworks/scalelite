@@ -19,6 +19,9 @@ Rails.application.routes.draw do
 
   get 'health_check', to: 'health_check#all'
 
+  get 'api', to: 'servers#index'
+  get 'api/servers', to: 'servers#all'
+
   match '*any', via: :all, to: 'errors#unsupported_request'
   root to: 'errors#unsupported_request', via: :all
 end
