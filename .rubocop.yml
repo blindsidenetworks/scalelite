@@ -25,6 +25,7 @@ Metrics:
 Naming/AccessorMethodName:
   Exclude:
     - app/controllers/bigbluebutton_api_controller.rb
+    - app/controllers/scalelite_api_controller.rb
 Naming/PredicateName:
   Exclude:
     - app/controllers/bigbluebutton_api_controller.rb

@@ -26,35 +26,34 @@ class ScaleliteApiController < ApplicationController
       raise InternalError, 'Errors finding servers'
     end
 
-    if servers.empty?
-      builder = Nokogiri::XML::Builder.new do |xml|
-        xml.response do
-          xml.returncode('SUCCESS')
-          xml.messageKey('noServers')
-          xml.message('No servers were found')
-        end
-      end
-    else  
-      builder = Nokogiri::XML::Builder.new do |xml|
-        xml.response do
-          xml.returncode('SUCCESS')
-          xml.version('2.0')
-          xml.servers do
-            servers.each do |server|
-              xml.server do
-                xml.serverID(server.id)
-                xml.serverUrl(server.url)
-                xml.serverSecret(server.secret) # TODO: this probably shouldn't be available unless the route is protected
-                xml.online(server.online)
-                xml.loadMultiplier(server.load_multiplier)
-                xml.enabled(server.enabled)
-                xml.load(server.load)
+    builder = if servers.empty?
+                Nokogiri::XML::Builder.new do |xml|
+                  xml.response do
+                    xml.returncode('SUCCESS')
+                    xml.messageKey('noServers')
+                    xml.message('No servers were found')
+                  end
+                end
+              else
+                Nokogiri::XML::Builder.new do |xml|
+                  xml.response do
+                    xml.returncode('SUCCESS')
+                    xml.version('2.0')
+                    xml.servers do
+                      servers.each do |server|
+                        xml.server do
+                          xml.serverID(server.id)
+                          xml.serverUrl(server.url)
+                          xml.online(server.online)
+                          xml.loadMultiplier(server.load_multiplier)
+                          xml.enabled(server.enabled)
+                          xml.load(server.load)
+                        end
+                      end
+                    end
+                  end
+                end
               end
-            end
-          end
-        end
-      end
-    end
     render(xml: builder)
   end
 
@@ -74,7 +73,6 @@ class ScaleliteApiController < ApplicationController
         xml.server do
           xml.serverID(server.id)
           xml.serverUrl(server.url)
-          xml.serverSecret(server.secret)
           xml.online(server.online)
           xml.loadMultiplier(server.load_multiplier)
           xml.enabled(server.enabled)
@@ -88,7 +86,7 @@ class ScaleliteApiController < ApplicationController
   def add_server
     params.require(:serverUrl)
     params.require(:serverSecret)
-    
+
     load_multiplier = normalize_load_multiplier(params['loadMultiplier'])
 
     begin
@@ -103,7 +101,6 @@ class ScaleliteApiController < ApplicationController
         xml.server do
           xml.serverID(server.id)
           xml.serverUrl(server.url)
-          xml.serverSecret(server.secret)
           xml.loadMultiplier(server.load_multiplier)
         end
       end
@@ -113,7 +110,7 @@ class ScaleliteApiController < ApplicationController
 
   def remove_server
     params.require(:serverID)
-    
+
     begin
       server = Server.find(params['serverID'])
       server.destroy!
@@ -132,7 +129,7 @@ class ScaleliteApiController < ApplicationController
 
   def enable_server
     params.require(:serverID)
-    
+
     begin
       server = Server.find(params['serverID'])
       server.enabled = true
@@ -152,7 +149,7 @@ class ScaleliteApiController < ApplicationController
 
   def disable_server
     params.require(:serverID)
-    
+
     begin
       server = Server.find(params['serverID'])
       server.enabled = false
@@ -173,7 +170,7 @@ class ScaleliteApiController < ApplicationController
   def set_load_multiplier
     params.require(:serverID)
     params.require(:loadMultiplier)
-    
+
     load_multiplier = normalize_load_multiplier(params['loadMultiplier'])
 
     begin
