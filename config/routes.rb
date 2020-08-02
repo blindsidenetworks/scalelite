@@ -17,14 +17,14 @@ Rails.application.routes.draw do
     get 'deleteRecordings', to: 'bigbluebutton_api#delete_recordings', as: :delete_recordings
   end
   
-  scope 'api', format: false, defaults: { format: 'xml' } do
-    get '/', to: 'servers#index'
-    get 'servers', to: 'servers#all'
-    get 'servers/add', to: 'servers#add'
-    get 'servers/remove', to: 'servers#remove'
-    get 'servers/enable', to: 'servers#enable'
-    get 'servers/disable', to: 'servers#disable'
-    get 'servers/setLoadMultiplier', to: 'servers#set_load_multiplier'
+  scope 'scalelite/api', as: 'scalelite_api', format: false, defaults: { format: 'xml' } do
+    get '/', to: 'scalelite_api#index' 
+    get 'getServers', to: 'scalelite_api#get_servers'
+    get 'addServer', to: 'scalelite_api#add_server'
+    get 'removeServer', to: 'scalelite_api#remove_server'
+    get 'enableServer', to: 'scalelite_api#enable_server'
+    get 'disableServer', to: 'scalelite_api#disable_server'
+    get 'setLoadMultiplier', to: 'scalelite_api#set_load_multiplier'
   end
 
   get 'health_check', to: 'health_check#all'

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-class ServersController < ApplicationController
-  # include ApiHelper # TODO figure out how to protect this route
+class ScaleliteApiController < ApplicationController
+  include ApiHelper # TODO figure out how to protect this route
 
-  # before_action :verify_checksum, except: :index
+  before_action :verify_checksum, except: :index
 
   def index
     builder = Nokogiri::XML::Builder.new do |xml|
@@ -15,7 +15,7 @@ class ServersController < ApplicationController
     render(xml: builder)
   end
 
-  def all
+  def get_servers
     begin
       servers = Server.all
       
@@ -47,7 +47,7 @@ class ServersController < ApplicationController
     # render(plain: servers) # TODO: remove debuggin
   end
 
-  def add
+  def add_server
     params.require(:serverUrl)
     params.require(:serverSecret)
     
@@ -83,7 +83,7 @@ class ServersController < ApplicationController
     render(xml: builder)
   end
 
-  def remove
+  def remove_server
     params.require(:serverID)
     
     begin
@@ -102,7 +102,7 @@ class ServersController < ApplicationController
     render(xml: builder)
   end
 
-  def enable
+  def enable_server
     params.require(:serverID)
     
     begin
@@ -123,7 +123,7 @@ class ServersController < ApplicationController
   end
 
 
-  def disable
+  def disable_server
     params.require(:serverID)
     
     begin
