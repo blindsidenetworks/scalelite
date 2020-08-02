@@ -16,9 +16,9 @@ Rails.application.routes.draw do
     get 'updateRecordings', to: 'bigbluebutton_api#update_recordings', as: :update_recordings
     get 'deleteRecordings', to: 'bigbluebutton_api#delete_recordings', as: :delete_recordings
   end
-  
+
   scope 'scalelite/api', as: 'scalelite_api', format: false, defaults: { format: 'xml' } do
-    get '/', to: 'scalelite_api#index' 
+    get '/', to: 'scalelite_api#index'
     get 'getServers', to: 'scalelite_api#get_servers'
     get 'getServerInfo', to: 'scalelite_api#get_server_info'
     get 'addServer', to: 'scalelite_api#add_server'

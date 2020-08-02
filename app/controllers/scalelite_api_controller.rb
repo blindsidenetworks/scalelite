@@ -23,23 +23,33 @@ class ScaleliteApiController < ApplicationController
     begin
       servers = Server.all
     rescue ApplicationRedisRecord::RecordNotFound
-      raise InternalError, 'Could not find any available servers'
+      raise InternalError, 'Errors finding servers'
     end
 
-    builder = Nokogiri::XML::Builder.new do |xml|
-      xml.response do
-        xml.returncode('SUCCESS')
-        xml.version('2.0')
-        xml.servers do
-          servers.each do |server|
-            xml.server do
-              xml.serverID(server.id)
-              xml.serverUrl(server.url)
-              xml.serverSecret(server.secret) # TODO: this probably shouldn't be available unless the route is protected
-              xml.online(server.online)
-              xml.loadMultiplier(server.load_multiplier)
-              xml.enabled(server.enabled)
-              xml.load(server.load)
+    if servers.empty?
+      builder = Nokogiri::XML::Builder.new do |xml|
+        xml.response do
+          xml.returncode('SUCCESS')
+          xml.messageKey('noServers')
+          xml.message('No servers were found')
+        end
+      end
+    else  
+      builder = Nokogiri::XML::Builder.new do |xml|
+        xml.response do
+          xml.returncode('SUCCESS')
+          xml.version('2.0')
+          xml.servers do
+            servers.each do |server|
+              xml.server do
+                xml.serverID(server.id)
+                xml.serverUrl(server.url)
+                xml.serverSecret(server.secret) # TODO: this probably shouldn't be available unless the route is protected
+                xml.online(server.online)
+                xml.loadMultiplier(server.load_multiplier)
+                xml.enabled(server.enabled)
+                xml.load(server.load)
+              end
             end
           end
         end
@@ -126,7 +136,7 @@ class ScaleliteApiController < ApplicationController
     begin
       server = Server.find(params['serverID'])
       server.enabled = true
-      server.save!    
+      server.save!
     rescue ApplicationRedisRecord::RecordNotFound
       raise InternalError, 'Error enabling the server'
     end
@@ -140,14 +150,13 @@ class ScaleliteApiController < ApplicationController
     render(xml: builder)
   end
 
-
   def disable_server
     params.require(:serverID)
     
     begin
       server = Server.find(params['serverID'])
       server.enabled = false
-      server.save!    
+      server.save!
     rescue ApplicationRedisRecord::RecordNotFound
       raise InternalError, 'Error disabling the server'
     end
@@ -170,7 +179,7 @@ class ScaleliteApiController < ApplicationController
     begin
       server = Server.find(params['serverID'])
       server.load_multiplier = load_multiplier
-      server.save!  
+      server.save!
     rescue ApplicationRedisRecord::RecordNotFound
       raise InternalError, 'Error changing load multiplier for the server.'
     end
@@ -185,14 +194,13 @@ class ScaleliteApiController < ApplicationController
   end
 
   private
+
   def normalize_load_multiplier(load_multiplier)
     tmp_load_multiplier = 1.0
     unless load_multiplier.nil?
       tmp_load_multiplier = load_multiplier.to_d
-      if tmp_load_multiplier.zero?
-        tmp_load_multiplier = 1.0
-      end
+      tmp_load_multiplier = 1.0 if tmp_load_multiplier.zero?
     end
-    return tmp_load_multiplier
+    tmp_load_multiplier
   end
 end
