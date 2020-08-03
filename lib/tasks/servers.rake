@@ -14,19 +14,21 @@ task :servers, [:format] => :environment do |_t, args|
       puts('"url":"' + server.url.to_s + '",')
       puts('"secret":"' + server.secret.to_s + '",')
       print('"enable_status":"')
-      print("#{server.enabled ? 'enabled' : 'disabled'}")
+      print(server.enabled ? 'enabled' : 'disabled')
       puts('",')
       print('"load":"')
-      print("#{server.load.presence || 'unavailable'}")
+      print(server.load.presence.to_s || 'unavailable')
       puts('",')
       print('"load_multiplier":"')
-      print("#{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
+      print(server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
       puts('",')
       print('"online_status":"')
-      print("#{server.online ? 'online' : 'offline'}")
+      print(server.online ? 'online' : 'offline')
       puts('"')
       puts('}')
-      puts(',') if item < servers.count
+      if item < servers.count
+        puts(',')
+      end
       item = item.next
     end
     puts(']')
