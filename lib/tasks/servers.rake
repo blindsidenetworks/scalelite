@@ -1,44 +1,43 @@
 # frozen_string_literal: true
 
 desc('List configured BigBlueButton servers')
-task :servers, [:format] => :environment do |_t, args|
-case args.format
-  when "json"
-    servers = Server.all
-    puts('{')
-    puts(' "servers":[')
-    item = 1
-    servers.each do |server|
+  task :servers, [:format] => :environment do |_t, args|
+  servers = Server.all
+  case args.format
+    when 'json'
       puts('{')
-      puts('"id":"'+ "#{server.id}" + '",')
-      puts('"url":"'+ "#{server.url}" + '",')
-      puts('"secret":"'+ "#{server.secret}" + '",')
-      puts('"enable_status":"'+ "#{server.enabled ? 'enabled' : 'disabled'}" + '",')
-      puts('"load":"'+ "#{server.load.presence || 'unavailable'}" + '",')
-      puts('"load_multiplier":"'+ "#{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}" + '",')
-      puts('"online_status":"'+ "#{server.online ? 'online' : 'offline'}" + '"')
-      puts('}')
-      if item < servers.count
-        puts(',')
+      puts(' "servers":[')
+      item = 1
+      servers.each do |server|
+        puts('{')
+        puts('"id":"' + "#{server.id}" + '",')
+        puts('"url":"' + "#{server.url}" + '",')
+        puts('"secret":"' + "#{server.secret}" + '",')
+        puts('"enable_status":"' + "#{server.enabled ? 'enabled' : 'disabled'}" + '",')
+        puts('"load":"' + "#{server.load.presence || 'unavailable'}" + '",')
+        puts('"load_multiplier":"' + "#{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}" + '",')
+        puts('"online_status":"' + "#{server.online ? 'online' : 'offline'}" + '"')
+        puts('}')
+        if item < servers.count
+          puts(',')
+        end
+        item = item.next
       end
-      item = item.next
+      puts(']')
+      puts('}')
+      exit(0)
+    else
+      puts('No servers are configured') if servers.empty?
+      servers.each do |server|
+        puts("id: #{server.id}")
+        puts("\turl: #{server.url}")
+        puts("\tsecret: #{server.secret}")
+        puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
+        puts("\tload: #{server.load.presence || 'unavailable'}")
+        puts("\tload multiplier: #{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
+        puts("\t#{server.online ? 'online' : 'offline'}")
+      end
     end
-    puts(']')
-    puts('}')
-    exit(0)
-  else
-    servers = Server.all
-    puts('No servers are configured') if servers.empty?
-    servers.each do |server|
-      puts("id: #{server.id}")
-      puts("\turl: #{server.url}")
-      puts("\tsecret: #{server.secret}")
-      puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
-      puts("\tload: #{server.load.presence || 'unavailable'}")
-      puts("\tload multiplier: #{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
-      puts("\t#{server.online ? 'online' : 'offline'}")
-    end
-  end
 end
 
 namespace :servers do
