@@ -26,9 +26,7 @@ task :servers, [:format] => :environment do |_t, args|
       print(server.online ? 'online' : 'offline')
       puts('"')
       puts('}')
-      if item < servers.count
-        puts(',')
-      end
+      puts(',') if item < servers.count
       item = item.next
     end
     puts(']')
