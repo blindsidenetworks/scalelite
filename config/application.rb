@@ -42,7 +42,7 @@ module Scalelite
     config.x.redis_store = config_for(:redis_store)
 
     # Build number returned in the /bigbluebutton/api response
-    config.x.build_number = ENV['BUILD_NUMBER']
+    config.x.build_number = ENV['BUILD_NUMBER'] || `git describe --tags`
 
     # Secret used to verify /bigbluebutton/api requests
     config.x.loadbalancer_secret = ENV['LOADBALANCER_SECRET']
