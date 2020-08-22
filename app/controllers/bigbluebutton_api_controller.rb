@@ -135,7 +135,10 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      server = Server.find_available
+        server = Server.find_available(false)
+        if params[:meta_doRecording].present? && params[:meta_doRecording] == "true"
+            server = Server.find_available(true)
+        end
     rescue ApplicationRedisRecord::RecordNotFound
       raise InternalError, 'Could not find any available servers.'
     end
