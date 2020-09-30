@@ -276,7 +276,7 @@ After changing the server needs to be polled at least once to see the new load.
 ./bin/rake poll:all
 ```
 
-When you a server to the pool, it may take upwards of 60 seconds (default value for `INTERVAL` for the background server polling process) before Scalelite marks the server as `online`.
+When you add a server to the pool, it may take upwards of 60 seconds (default value for `INTERVAL` for the background server polling process) before Scalelite marks the server as `online`.
 You can run the above task to have it poll the server right away without waiting.
 
 ### Check the status of the entire deployment
