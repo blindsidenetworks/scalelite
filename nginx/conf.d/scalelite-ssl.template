@@ -4,11 +4,13 @@ server {
   listen 80 default_server;
   listen [::]:80 default_server;
 
-  location / {
+  # Modified for redirecting all http traffic to https, removed location
+  # location / {
     return  301 https://$host$request_uri;
-  }
+  #}
 
-  include conf.d/scalelite/*;
+  # No more needed
+  # include conf.d/scalelite/*;
 }
 
 server {
