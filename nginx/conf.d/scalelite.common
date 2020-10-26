@@ -1,4 +1,4 @@
-location / {
+location /bigbluebutton {
   proxy_pass http://scalelite-api:3000;
 
   proxy_read_timeout 60s;
