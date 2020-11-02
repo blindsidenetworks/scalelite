@@ -5,6 +5,8 @@ class BigBlueButtonApiController < ApplicationController
 
   before_action :verify_checksum, except: :index
 
+  $meeting_instance_counter = 1
+
   def index
     # Return the scalelite build number if passed as an env variable
     build_number = Rails.configuration.x.build_number
@@ -157,6 +159,11 @@ class BigBlueButtonApiController < ApplicationController
        (duration.zero? || duration > Rails.configuration.x.max_meeting_duration)
       logger.debug("Setting duration to #{Rails.configuration.x.max_meeting_duration}")
       params[:duration] = Rails.configuration.x.max_meeting_duration
+    end
+
+    if server.url == 'https://demo3.bigbluebutton.org/bigbluebutton/api/'
+      params['meta_bbb_meetinginstance'] = $meeting_instance_counter
+      $meeting_instance_counter = $meeting_instance_counter % 4 + 1
     end
 
     logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
