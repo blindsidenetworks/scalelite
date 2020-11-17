@@ -35,6 +35,7 @@ scalelite_props = Psych.load_file(File.join(__dir__, '../scalelite.yml'))
 work_dir = scalelite_props['work_dir'] || raise('Unable to determine work_dir from scalelite.yml')
 spool_dir = scalelite_props['spool_dir'] || raise('Unable to determine spool_dir from scalelite.yml')
 extra_rsync_opts = scalelite_props['extra_rsync_opts'] || []
+delete_recording = scalelite_props['delete_recording']
 
 puts("Transferring recording for #{meeting_id} to Scalelite")
 format_dirs = []
@@ -62,6 +63,12 @@ begin
   puts("Transferring recording archive to #{spool_dir}")
   system('rsync', '--verbose', '--protect-args', *extra_rsync_opts, archive_file, spool_dir) \
     || raise('Failed to transfer recording archive')
+
+  # Delete recording after transfer
+  if delete_recording
+    puts('Deleting local recording')
+    system('bbb-record', '--delete', meeting_id) || raise('Failed to delete local recording')
+  end
 ensure
   FileUtils.rm_f(archive_file)
 end
