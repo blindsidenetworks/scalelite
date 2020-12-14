@@ -25,3 +25,7 @@
 
 # Ignore master key for decrypting credentials and more.
 /config/master.key
+
+/db/production
+
+/bbb_processed

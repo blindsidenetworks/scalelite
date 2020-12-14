@@ -7,6 +7,7 @@ xml.response do
       xml.recording do
         xml.recordID recording.record_id
         xml.meetingID recording.meeting_id
+        xml.parent_meeting_id recording.parent_meeting_id
         xml.internalMeetingID recording.record_id
         xml.name recording.name
         xml.published recording.published ? 'true' : 'false'

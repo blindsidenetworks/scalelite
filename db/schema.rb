@@ -55,4 +55,11 @@ ActiveRecord::Schema.define(version: 2018_11_23_180008) do
     t.index ["playback_format_id"], name: "index_thumbnails_on_playback_format_id"
   end
 
+  create_table "breakout_room_meta", force: :cascade do |t|
+    t.string "breakout_room_id"
+    t.string "parent_recording_id"
+    t.string "parent_meeting_id"
+    t.index ["breakout_room_id"], name: "index_breakout_room_breakout_id", unique: true
+  end
+
 end

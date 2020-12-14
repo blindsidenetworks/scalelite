@@ -1,0 +1,31 @@
+version: "3.3"
+services:
+  scalelite:
+    build: . 
+    container_name: "scalelite"
+    env_file: ".env"
+    volumes:
+      - ~/Development/shared:/var/bigbluebutton/spool
+      - ./bbb_processed:/var/bigbluebutton/published
+    ports:
+      - "3000:3000"
+    links:
+      - postgres
+      - redis
+  postgres:
+    image: postgres:9.5
+    container_name: postgres
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db/production:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+  redis:
+    image: redis:4.0
+    container_name: redis
+    ports:
+      - "6379:6379"

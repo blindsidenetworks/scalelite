@@ -245,9 +245,10 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def get_recordings
-    query = Recording.includes(playback_formats: [:thumbnails], metadata: [])
+    query = Recording.joins("LEFT JOIN breakout_room_meta ON breakout_room_meta.breakout_room_id = record_id").includes(playback_formats: [:thumbnails], metadata: [])
+    query = query.select("recordings.*", "breakout_room_meta.breakout_room_id", "breakout_room_meta.parent_recording_id", "breakout_room_meta.parent_meeting_id")
     query = query.with_recording_id_prefixes(params[:recordID].split(',')) if params[:recordID].present?
-    query = query.where(meeting_id: params[:meetingID].split(',')) if params[:meetingID].present?
+    query = query.where(meeting_id: params[:meetingID].split(',')).or(query.where("breakout_room_meta.parent_meeting_id": params[:meetingID].split(','))) if params[:meetingID].present?
 
     @recordings = query.order(starttime: :desc).all
     @url_prefix = "#{request.protocol}#{request.host}"

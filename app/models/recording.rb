@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require_relative "breakout_room_meta"
 
 class Recording < ApplicationRecord
   has_many :metadata, dependent: :destroy
@@ -43,6 +44,18 @@ class Recording < ApplicationRecord
     end_time = recording_xml.at_xpath('end_time')&.text
     recording_params[:endtime] = Time.at(Rational(end_time.to_i, 1000)).utc if end_time.present?
     recording_params.merge!(overrides)
+    
+    # Breakout room data
+    breakout_rooms_meta = []
+    breakout_xml = recording_xml.at_xpath('breakoutRooms')
+    unless breakout_xml.nil?
+      breakout_rooms = breakout_xml.xpath('breakoutRoom')
+      breakout_rooms.each do |room|
+        breakout_rooms_meta.push({ "breakout_room_id" => room&.text, "parent_recording_id" => recording_params[:record_id], "parent_meeting_id" => recording_params[:meeting_id] })
+      end
+      BreakoutRoomMeta.save(breakout_rooms_meta)
+    end
+
 
     # Metadata
     metadata_params = []
