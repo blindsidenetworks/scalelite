@@ -12,7 +12,7 @@ on:
 jobs:
   test:
     name: Rubocop + Rails Test
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     services:
       postgres:
@@ -58,3 +58,12 @@ jobs:
           DATABASE_URL: postgres://postgres:password@localhost:5432/scalelite_test
         run:  |
           bundler exec rails test:db
+
+      - name: Trigger Build Workflow
+        if: success()
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.CR_PAT }}
+          repository: ${{ github.repository }}
+          event-type: trigger-build
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
