@@ -111,6 +111,8 @@ GEM
     mini_portile2 (2.4.0)
     minitest (5.14.2)
     minitest-stub_any_instance (1.0.2)
+    mock_redis (0.27.3)
+      ruby2_keywords
     msgpack (1.3.3)
     nio4r (2.5.4)
     nokogiri (1.10.10)
@@ -118,7 +120,6 @@ GEM
     parallel (1.19.1)
     parser (2.7.0.2)
       ast (~> 2.4.0)
-    pg (1.2.2)
     public_suffix (4.0.3)
     puma (4.3.5)
       nio4r (~> 2.0)
@@ -170,6 +171,7 @@ GEM
       rack (>= 1.1)
       rubocop (>= 0.72.0)
     ruby-progressbar (1.10.1)
+    ruby2_keywords (0.0.4)
     ruby_dep (1.5.0)
     safe_yaml (1.0.5)
     spring (2.1.0)
@@ -215,7 +217,7 @@ DEPENDENCIES
   hiredis (~> 0.6.3)
   listen (>= 3.0.5, < 3.2)
   minitest-stub_any_instance
-  pg
+  mock_redis (~> 0.27.3)
   puma (~> 4.3)
   rails (~> 6.0.3, >= 6.0.3.4)
   redis (~> 4.1.3)

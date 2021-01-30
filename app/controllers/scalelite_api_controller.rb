@@ -23,7 +23,7 @@ class ScaleliteApiController < ApplicationController
     begin
       servers = Server.all
     rescue ApplicationRedisRecord::RecordNotFound
-      raise InternalError, 'Errors finding servers'
+      raise InternalError, 'Internal server error'
     end
 
     builder = if servers.empty?
@@ -43,7 +43,7 @@ class ScaleliteApiController < ApplicationController
                       servers.each do |server|
                         xml.server do
                           xml.serverID(server.id)
-                          xml.serverUrl(server.url)
+                          xml.serverURL(server.url)
                           xml.online(server.online)
                           xml.loadMultiplier(server.load_multiplier)
                           xml.enabled(server.enabled)
@@ -63,7 +63,7 @@ class ScaleliteApiController < ApplicationController
     begin
       server = Server.find(params['serverID'])
     rescue ApplicationRedisRecord::RecordNotFound
-      raise InternalError, 'Could not find the server'
+      raise ServerNotFoundError
     end
 
     builder = Nokogiri::XML::Builder.new do |xml|
@@ -72,7 +72,7 @@ class ScaleliteApiController < ApplicationController
         xml.version('2.0')
         xml.server do
           xml.serverID(server.id)
-          xml.serverUrl(server.url)
+          xml.serverURL(server.url)
           xml.online(server.online)
           xml.loadMultiplier(server.load_multiplier)
           xml.enabled(server.enabled)
@@ -84,13 +84,13 @@ class ScaleliteApiController < ApplicationController
   end
 
   def add_server
-    params.require(:serverUrl)
+    params.require(:serverURL)
     params.require(:serverSecret)
 
     load_multiplier = normalize_load_multiplier(params['loadMultiplier'])
 
     begin
-      server = Server.create!(url: params['serverUrl'], secret: params['serverSecret'], load_multiplier: load_multiplier)
+      server = Server.create!(url: params['serverURL'], secret: params['serverSecret'], load_multiplier: load_multiplier)
     rescue ApplicationRedisRecord::RecordNotFound
       raise InternalError, 'Error adding the server'
     end
@@ -100,7 +100,7 @@ class ScaleliteApiController < ApplicationController
         xml.returncode('SUCCESS')
         xml.server do
           xml.serverID(server.id)
-          xml.serverUrl(server.url)
+          xml.serverURL(server.url)
           xml.loadMultiplier(server.load_multiplier)
         end
       end

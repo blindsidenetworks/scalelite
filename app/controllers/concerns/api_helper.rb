@@ -4,7 +4,7 @@ require 'net/http'
 
 module ApiHelper
   extend ActiveSupport::Concern
-  include BBBErrors
+  include ApplicationErrors
 
   REQUEST_TIMEOUT = 10
   CHECKSUM_LENGTH = 40
@@ -19,7 +19,7 @@ module ApiHelper
     )
 
     # Camel case (ex) get_meetings to getMeetings to match BBB server
-    checksum = Digest::SHA1.hexdigest(action_name.camelcase(:lower) + check_string + Rails.configuration.x.loadbalancer_secret)
+    checksum = Digest::SHA1.hexdigest(action_name.camelcase(:lower) + check_string + Rails.configuration.x.app_secret)
 
     raise ChecksumError unless ActiveSupport::SecurityUtils.fixed_length_secure_compare(checksum, params[:checksum])
   end
@@ -33,30 +33,5 @@ module ApiHelper
     uri = URI.join(base_uri, action)
     uri.query = URI.encode_www_form(bbb_params.merge(checksum: checksum))
     uri
-  end
-
-  # GET/POST request
-  def get_post_req(uri, body = '')
-    # If body is passed and has a value, setup POST request
-    if body.present?
-      req = Net::HTTP::Post.new(uri.request_uri)
-      req['Content-Type'] = 'application/xml'
-      req.body = body
-    else
-      req = Net::HTTP::Get.new(uri.request_uri)
-    end
-
-    Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https',
-                                        open_timeout: REQUEST_TIMEOUT, read_timeout: REQUEST_TIMEOUT) do |http|
-      res = http.request(req)
-      doc = Nokogiri::XML(res.body)
-      returncode = doc.at_xpath('/response/returncode')
-      raise InternalError, 'Response did not include returncode' if returncode.nil?
-      if returncode.content != 'SUCCESS'
-        raise BBBError.new(doc.at_xpath('/response/messageKey').content, doc.at_xpath('/response/message').content)
-      end
-
-      doc
-    end
   end
 end

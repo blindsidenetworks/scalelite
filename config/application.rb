@@ -45,35 +45,6 @@ module Scalelite
     config.x.build_number = ENV['BUILD_NUMBER']
 
     # Secret used to verify /bigbluebutton/api requests
-    config.x.loadbalancer_secret = ENV['LOADBALANCER_SECRET']
-
-    # Defaults to 0 since nil/"".to_i = 0
-    config.x.max_meeting_duration = ENV['MAX_MEETING_DURATION'].to_i
-
-    # Number of times poller needs to successfully reach offline server for it to
-    # be considered online again
-    config.x.server_healthy_threshold = ENV.fetch('SERVER_HEALTHY_THRESHOLD', '1').to_i
-
-    # Number of times poller needs to fail to reach online server for it to panic the server
-    # and set it to offline
-    config.x.server_unhealthy_threshold = ENV.fetch('SERVER_UNHEALTHY_THRESHOLD', '2').to_i
-
-    # Directory to monitor for recordings transferred from BigBlueButton servers
-    config.x.recording_spool_dir = File.absolute_path(
-      ENV.fetch('RECORDING_SPOOL_DIR') { '/var/bigbluebutton/spool' }
-    )
-    # Working directory for temporary files when extracting recordings
-    config.x.recording_work_dir = File.absolute_path(
-      ENV.fetch('RECORDING_WORK_DIR') { '/var/bigbluebutton/recording/scalelite' }
-    )
-    # Published recording directory
-    config.x.recording_publish_dir = File.absolute_path(
-      ENV.fetch('RECORDING_PUBLISH_DIR') { '/var/bigbluebutton/published' }
-    )
-
-    # Unpublished recording directory
-    config.x.recording_unpublish_dir = File.absolute_path(
-      ENV.fetch('RECORDING_UNPUBLISH_DIR') { '/var/bigbluebutton/unpublished' }
-    )
+    config.x.app_secret = ENV['APP_SECRET']
   end
 end

@@ -9,12 +9,16 @@ module RedisStore
     @mutex.synchronize do
       return @connection_pool if @connection_pool
 
-      pool = Rails.configuration.x.redis_store.pool || ENV['RAILS_MAX_THREADS'] || ConnectionPool::DEFAULTS[:size]
-      pool_timeout = Rails.configuration.x.redis_store.pool_timeout || ConnectionPool::DEFAULTS[:timeout]
+      pool = ConnectionPool::DEFAULTS[:size]
+      pool_timeout = ConnectionPool::DEFAULTS[:timeout]
       @connection_pool = ConnectionPool.new(size: pool, timeout: pool_timeout) do
-        redis = Redis.new(Rails.configuration.x.redis_store)
+        if Rails.env.production?
+          redis = Redis.new(url: Rails.configuration.x.redis_store[:url])
+        else
+          redis = MockRedis.new
+        end
 
-        namespace = Rails.configuration.x.redis_store.namespace
+        namespace = Rails.configuration.x.redis_store[:namespace]
         redis = Redis::Namespace.new(namespace, redis: redis) if namespace
 
         redis

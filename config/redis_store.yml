@@ -1,17 +1,3 @@
-default: &default
-  url: <%= ENV['REDIS_URL'] %>
-  pool: <%= ENV.fetch('REDIS_POOL') { ENV.fetch('RAILS_MAX_THREADS') { 5 } } %>
-  driver: hiredis
-
-development:
-  <<: *default
-  namespace: scalelite_development
-
-test:
-  <<: *default
-  driver: null # Reset to allow fakeredis to load
-  namespace: scalelite_test
-
-production:
-  <<: *default
-  namespace: <%= ENV.fetch('REDIS_NAMESPACE') { 'scalelite' } %>
+shared:
+  url: <%= ENV.fetch("REDIS_URL") { "redis://:supersecrets@example.com:6379" } %>
+  namespace: <%= ENV.fetch("REDIS_NAMESPACE") { "scalelite" } %>

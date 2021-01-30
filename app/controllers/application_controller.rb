@@ -26,16 +26,22 @@ class ApplicationController < ActionController::Metal
   ActiveSupport.run_load_hooks(:action_controller, self)
   # Controller setup done, applications stuff is below
 
-  include BBBErrors
+  include ApplicationErrors
 
-  rescue_from BBBError do |e|
+  rescue_from ApplicationError do |e|
     render(xml: build_error(e.message_key, e.message))
   end
 
   rescue_from ActionController::ParameterMissing do |e|
     # Raise specific Missing Meeting ID error if thats the missing param
-    error = if e.param == :meetingID
-              MissingMeetingIDError.new
+    error = if e.param == :serverID
+              MissingServerIDError.new
+            elsif e.param == :serverURL
+              MissingServerURLError.new
+            elsif e.param == :serverSecret
+              MissingServerSecretError.new
+            elsif e.param == :loadMultiplier
+              MissingLoadMultiplierError.new
             else
               InternalError.new(e.message)
             end

@@ -20,14 +20,12 @@ gem 'hiredis', '~> 0.6.3'
 gem 'redis', '~> 4.1.3'
 gem 'redis-namespace', '~> 1.7.0'
 
-# Use postgresql as the database for Active Record
-gem 'pg'
-
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '>= 1.4.2', require: false
 
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
 # gem 'rack-cors'
+gem 'sqlite3'
 
 # Generates a terminal table
 gem 'tabulo', '~> 2.3.0'
@@ -40,10 +38,9 @@ group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
 
   # Allow using sqlite as the database for Active Record in development/test env
-  gem 'sqlite3'
-
   gem 'dotenv-rails'
   gem 'factory_bot_rails'
+  gem 'mock_redis', '~> 0.27.3'
 end
 
 group :development do

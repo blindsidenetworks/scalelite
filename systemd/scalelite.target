@@ -1,4 +1,0 @@
-[Unit]
-Description=Scalelite
-[Install]
-WantedBy=multi-user.target
