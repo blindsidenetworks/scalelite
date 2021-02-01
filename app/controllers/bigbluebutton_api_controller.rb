@@ -164,10 +164,11 @@ class BigBlueButtonApiController < ApplicationController
     uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params)
 
     begin
-      # Send a GET/POST request to the server
-      response = get_post_req(uri, request.post? ? request.body.read : '')
+      # Read the body if POST
+      body = request.post? ? request.body.read : ''
 
-      # TODO: handle create post for preupload presentations
+      # Send a GET/POST request to the server
+      response = get_post_req(uri, body)
     rescue BBBError
       # Reraise the error to return error xml to caller
       raise

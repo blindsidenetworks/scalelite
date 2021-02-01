@@ -52,7 +52,7 @@ chmod 0775 /mnt/scalelite-recordings/var/bigbluebutton/unpublished
 ## Configuring the BigBlueButton recording transfer
 **On each BigBlueButton server**
 
-The `scalelite_recording_transfer.rb` post publish script should be installed with its configuration file as described in [this document](bigbluebutton/README.md).
+The `scalelite_post_publish.rb` post publish script should be installed with its configuration file as described in [this document](bigbluebutton/README.md).
 
 To match the mount configuration described in this document, the configuration file `/usr/local/bigbluebutton/core/scripts/scalelite.yml` should have the following contents:
 
