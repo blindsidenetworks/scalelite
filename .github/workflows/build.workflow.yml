@@ -34,7 +34,7 @@ jobs:
           file: ./Dockerfile
           push: true
           target: nginx
-          tags: ghcr.io/${{ github.repository_owner }}/scalelite-nginx:latest
+          tags: ghcr.io/${{ github.repository_owner }}/scalelite-nginx:{{ github.ref }}
       -
         name: Build and push api
         id: docker_build_api
@@ -44,7 +44,7 @@ jobs:
           file: ./Dockerfile
           push: true
           target: api
-          tags: ghcr.io/${{ github.repository_owner }}/scalelite-api:latest
+          tags: ghcr.io/${{ github.repository_owner }}/scalelite-api:{{ github.ref }}
       -
         name: Build and push poller
         id: docker_build_poller
@@ -54,7 +54,7 @@ jobs:
           file: ./Dockerfile
           push: true
           target: poller
-          tags: ghcr.io/${{ github.repository_owner }}/scalelite-poller:latest
+          tags: ghcr.io/${{ github.repository_owner }}/scalelite-poller:{{ github.ref }}
       -
         name: Build and push recording importer
         id: docker_build_recording_importer
@@ -64,4 +64,4 @@ jobs:
           file: ./Dockerfile
           push: true
           target: recording-importer
-          tags: ghcr.io/${{ github.repository_owner }}/scalelite-recording-importer:latest
+          tags: ghcr.io/${{ github.repository_owner }}/scalelite-recording-importer:{{ github.ref }}
