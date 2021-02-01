@@ -2,7 +2,7 @@
 
 [BigBlueButton](https://docs.bigbluebutton.org/) is an open source web conferencing system for online learning.
 
-Scalelite is an open source load balancer that manages a pool of BigBlueButton servers.  It makes the pool of servers appear as a (very scalable) BigBlueButton.  A front-end, such as [Moodle](https://moodle.org/plugins/mod_bigbluebuttonbn) or [Greenlight](https://github.com/bigbluebutton/greenlight), sends standard BigBlueButton API requests to the Scalelite server which, in turn, distributes those request to the least loaded BigBlueButton server in the pool.
+Scalelite is an open source load balancer that manages a pool of BigBlueButton servers.  It makes the pool of servers appear as a single (very scalable) BigBlueButton server.  A front-end, such as [Moodle](https://moodle.org/plugins/mod_bigbluebuttonbn) or [Greenlight](https://github.com/bigbluebutton/greenlight), sends standard BigBlueButton API requests to the Scalelite server which, in turn, distributes those request to the least loaded BigBlueButton server in the pool.
 
 A single BigBlueButton server that meets the [minimum configuration](http://docs.bigbluebutton.org/2.2/install.html#minimum-server-requirements) supports around 200 concurrent users.
 
@@ -12,7 +12,7 @@ With Scalelite, a school can create a pool of 4 BigBlueButton servers and handle
 
 BigBlueButton has been in development for over 10 years now.  The latest release is a pure HTML5 client, with extensive documentation.  There is even a BigBlueButton install script called [bbb-install.sh](https://github.com/bigbluebutton/bbb-install) that lets you setup a BigBlueButton server (with a Let's Encrypt certificate) in about 15 minutes.  Using `bbb-install.sh` you can quickly setup a pool of servers for management by Scalelite.
 
-To load balance the pool, Scalelite periodically polls each BigBlueButton to check if it is reachable online, ready to receive [API](http://docs.bigbluebutton.org/dev/api.html) requests, and to determine its current load (number of connected users).  With this information, when Scalelite receives an incoming API call to [create](http://docs.bigbluebutton.org/dev/api.html#create) a new meeting, it places the new meeting on the least loaded server in the pool.   In this way, Scalelite can balance the load of meeting requests evenly across the pool.
+To load balance the pool, Scalelite periodically polls each BigBlueButton to check if it is reachable online, ready to receive [API](http://docs.bigbluebutton.org/dev/api.html) requests, and to determine its current load (number of currently running meetings).  With this information, when Scalelite receives an incoming API call to [create](http://docs.bigbluebutton.org/dev/api.html#create) a new meeting, it places the new meeting on the least loaded server in the pool.   In this way, Scalelite can balance the load of meeting requests evenly across the pool.
 
 Many BigBlueButton servers will create many recordings.  Scalelite can serve a large set of recordings by consolidating them together, indexing them in a database, and, when receiving an incoming [getRecordings](https://docs.bigbluebutton.org/dev/api.html#getrecordings), use the database index to return quickly the list of available recordings.
 
@@ -118,7 +118,8 @@ To switch your Front-End application to use Scalelite instead of a single BigBlu
 
 These variables are used by the service startup scripts in the Docker images, but are not used if you are deploying the application in a different way.
 
-* `NGINX_SSL`: Set this variable to enable the "nginx" image to listen on SSL. If you enable this, then you must bind mount the files `/etc/nginx/ssl/live/$URL_HOST/fullchain.pem` and `/etc/nginx/ssl/live/$URL_HOST/privkey.pem` (containing the certificate plus intermediates and the private key respectively) into the Docker image. Alternately, you can mount the entire `/etc/letsencrypt` directory from certbot to `/etc/nginx/ssl` instead.
+* `NGINX_SSL`: Set this variable to "true" to enable the "nginx" image to listen on SSL. If you enable this, then you must bind mount the files `/etc/nginx/ssl/live/$URL_HOST/fullchain.pem` and `/etc/nginx/ssl/live/$URL_HOST/privkey.pem` (containing the certificate plus intermediates and the private key respectively) into the Docker image. Alternately, you can mount the entire `/etc/letsencrypt` directory from certbot to `/etc/nginx/ssl` instead.
+* `BEHIND_PROXY`: Set to true if scalelite is behind a proxy or load balancer.
 * `POLL_INTERVAL`: Used by the "poller" image to set the interval at which BigBlueButton servers are polled, in seconds. Defaults to 60.
 * `RECORDING_IMPORT_POLL`: Whether or not to poll the recording spool directory for new recordings. Defaults to "true". If the recording poll directory is on a local filesystem where inotify works, you can set this to "false" to reduce CPU overhead.
 * `RECORDING_IMPORT_POLL_INTERVAL`: How often to check the recording spool directory for new recordings, in seconds (when running in poll mode). Defaults to 60.
@@ -139,6 +140,8 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `RECORDING_WORK_DIR`: Directory where temporary files from recording transfer/import are extracted. Defaults to `/var/bigbluebutton/recording/scalelite`
 * `RECORDING_PUBLISH_DIR`: Directory where published recording files are placed to make them available to the web server. Defaults to `/var/bigbluebutton/published`
 * `RECORDING_UNPUBLISH_DIR`: Directory where unpublished recording files are placed to make them unavailable to the web server. Defaults to `/var/bigbluebutton/unpublished`
+* `SERVER_HEALTHY_THRESHOLD`: The number of times an offline server needs to responds successfully for it to be considered online. Defaults to **1**. If you increase this number, you should decrease `POLL_INTERVAL`
+* `SERVER_UNHEALTHY_THRESHOLD`: The number of times an online server needs to responds unsuccessfully for it to be considered offline. Defaults to **2**. If you increase this number, you should decrease `POLL_INTERVAL`
 
 ### Redis Connection (`config/redis_store.yml`)
 
@@ -154,6 +157,14 @@ Additionally, these options can be set:
 * `pool`: The number of connections in the pool (should match number of threads). Defaults to `RAILS_MAX_THREADS` environment variable, otherwise 5.
 * `pool_timeout`: Amount of time (seconds) to wait if all connections in the pool are in use. Defaults to 5.
 * `namespace`: An optional prefix to apply to all keys stored in Redis.
+
+## Upgrading
+
+Upgrading Scalelite to the latest version can be done using one command: 
+
+`systemctl restart scalelite.target`
+
+To confirm that you have the latest version, enter `http(s)://<scalelite-hostname>/bigbluebutton/api` in your browser and confirm that the value inside the `<build><\build>` tag is equal to the new version.
 
 ## Administration
 
@@ -182,6 +193,7 @@ id: 2d2d674a-c6bb-48f3-8ad4-68f33a80a5b7
         secret: 2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535
         enabled
         load: 21.0
+        load multiplier: 2.0
         online
 ```
 
@@ -195,11 +207,13 @@ Particular information to note:
 ### Add a server
 
 ```sh
-./bin/rake servers:add[url,secret]
+./bin/rake servers:add[url,secret,loadMultiplier]
 ```
 
 The `url` value is the complete URL to the BigBlueButton API endpoint of the server. The `/api` on the end is required.
 You can find the BigBlueButton server's URL and Secret by running `bbb-conf --secret` on the BigBlueButton server.
+
+The `loadMultiplier` can be used to give individual servers a higher or lower priority over other servers. A higher loadMultiplier should be placed on the weaker servers. If not passed, it defaults to a value of `1`.
 
 This command will print out the ID of the newly created server, and `OK` if it was successful.
 Note that servers are added in the disabled state; see "Enable a server" below to enable it.
@@ -245,13 +259,25 @@ Disable a server and clear all meeting state.
 This method is used to recover from a crashed BigBlueButton server.
 After the meeting state is cleared, anyone who tries to join a meeting that was previously on this server will instead be directed to a new meeting on a different server.
 
+### Edit the load-multiplier of a server
+
+```sh
+./bin/rake servers:loadMultiplier[id,newLoadMultiplier]
+```
+
+Sets the load_multiplier for a BigBlueButton server.
+
+The `loadMultiplier` can be used to give individual servers a higher or lower priority over other servers. A higher loadMultiplier should be placed on the weaker servers.
+
+After changing the server needs to be polled at least once to see the new load.
+
 ### Poll all servers
 
 ```sh
 ./bin/rake poll:all
 ```
 
-When you a server to the pool, it may take upwards of 60 seconds (default value for `INTERVAL` for the background server polling process) before Scalelite marks the server as `online`.
+When you add a server to the pool, it may take upwards of 60 seconds (default value for `INTERVAL` for the background server polling process) before Scalelite marks the server as `online`.
 You can run the above task to have it poll the server right away without waiting.
 
 ### Check the status of the entire deployment

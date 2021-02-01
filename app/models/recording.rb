@@ -26,10 +26,10 @@ class Recording < ApplicationRecord
     # Recording
     recording_params = {}
     recording_xml = metadata_xml.at_xpath('recording')
-    meeting_xml = recording_xml.at_xpath('meeting')
-    recording_params[:record_id] = meeting_xml['id']
-    recording_params[:meeting_id] = meeting_xml['externalId']
-    recording_params[:name] = meeting_xml['name']
+    meta_xml = recording_xml.at_xpath('meta')
+    recording_params[:record_id] = recording_xml.at_xpath('id')&.text
+    recording_params[:meeting_id] = meta_xml.at_xpath('meetingId')&.text
+    recording_params[:name] = meta_xml.at_xpath('meetingName')&.text
     published = recording_xml.at_xpath('published')&.text
     recording_params[:published] = (published == 'true') if published.present?
     participants = recording_xml.at_xpath('participants')&.text
@@ -59,7 +59,8 @@ class Recording < ApplicationRecord
     # Playback format
     playback_format_params = {}
     playback_xml = recording_xml.at_xpath('playback')
-    link = playback_xml.at_xpath('link')&.text
+    link_raw = playback_xml.at_xpath('link')&.text
+    link = link_raw.strip
     playback_format_params[:format] = playback_xml.at_xpath('format')&.text
     duration = playback_xml.at_xpath('duration')&.text
     playback_format_params[:length] = (duration.to_f / 60_000).round if duration.present?
@@ -74,7 +75,7 @@ class Recording < ApplicationRecord
           width: image_xml['width']&.to_i,
           height: image_xml['height']&.to_i,
           alt: image_xml['alt'],
-          url: URI(image_xml.text).path,
+          url: URI(image_xml.text.strip).path,
           sequence: i,
         }
       end

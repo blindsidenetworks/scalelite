@@ -71,7 +71,7 @@ to verify that the containers started correctly.
 
 ## Initialize the scalelite-api Database
 
-If this is a fresh install, you can load the database schema insto PostgreSQL by running this command:
+If this is a fresh install, you can load the database schema into PostgreSQL by running this command:
 
 `docker exec -it scalelite-api bin/rake db:setup`
 

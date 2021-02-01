@@ -501,4 +501,28 @@ class ServerTest < ActiveSupport::TestCase
       server.destroy!
     end
   end
+
+  test 'Server increment healthy increments by 1' do
+    server = Server.new(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+
+    assert server.healthy_counter.nil?
+    assert_equal(server.increment_healthy, 1)
+  end
+
+  test 'Server increment unhealthy increments by 1' do
+    server = Server.new(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+
+    assert server.unhealthy_counter.nil?
+    assert_equal(server.increment_unhealthy, 1)
+  end
+
+  test 'Server reset counters sets both healthy and unhealthy to 0' do
+    server = Server.new(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
+
+    assert_equal(server.increment_healthy, 1)
+    assert_equal(server.increment_unhealthy, 1)
+    server.reset_counters
+    assert server.healthy_counter.nil?
+    assert server.unhealthy_counter.nil?
+  end
 end
