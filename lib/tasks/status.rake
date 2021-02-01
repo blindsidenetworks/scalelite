@@ -40,6 +40,9 @@ desc('List all BigBlueButton servers and all meetings currently running')
                         largest: users_in_largest_meeting,
                         videos: video_streams
                       ))
+
+    # Sort list of servers
+    servers_info = servers_info.sort_by(&:hostname)
   end
   
 task status: :environment do

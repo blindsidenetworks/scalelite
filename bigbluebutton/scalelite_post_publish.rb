@@ -59,6 +59,7 @@ begin
       || raise('Failed to create recording archive')
   end
 
+  FileUtils.mkdir_p(spool_dir)
   puts("Transferring recording archive to #{spool_dir}")
   system('rsync', '--verbose', '--protect-args', *extra_rsync_opts, archive_file, spool_dir) \
     || raise('Failed to transfer recording archive')
