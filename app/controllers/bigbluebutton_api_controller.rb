@@ -3,7 +3,7 @@
 class BigBlueButtonApiController < ApplicationController
   include ApiHelper
 
-  before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled]
+  before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled]
 
   def index
     # Return the scalelite build number if passed as an env variable
@@ -129,6 +129,11 @@ class BigBlueButtonApiController < ApplicationController
 
     # Render all meetings if there are any or a custom no meetings response if no meetings exist
     render(xml: meetings_node.children.empty? ? no_meetings_response : all_meetings)
+  end
+
+  def get_meetings_disabled
+    logger.debug('The get meetings api has been disabled')
+    render(xml: no_meetings_reponse)
   end
 
   def create
@@ -416,6 +421,17 @@ class BigBlueButtonApiController < ApplicationController
         xml.returncode('FAILED')
         xml.messageKey('notFound')
         xml.message('We could not find recordings')
+      end
+    end
+  end
+
+  # No meetings response if their are no existing meetings or get_meetings API is disabled
+  def no_meetings_reponse
+    Nokogiri::XML::Builder.new do |xml|
+      xml.response do
+        xml.returncode('SUCCESS')
+        xml.messageKey('noMeetings')
+        xml.message('no meetings were found on this server')
       end
     end
   end

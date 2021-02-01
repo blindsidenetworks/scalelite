@@ -7,7 +7,11 @@ Rails.application.routes.draw do
     get '/', to: 'bigbluebutton_api#index'
     get 'isMeetingRunning', to: 'bigbluebutton_api#is_meeting_running', as: :is_meeting_running
     get 'getMeetingInfo', to: 'bigbluebutton_api#get_meeting_info', as: :get_meeting_info
-    get 'getMeetings', to: 'bigbluebutton_api#get_meetings', as: :get_meetings
+    if 'true'.casecmp?(ENV['GET_MEETINGS_API_DISABLED'])
+      get('getMeetings', to: 'bigbluebutton_api#get_meetings_disabled', as: :get_meetings)
+    else
+      get('getMeetings', to: 'bigbluebutton_api#get_meetings', as: :get_meetings)
+    end
     match 'create', to: 'bigbluebutton_api#create', via: [:get, :post]
     get 'end', to: 'bigbluebutton_api#end'
     get 'join', to: 'bigbluebutton_api#join'
