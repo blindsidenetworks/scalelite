@@ -35,24 +35,24 @@ chmod 0775 /mnt/scalelite-recordings/var/bigbluebutton/spool
 
 # Create the temporary (working) directory for recording import
 mkdir -p /mnt/scalelite-recordings/var/bigbluebutton/recording/scalelite
-chown 1000:1000 /mnt/scalelite-recordings/var/bigbluebutton/recording/scalelite
+chown 1000:2000 /mnt/scalelite-recordings/var/bigbluebutton/recording/scalelite
 chmod 0775 /mnt/scalelite-recordings/var/bigbluebutton/recording/scalelite
 
 # Create the directory for published recordings
 mkdir -p /mnt/scalelite-recordings/var/bigbluebutton/published
-chown 1000:1000 /mnt/scalelite-recordings/var/bigbluebutton/published
+chown 1000:2000 /mnt/scalelite-recordings/var/bigbluebutton/published
 chmod 0775 /mnt/scalelite-recordings/var/bigbluebutton/published
 
 # Create the directory for unpublished recordings
 mkdir -p /mnt/scalelite-recordings/var/bigbluebutton/unpublished
-chown 1000:1000 /mnt/scalelite-recordings/var/bigbluebutton/unpublished
+chown 1000:2000 /mnt/scalelite-recordings/var/bigbluebutton/unpublished
 chmod 0775 /mnt/scalelite-recordings/var/bigbluebutton/unpublished
 ```
 
 ## Configuring the BigBlueButton recording transfer
 **On each BigBlueButton server**
 
-The `scalelite_recording_transfer.rb` post publish script should be installed with its configuration file as described in [this document](bigbluebutton/README.md).
+The `scalelite_post_publish.rb` post publish script should be installed with its configuration file as described in [this document](bigbluebutton/README.md).
 
 To match the mount configuration described in this document, the configuration file `/usr/local/bigbluebutton/core/scripts/scalelite.yml` should have the following contents:
 
