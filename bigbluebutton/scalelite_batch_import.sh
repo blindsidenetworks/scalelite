@@ -16,5 +16,5 @@ for done_file in "$status_dir"/*.done; do
 
     prev_record_id="$record_id"
 
-    ( cd "$scripts_dir" && sudo -n -u bigbluebutton ./post_publish/scalelite_post_publish.rb -m "$record_id" )
+    ( cd "$scripts_dir" && sudo -n -u bigbluebutton ruby ./post_publish/scalelite_post_publish.rb -m "$record_id" )
 done
