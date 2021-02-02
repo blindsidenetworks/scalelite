@@ -24,5 +24,20 @@ module ActiveSupport
         "#{query_string}&checksum=#{checksum}"
       end
     end
+
+    def reload_routes!
+      Rails.application.reload_routes!
+    end
+
+    def mock_env(partial_env_hash)
+      old = ENV.to_hash
+      ENV.update(partial_env_hash)
+      begin
+        yield
+      ensure
+        ENV.replace(old)
+        reload_routes!
+      end
+    end
   end
 end
