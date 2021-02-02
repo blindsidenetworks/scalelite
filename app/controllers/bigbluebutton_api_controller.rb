@@ -3,7 +3,7 @@
 class BigBlueButtonApiController < ApplicationController
   include ApiHelper
 
-  before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled]
+  before_action :verify_checksum, except: :index
 
   def index
     # Return the scalelite build number if passed as an env variable
@@ -358,16 +358,6 @@ class BigBlueButtonApiController < ApplicationController
 
     render(:delete_recordings)
   end
-  
-  def get_recordings_disabled
-    logger.debug("The recording feature have been disabled")
-    render(xml: no_recordings_response)
-  end
-
-  def recordings_disabled
-    logger.debug("The recording feature have been disabled")
-    render(xml: recordings_not_found_response)
-  end
 
   private
 
@@ -394,28 +384,6 @@ class BigBlueButtonApiController < ApplicationController
       xml.response do
         xml.returncode('SUCCESS')
         xml.running('false')
-      end
-    end
-  end
-
-  # No recordings response if their are no saved recordings or recording feature is disabled
-  def no_recordings_response
-    Nokogiri::XML::Builder.new do |xml|
-      xml.response do
-        xml.returncode('SUCCESS')
-        xml.messageKey('noRecordings')
-        xml.message('There are no recordings for the meeting(s).')
-      end
-    end
-  end
-
-  # Recordings not found response if the requested recordings cannot be found or recording feature is disabled
-  def recordings_not_found_response
-    Nokogiri::XML::Builder.new do |xml|
-      xml.response do
-        xml.returncode('FAILED')
-        xml.messageKey('notFound')
-        xml.message('We could not find recordings')
       end
     end
   end
