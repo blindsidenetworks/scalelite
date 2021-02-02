@@ -29,14 +29,12 @@ Rails.application.configure do
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
-  
-  unless 'true'.casecmp?(ENV['DB_DISABLED'])
-    # Raise an error on page load if there are pending migrations.
-    config.active_record.migration_error = :page_load
 
-    # Highlight code that triggered database queries in logs.
-    config.active_record.verbose_query_logs = true
-  end
+  # Raise an error on page load if there are pending migrations.
+  config.active_record.migration_error = :page_load
+
+  # Highlight code that triggered database queries in logs.
+  config.active_record.verbose_query_logs = true
 
   Rails.logger = Logger.new(STDOUT)
 
