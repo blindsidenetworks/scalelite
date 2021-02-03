@@ -51,7 +51,7 @@ jobs:
           bundle install --jobs 4 --retry 3
 
       - name: Run Rubocop
-        run: bundle exec rubocop --fail-level F
+        run: bundle exec rubocop
 
       - name: Run Rails Test
         env:

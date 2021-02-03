@@ -358,14 +358,14 @@ class BigBlueButtonApiController < ApplicationController
 
     render(:delete_recordings)
   end
-  
+
   def get_recordings_disabled
-    logger.debug("The recording feature have been disabled")
+    logger.debug('The recording feature have been disabled')
     render(xml: no_recordings_response)
   end
 
   def recordings_disabled
-    logger.debug("The recording feature have been disabled")
+    logger.debug('The recording feature have been disabled')
     render(xml: recordings_not_found_response)
   end
 
