@@ -9,21 +9,26 @@ task status: :environment do
   servers_info = []
   Server.all.each do |server|
     begin
-      response = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
-      meetings = response.xpath('/response/meetings/meeting')
-
+      # Empty defaults
+      meetings = []
       server_users = 0
       video_streams = 0
       users_in_largest_meeting = 0
 
-      meetings.each do |meeting|
-        count = meeting.at_xpath('participantCount')
-        users = count.present? ? count.text.to_i : 0
-        server_users += users
-        users_in_largest_meeting = users if users > users_in_largest_meeting
+      # Scan only enabled servers that are online
+      if server.online && server.enabled
+        response = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
+        meetings = response.xpath('/response/meetings/meeting')
 
-        streams = meeting.at_xpath('videoCount')
-        video_streams += streams.present? ? streams.text.to_i : 0
+        meetings.each do |meeting|
+          count = meeting.at_xpath('participantCount')
+          users = count.present? ? count.text.to_i : 0
+          server_users += users
+          users_in_largest_meeting = users if users > users_in_largest_meeting
+
+          streams = meeting.at_xpath('videoCount')
+          video_streams += streams.present? ? streams.text.to_i : 0
+        end
       end
     rescue StandardError
       # Set all values to 0 if request to server fails (server is offline)
