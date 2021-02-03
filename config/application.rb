@@ -44,8 +44,10 @@ module Scalelite
     # Build number returned in the /bigbluebutton/api response
     config.x.build_number = ENV['BUILD_NUMBER']
 
-    # Secret used to verify /bigbluebutton/api requests
-    config.x.loadbalancer_secret = ENV['LOADBALANCER_SECRET']
+    # Secrets used to verify /bigbluebutton/api requests
+    config.x.loadbalancer_secrets = []
+    config.x.loadbalancer_secrets.push(ENV['LOADBALANCER_SECRET']) if ENV['LOADBALANCER_SECRET']
+    config.x.loadbalancer_secrets.concat(ENV['LOADBALANCER_SECRETS'].split(':')) if ENV['LOADBALANCER_SECRETS']
 
     # Defaults to 0 since nil/"".to_i = 0
     config.x.max_meeting_duration = ENV['MAX_MEETING_DURATION'].to_i
