@@ -98,7 +98,7 @@ See [Deploying Scalelite Docker Containers](docker-README.md)
 
 To switch your Front-End application to use Scalelite instead of a single BigBlueButton server, there are 2 changes that need to be made
 
-- `BigBlueButton server url` should be set to the url of your Scalelite deployment `http(s)://<scalelite-hostname>/bigbluebutton/`
+- `BigBlueButton server url` should be set to the url of your Scalelite deployment `http(s)://<scalelite-hostname>/bigbluebutton/api/`
 - `BigBlueButton shared secret` should be set to the `LOADBALANCER_SECRET` value that you set in `/etc/default/scalelite`
 
 ## Configuration
