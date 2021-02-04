@@ -371,7 +371,7 @@ class BigBlueButtonApiController < ApplicationController
 
   def recordings_disabled
     logger.debug('The recording feature have been disabled')
-    render(xml: recordings_not_found_response)
+    raise BBBError.new('notFound', 'We could not find recordings')
   end
 
   private
@@ -410,17 +410,6 @@ class BigBlueButtonApiController < ApplicationController
         xml.returncode('SUCCESS')
         xml.messageKey('noRecordings')
         xml.message('There are no recordings for the meeting(s).')
-      end
-    end
-  end
-
-  # Recordings not found response if the requested recordings cannot be found or recording feature is disabled
-  def recordings_not_found_response
-    Nokogiri::XML::Builder.new do |xml|
-      xml.response do
-        xml.returncode('FAILED')
-        xml.messageKey('notFound')
-        xml.message('We could not find recordings')
       end
     end
   end
