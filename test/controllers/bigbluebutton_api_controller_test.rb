@@ -982,4 +982,17 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>messageKey', 'notFound'
     assert_select 'response>message', 'We could not find recordings'
   end
+
+  # get_meetings_api_disabled
+
+  test 'getMeetings returns no meetings if GET_MEETINGS_API_DISABLED flag is set to true' do
+    mock_env('GET_MEETINGS_API_DISABLED' => 'TRUE') do
+      reload_routes!
+      get bigbluebutton_api_get_meetings_url
+    end
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>messageKey', 'noMeetings'
+    assert_select 'response>message', 'no meetings were found on this server'
+  end
 end
