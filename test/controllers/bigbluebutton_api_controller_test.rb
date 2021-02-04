@@ -932,7 +932,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>messageKey', 'noRecordings'
-    assert_select 'response>message', 'There are no recordings for the meeting(s).'
+    assert_select 'response>message', 'There are not recordings for the meetings'
   end
 
   test 'publishRecordings returns notFound if RECORDING_DISABLED flag is set to true' do
@@ -952,17 +952,6 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     mock_env('RECORDING_DISABLED' => 'true') do
       reload_routes!
       get 'http://www.example.com/bigbluebutton/api/updateRecordings', params: params
-    end
-    assert_response :success
-    assert_select 'response>returncode', 'FAILED'
-    assert_select 'response>messageKey', 'notFound'
-    assert_select 'response>message', 'We could not find recordings'
-  end
-
-  test 'Any Recordings API returns notFound if RECORDING_DISABLED flag is set to true' do
-    mock_env('RECORDING_DISABLED' => 'true') do
-      reload_routes!
-      get 'http://www.example.com/bigbluebutton/api/testRecordings'
     end
     assert_response :success
     assert_select 'response>returncode', 'FAILED'
