@@ -133,7 +133,7 @@ class BigBlueButtonApiController < ApplicationController
 
   def get_meetings_disabled
     logger.debug('The get meetings api has been disabled')
-    render(xml: no_meetings_reponse)
+    render(xml: no_meetings_response)
   end
 
   def create
@@ -400,17 +400,6 @@ class BigBlueButtonApiController < ApplicationController
       xml.response do
         xml.returncode('SUCCESS')
         xml.running('false')
-      end
-    end
-  end
-
-  # No meetings response if their are no existing meetings or get_meetings API is disabled
-  def no_meetings_reponse
-    Nokogiri::XML::Builder.new do |xml|
-      xml.response do
-        xml.returncode('SUCCESS')
-        xml.messageKey('noMeetings')
-        xml.message('no meetings were found on this server')
       end
     end
   end
