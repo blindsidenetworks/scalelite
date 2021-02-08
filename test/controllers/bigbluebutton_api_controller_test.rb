@@ -982,6 +982,6 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>messageKey', 'noMeetings'
-    assert_select 'response>message', 'no meetings were found on this server'
+    assert_select 'response>message', 'No meetings were found on this server.'
   end
 end
