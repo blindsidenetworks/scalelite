@@ -142,9 +142,10 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `RECORDING_UNPUBLISH_DIR`: Directory where unpublished recording files are placed to make them unavailable to the web server. Defaults to `/var/bigbluebutton/unpublished`
 * `SERVER_HEALTHY_THRESHOLD`: The number of times an offline server needs to responds successfully for it to be considered online. Defaults to **1**. If you increase this number, you should decrease `POLL_INTERVAL`
 * `SERVER_UNHEALTHY_THRESHOLD`: The number of times an online server needs to responds unsuccessfully for it to be considered offline. Defaults to **2**. If you increase this number, you should decrease `POLL_INTERVAL`
-* `ENV['DB_DISABLED']`: Disable the database by setting this value as `true`.
-* `ENV['RECORDING_DISABLED']`: Disable the recording feature and all its associated api's, by setting this value as `true`.
-* `ENV['GET_MEETINGS_API_DISABLED']`: Disable GET_MEETINGS API by setting this value as `true`.
+* `DB_DISABLED`: Disable the database by setting this value as `true`.
+* `RECORDING_DISABLED`: Disable the recording feature and all its associated api's, by setting this value as `true`.
+* `GET_MEETINGS_API_DISABLED`: Disable GET_MEETINGS API by setting this value as `true`.
+* `POLLER_THREADS`: The number of threads to run in the poller process. The default is 5.
 
 ### Redis Connection (`config/redis_store.yml`)
 
