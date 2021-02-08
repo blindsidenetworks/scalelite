@@ -366,7 +366,8 @@ class BigBlueButtonApiController < ApplicationController
 
   def get_recordings_disabled
     logger.debug('The recording feature have been disabled')
-    render(xml: no_recordings_response)
+    @recordings = []
+    render(:get_recordings)
   end
 
   def recordings_disabled
@@ -399,17 +400,6 @@ class BigBlueButtonApiController < ApplicationController
       xml.response do
         xml.returncode('SUCCESS')
         xml.running('false')
-      end
-    end
-  end
-
-  # No recordings response if their are no saved recordings or recording feature is disabled
-  def no_recordings_response
-    Nokogiri::XML::Builder.new do |xml|
-      xml.response do
-        xml.returncode('SUCCESS')
-        xml.messageKey('noRecordings')
-        xml.message('There are no recordings for the meeting(s).')
       end
     end
   end
