@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
+require 'concurrent-ruby'
+
 desc 'Run a polling process to continually monitor servers and meetings'
 task :poll, [:interval] => :environment do |_t, args|
-  args.with_defaults(interval: 60.seconds)
+  args.with_defaults(interval: ENV['POLLING_INTERVAL'])
   interval = args.interval.to_f
   Rails.logger.info("Running poller with interval #{interval}")
 
@@ -29,53 +31,59 @@ namespace :poll do
     include ApiHelper
 
     Rails.logger.debug('Polling servers')
-    Server.all.each do |server|
-      Rails.logger.debug("Polling Server id=#{server.id}")
-      resp = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
-      meetings = resp.xpath('/response/meetings/meeting')
+    pool = Concurrent::FixedThreadPool.new(ENV.fetch('POLLER_THREADS', 5).to_i - 1, name: 'sync-server-data')
+    tasks = Server.all.map do |server|
+      Concurrent::Promises.future_on(pool) do
+        Rails.logger.debug("Polling Server id=#{server.id}")
+        resp = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
+        meetings = resp.xpath('/response/meetings/meeting')
 
-      # Reset unhealthy counter so that only consecutive unhealthy calls are counted
-      server.reset_unhealthy_counter
+        # Reset unhealthy counter so that only consecutive unhealthy calls are counted
+        server.reset_unhealthy_counter
 
-      if server.online
-        # Update the load if the server is currently online
-        server.load = meetings.length * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
-      else
-        # Only bring the server online if the number of successful requests is >= the acceptable threshold
-        next if server.increment_healthy < Rails.configuration.x.server_healthy_threshold
+        if server.online
+          # Update the load if the server is currently online
+          server.load = meetings.length * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
+        else
+          # Only bring the server online if the number of successful requests is >= the acceptable threshold
+          next if server.increment_healthy < Rails.configuration.x.server_healthy_threshold
 
-        Rails.logger.info("Server id=#{server.id} is healthy. Bringing back online...")
+          Rails.logger.info("Server id=#{server.id} is healthy. Bringing back online...")
+          server.reset_counters
+          server.load = meetings.length * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
+          server.online = true
+        end
+      rescue StandardError => e
+        Rails.logger.warn("Failed to get server id=#{server.id} status: #{e}")
+
+        # Reset healthy counter so that only consecutive healthy calls are counted
+        server.reset_healthy_counter
+
+        next unless server.online # Only check healthiness if server is currently online
+
+        # Only take the server offline if the number of failed requests is >= the acceptable threshold
+        next if server.increment_unhealthy < Rails.configuration.x.server_unhealthy_threshold
+
+        Rails.logger.warn("Server id=#{server.id} is unhealthy. Panicking and setting offline...")
+        Rake::Task['servers:panic'].invoke(server.id, true) # Panic server to clear meetings
         server.reset_counters
-        server.load = meetings.length * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
-        server.online = true
-      end
-    rescue StandardError => e
-      Rails.logger.warn("Failed to get server id=#{server.id} status: #{e}")
-
-      # Reset healthy counter so that only consecutive healthy calls are counted
-      server.reset_healthy_counter
-
-      next unless server.online # Only check healthiness if server is currently online
-
-      # Only take the server offline if the number of failed requests is >= the acceptable threshold
-      next if server.increment_unhealthy < Rails.configuration.x.server_unhealthy_threshold
-
-      Rails.logger.warn("Server id=#{server.id} is unhealthy. Panicking and setting offline...")
-      Rake::Task['servers:panic'].invoke(server.id, true) # Panic server to clear meetings
-      server.reset_counters
-      server.load = nil
-      server.online = false
-    ensure
-      begin
-        server.save!
-        Rails.logger.info(
-          "Server id=#{server.id} #{server.online ? 'online' : 'offline'} " \
-          "load: #{server.load.nil? ? 'unavailable' : server.load}"
-        )
-      rescue ApplicationRedisRecord::RecordNotSaved => e
-        Rails.logger.warn("Unable to update Server id=#{server.id}: #{e}")
+        server.load = nil
+        server.online = false
+      ensure
+        begin
+          server.save!
+          Rails.logger.info(
+            "Server id=#{server.id} #{server.online ? 'online' : 'offline'} " \
+            "load: #{server.load.nil? ? 'unavailable' : server.load}"
+          )
+        rescue ApplicationRedisRecord::RecordNotSaved => e
+          Rails.logger.warn("Unable to update Server id=#{server.id}: #{e}")
+        end
       end
     end
+    Concurrent::Promises.zip_futures_on(pool, *tasks).wait!
+    pool.shutdown
+    pool.wait_for_termination(5) || pool.kill
   end
 
   desc 'Check all meetings to clear ended meetings'
@@ -83,25 +91,32 @@ namespace :poll do
     include ApiHelper
 
     Rails.logger.debug('Polling meetings')
-    Meeting.all.each do |meeting|
-      server = meeting.server
-      Rails.logger.debug("Polling Meeting id=#{meeting.id} on Server id=#{server.id}")
-      get_post_req(encode_bbb_uri('getMeetingInfo', server.url, server.secret, meetingID: meeting.id))
-    rescue BBBErrors::BBBError => e
-      unless e.message_key == 'notFound'
-        Rails.logger.warn("Unexpected BigBlueButton error polling Meeting id=#{meeting.id} on Server id=#{server.id}: #{e}")
-        next
-      end
+    pool = Concurrent::FixedThreadPool.new(ENV.fetch('POLLER_THREADS', 5).to_i - 1, name: 'sync-meeting-data')
+    tasks = Meeting.all.map do |meeting|
+      Concurrent::Promises.future_on(pool) do
+        server = meeting.server
+        Rails.logger.debug("Polling Meeting id=#{meeting.id} on Server id=#{server.id}")
+        get_post_req(encode_bbb_uri('getMeetingInfo', server.url, server.secret, meetingID: meeting.id))
+      rescue BBBErrors::BBBError => e
+        unless e.message_key == 'notFound'
+          Rails.logger.warn("Unexpected BigBlueButton error polling Meeting id=#{meeting.id} on Server id=#{server.id}: #{e}")
+          next
+        end
 
-      begin
-        meeting.destroy!
-        Rails.logger.info("Meeting id=#{meeting.id} on Server id=#{server.id} has ended")
-      rescue ApplicationRedisRecord::RecordNotSaved => e
-        Rails.logger.warn("Unable to destroy meeting id=#{meeting.id}: #{e}")
+        begin
+          meeting.destroy!
+          Rails.logger.info("Meeting id=#{meeting.id} on Server id=#{server.id} has ended")
+        rescue ApplicationRedisRecord::RecordNotSaved => e
+          Rails.logger.warn("Unable to destroy meeting id=#{meeting.id}: #{e}")
+        end
+      rescue StandardError => e
+        Rails.logger.warn("Failed to check meeting id=#{meeting.id} status: #{e}")
       end
-    rescue StandardError => e
-      Rails.logger.warn("Failed to check meeting id=#{meeting.id} status: #{e}")
     end
+    Concurrent::Promises.zip_futures_on(pool, *tasks).wait!
+
+    pool.shutdown
+    pool.wait_for_termination(5) || pool.kill
   end
 
   desc 'Run all pollers once'
