@@ -654,6 +654,19 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, params).to_s
   end
 
+  test 'join redirects user to the current join url with only permitted params for join' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+    meeting = Meeting.find_or_create_with_server('test-meeting-1', server1)
+    params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name', test1: '', test2: '' }
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_join_url, params: params
+    end
+    filtered_params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name' }
+    assert_equal Rails.configuration.x.join_exclude_params, %w[test1 test2]
+    assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, filtered_params).to_s
+  end
+
   # getRecordings
 
   test 'getRecordings with no parameters returns checksum error' do
