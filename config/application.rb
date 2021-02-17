@@ -60,6 +60,14 @@ module Scalelite
     # and set it to offline
     config.x.server_unhealthy_threshold = ENV.fetch('SERVER_UNHEALTHY_THRESHOLD', '2').to_i
 
+    # Request connection timeout. This is the timeout for the initial TCP/TLS connection, not including
+    # waiting for a response.
+    config.x.open_timeout = ENV.fetch('CONNECT_TIMEOUT', '5').to_f
+
+    # Request response timeout. This is the timeout for waiting for a response after the connection has
+    # been established and the request has been sent.
+    config.x.read_timeout = ENV.fetch('RESPONSE_TIMEOUT', '10').to_f
+
     # Directory to monitor for recordings transferred from BigBlueButton servers
     config.x.recording_spool_dir = File.absolute_path(
       ENV.fetch('RECORDING_SPOOL_DIR') { '/var/bigbluebutton/spool' }
