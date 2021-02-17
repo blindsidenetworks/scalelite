@@ -40,7 +40,7 @@ class BigBlueButtonApiController < ApplicationController
 
     begin
       # Send a GET request to the server
-      response = get_post_req(uri)
+      response = get_post_req(uri, **bbb_req_timeout(server))
     rescue BBBError
       # Reraise the error
       raise
@@ -74,7 +74,7 @@ class BigBlueButtonApiController < ApplicationController
 
     begin
       # Send a GET request to the server
-      response = get_post_req(uri)
+      response = get_post_req(uri, **bbb_req_timeout(server))
     rescue BBBError
       # Reraise the error
       raise
@@ -173,7 +173,7 @@ class BigBlueButtonApiController < ApplicationController
       body = request.post? ? request.body.read : ''
 
       # Send a GET/POST request to the server
-      response = get_post_req(uri, body)
+      response = get_post_req(uri, body, **bbb_req_timeout(server))
     rescue BBBError
       # Reraise the error to return error xml to caller
       raise
@@ -208,7 +208,7 @@ class BigBlueButtonApiController < ApplicationController
       meeting.destroy!
 
       # Send a GET request to the server
-      response = get_post_req(uri)
+      response = get_post_req(uri, **bbb_req_timeout(server))
     rescue BBBError => e
       if e.message_key == 'notFound'
         # If the meeting is not found, delete the meeting from the load balancer database

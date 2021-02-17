@@ -37,6 +37,20 @@ module ApiHelper
     uri
   end
 
+  # Calculate a timeout based on server state to pass to get_post_req options
+  def bbb_req_timeout(server)
+    unless server.online
+      # Use values that are 1/10 the normal values, but clamp to a minimum.
+      # If the original configured timeout value is below the minimum, then use that instead.
+      return {
+        open_timeout: [[0.2, Rails.configuration.x.open_timeout].min, Rails.configuration.x.open_timeout / 10].max,
+        read_timeout: [[0.5, Rails.configuration.x.read_timeout].min, Rails.configuration.x.read_timeout / 10].max,
+      }
+    end
+
+    {}
+  end
+
   # GET/POST request
   def get_post_req(uri, body = '', **options)
     # If body is passed and has a value, setup POST request
