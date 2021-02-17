@@ -217,7 +217,7 @@ class BigBlueButtonApiController < ApplicationController
       end
       # Reraise the error
       raise e
-    rescue RecordNotDestroyed => e
+    rescue ApplicationRedisRecord::RecordNotDestroyed => e
       logger.warn("Error #{e} deleting meeting #{params[:meetingID]} from server #{server.id}")
     rescue StandardError => e
       logger.warn("Error #{e} accessing meeting #{params[:meetingID]} on server #{server.id}.")
