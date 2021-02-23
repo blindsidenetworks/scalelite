@@ -39,19 +39,19 @@ namespace :poll do
         meetings = resp.xpath('/response/meetings/meeting')
 
         total_load = 0
-        meetings_min_user_count = ENV.fetch('MEETINGS_MIN_USER_COUNT', '15').to_i
-        meetings_min_webcam_count = ENV.fetch('MEETINGS_MIN_WEBCAM_COUNT', '1').to_i
-        meetings_screenshare_count = (ENV.fetch('MEETINGS_SCREENSHARE_COUNT', 'true') == 'true') ? 1 : 0
-        x_minutes_ago = (ENV.fetch('MEETING_JOIN_BUFFER_TIME', '15').to_i).minutes.ago
+        load_min_user_count = ENV.fetch('LOAD_MIN_USER_COUNT', '15').to_i
+        load_min_webcam_count = ENV.fetch('LOAD_MIN_WEBCAM_COUNT', '1').to_i
+        load_screenshare_count = (ENV.fetch('LOAD_SCREENSHARE_COUNT', 'true') == 'true') ? 1 : 0
+        x_minutes_ago = (ENV.fetch('LOAD_JOIN_BUFFER_TIME', '15').to_i).minutes.ago
 
         meetings.each do |meeting|
           created_time = Time.zone.at(meeting.xpath('.//createTime').text.to_i / 1000)
           actual_attendees = meeting.xpath('.//participantCount').text.to_i + meeting.xpath('.//moderatorCount').text.to_i
           actual_webcams = meeting.xpath('.//videoCount').text.to_i                         
           total_load += if created_time > x_minutes_ago
-                          [actual_attendees, meetings_min_user_count].max * (1 + 10 * actual_webcams + 20 * meetings_screenshare_count)
+                          [actual_attendees, load_min_user_count].max * (1 + 10 * actual_webcams + 20 * load_screenshare_count)
                         else
-                           actual_attendees * (1 + 10 * meetings_min_webcam_count + 20 * meetings_screenshare_count)
+                           actual_attendees * (1 + 10 * load_min_webcam_count + 20 * load_screenshare_count)
                         end
         end
         
