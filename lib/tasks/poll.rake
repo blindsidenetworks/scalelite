@@ -38,19 +38,37 @@ namespace :poll do
         resp = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
         meetings = resp.xpath('/response/meetings/meeting')
 
+        total_load = 0
+        meetings_min_user_count = ENV.fetch('MEETINGS_MIN_USER_COUNT', '15').to_i
+        meetings_min_webcam_count = ENV.fetch('MEETINGS_MIN_WEBCAM_COUNT', '1').to_i
+        meetings_screenshare_count = (ENV.fetch('MEETINGS_SCREENSHARE_COUNT', 'true') == 'true') ? 1 : 0
+        x_minutes_ago = (ENV.fetch('MEETING_JOIN_BUFFER_TIME', '15').to_i).minutes.ago
+
+        meetings.each do |meeting|
+          created_time = Time.zone.at(meeting.xpath('.//createTime').text.to_i / 1000)
+          actual_attendees = meeting.xpath('.//participantCount').text.to_i + meeting.xpath('.//moderatorCount').text.to_i
+          actual_webcams = meeting.xpath('.//videoCount').text.to_i                         
+          total_load += if created_time > x_minutes_ago
+                          [actual_attendees, meetings_min_user_count].max * (1 + 10 * actual_webcams + 20 * meetings_screenshare_count)
+                        else
+                           actual_attendees * (1 + 10 * meetings_min_webcam_count + 20 * meetings_screenshare_count)
+                        end
+        end
+        
+        
         # Reset unhealthy counter so that only consecutive unhealthy calls are counted
         server.reset_unhealthy_counter
 
         if server.online
           # Update the load if the server is currently online
-          server.load = meetings.length * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
+          server.load = total_load
         else
           # Only bring the server online if the number of successful requests is >= the acceptable threshold
           next if server.increment_healthy < Rails.configuration.x.server_healthy_threshold
 
           Rails.logger.info("Server id=#{server.id} is healthy. Bringing back online...")
           server.reset_counters
-          server.load = meetings.length * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
+          server.load = total_load
           server.online = true
         end
       rescue StandardError => e
