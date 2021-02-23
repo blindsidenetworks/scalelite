@@ -85,5 +85,11 @@ module Scalelite
     config.x.recording_unpublish_dir = File.absolute_path(
       ENV.fetch('RECORDING_UNPUBLISH_DIR') { '/var/bigbluebutton/unpublished' }
     )
+
+    # Minimum user count of a meeting, used for calculating server load. Defaults to 15.
+    config.x.load_min_user_count = ENV.fetch('LOAD_MIN_USER_COUNT', 15).to_i
+
+    # The time(in minutes) until the `load_min_user_count` will be used for calculating server load
+    config.x.load_join_buffer_time = ENV.fetch('LOAD_JOIN_BUFFER_TIME', 15).to_i.minutes
   end
 end
