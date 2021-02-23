@@ -148,6 +148,8 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `POLLER_THREADS`: The number of threads to run in the poller process. The default is 5.
 * `CONNECT_TIMEOUT`: The timeout for establishing a network connection to the BigBlueButton server in the load balancer and poller in seconds. Default is 5 seconds. Floating point numbers can be used for timeouts less than 1 second.
 * `RESPONSE_TIMEOUT`: The timeout to wait for a response after sending a request to the BigBlueButton server in the load balancer and poller in seconds. Default is 10 seconds. Floating point numbers can be used for timeouts less than 1 second.
+* `MEETINGS_MIN_USER_COUNT`: Minimum user count of a meeting, used for calculating server load.
+* `MEETING_JOIN_BUFFER_TIME`: The time until the `MEETINGS_MIN_USER_COUNT` will be used for calculating server load.
 
 ### Redis Connection (`config/redis_store.yml`)
 
