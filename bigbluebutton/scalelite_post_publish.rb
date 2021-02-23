@@ -20,13 +20,13 @@
 require 'optparse'
 require 'psych'
 require 'fileutils'
-require File.expand_path('../../../lib/recordandplayback', __FILE__)
+require File.expand_path('../../../lib/recordandplayback', __dir__)
 
-logger = Logger.new("/var/log/bigbluebutton/post_publish.log", 'weekly' )
+logger = Logger.new('/var/log/bigbluebutton/post_publish.log', 'weekly')
 logger.level = Logger::INFO
 BigBlueButton.logger = logger
 
-BigBlueButton.logger.info("Recording transferring to Scalelite starts")
+BigBlueButton.logger.info('Recording transferring to Scalelite starts')
 
 meeting_id = nil
 OptionParser.new do |opts|
@@ -34,7 +34,8 @@ OptionParser.new do |opts|
     meeting_id = v
   end
 end.parse!
-unless meeting_id do
+
+unless meeting_id
   msg = 'Meeting ID was not provided'
   BigBlueButton.logger.info(msg) && raise(msg)
 end
@@ -74,7 +75,7 @@ begin
   system('rsync', '--verbose', '--protect-args', *extra_rsync_opts, archive_file, spool_dir) \
     || raise('Failed to transfer recording archive')
 
-  BigBlueButton.logger.info("Recording transferring to Scalelite ends")
+  BigBlueButton.logger.info('Recording transferring to Scalelite ends')
 ensure
   FileUtils.rm_f(archive_file)
 end
