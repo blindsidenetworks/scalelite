@@ -130,7 +130,7 @@ class ApplicationRedisRecord
 
   def self.with_connection
     RedisStore.with_connection do |redis|
-      yield redis
+      yield(redis)
     end
   end
   delegate :with_connection, to: 'self.class'
