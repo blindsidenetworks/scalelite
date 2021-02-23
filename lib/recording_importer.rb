@@ -9,6 +9,8 @@ class RecordingImporter
   end
 
   def self.import(filename)
+    return if ENV['RECORDING_DISABLED'].casecmp?('true')
+
     logger.info("Importing recording from file: #{filename}")
 
     recording = nil
