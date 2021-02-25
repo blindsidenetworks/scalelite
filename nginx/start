@@ -24,8 +24,7 @@ else
 	echo "Using non-SSL configuration template."
 	nginx_template=/etc/nginx/conf.d/scalelite.template
 fi
-SCALELITE_API=${SCALELITE_API-scalelite-api}
-envsubst '$URL_HOST:$SCALELITE_API' <$nginx_template >/etc/nginx/conf.d/scalelite.conf
+envsubst '$URL_HOST' <$nginx_template >/etc/nginx/conf.d/scalelite.conf
 unset nginx_template
 
 mkdir -p /run/nginx
