@@ -20,7 +20,7 @@
 require 'optparse'
 require 'psych'
 require 'fileutils'
-require File.expand_path('../../../lib/recordandplayback', __dir__)
+require File.expand_path('../../lib/recordandplayback', __dir__)
 
 logger = Logger.new('/var/log/bigbluebutton/post_publish.log', 'weekly')
 logger.level = Logger::INFO
