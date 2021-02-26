@@ -4,7 +4,7 @@ require 'concurrent-ruby'
 
 desc 'Run a polling process to continually monitor servers and meetings'
 task :poll, [:interval] => :environment do |_t, args|
-  args.with_defaults(interval: ENV['POLLING_INTERVAL'])
+  args.with_defaults(interval: 60.seconds)
   interval = args.interval.to_f
   Rails.logger.info("Running poller with interval #{interval}")
 
