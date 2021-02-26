@@ -143,6 +143,18 @@ class Server < ApplicationRedisRecord
     end
   end
 
+  # Validates uniqueness of a new server object, and attempts to save it. Raises a RecordNotSaved exception on errors,
+  # otherwise returns the newly created object.
+  def self.create!(attributes = {})
+    Server.all.each_slice(1000) do |server_list|
+      server_list.each do |server|
+        raise RecordNotSaved.new('Server url is not unique', self) if server.url.eql?(attributes[:url])
+        raise RecordNotSaved.new('Server id is not unique', self) if server.secret.eql?(attributes[:secret])
+      end
+    end
+    super
+  end
+
   # Find a server by ID
   def self.find(id)
     with_connection do |redis|
