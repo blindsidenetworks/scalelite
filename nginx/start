@@ -6,7 +6,7 @@ if [ $$ == 1 ]; then
 fi
 
 # For backward compatibility, set NGINX_BEHIND_PROXY if not defined but BEHIND_PROXY is.
-if [ -z "$NGINX_BEHIND_PROXY" && -n "$BEHIND_PROXY" ] ; then
+if [ -z "$NGINX_BEHIND_PROXY" ] && [ -n "$BEHIND_PROXY" ] ; then
   NGINX_BEHIND_PROXY="true"
 fi
 
