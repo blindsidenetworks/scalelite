@@ -56,14 +56,14 @@ namespace :poll do
 
         if server.online
           # Update the load if the server is currently online
-          server.load = total_attendees
+          server.load = total_attendees * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
         else
           # Only bring the server online if the number of successful requests is >= the acceptable threshold
           next if server.increment_healthy < Rails.configuration.x.server_healthy_threshold
 
           Rails.logger.info("Server id=#{server.id} is healthy. Bringing back online...")
           server.reset_counters
-          server.load = total_attendees
+          server.load = total_attendees * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
           server.online = true
         end
       rescue StandardError => e
