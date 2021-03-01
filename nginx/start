@@ -36,6 +36,5 @@ while :; do
 	nginx -s reload
 done &
 
-
 echo "Starting nginx..."
 exec nginx -g 'daemon off;'
