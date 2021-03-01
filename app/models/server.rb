@@ -41,6 +41,15 @@ class Server < ApplicationRedisRecord
       raise RecordNotSaved.new('Cannot update id field', self) if id_changed?
 
       # Default values
+      if id.nil?
+        self.id = \
+          if Rails.configuration.x.server_id_is_hostname
+            URI.parse(url).host.downcase(:ascii)
+          else
+            SecureRandom.uuid
+          end
+      end
+
       self.id = SecureRandom.uuid if id.nil?
       self.online = false if online.nil?
 

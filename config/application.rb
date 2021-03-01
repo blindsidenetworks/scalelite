@@ -91,5 +91,8 @@ module Scalelite
 
     # The time(in minutes) until the `load_min_user_count` will be used for calculating server load
     config.x.load_join_buffer_time = ENV.fetch('LOAD_JOIN_BUFFER_TIME', 15).to_i.minutes
+
+    # Whether to generate ids for servers based on the hostname rather than random UUIDs
+    config.x.server_id_is_hostname = ENV['SERVER_ID_IS_HOSTNAME']&.downcase == 'true'
   end
 end
