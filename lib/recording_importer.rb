@@ -9,7 +9,7 @@ class RecordingImporter
   end
 
   def self.import(filename)
-    return if ENV['RECORDING_DISABLED'].casecmp?('true')
+    return if Rails.configuration.x.recording_disabled
 
     logger.info("Importing recording from file: #{filename}")
 

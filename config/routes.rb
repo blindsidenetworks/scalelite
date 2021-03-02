@@ -15,7 +15,7 @@ Rails.application.routes.draw do
     match 'create', to: 'bigbluebutton_api#create', via: [:get, :post]
     get 'end', to: 'bigbluebutton_api#end'
     get 'join', to: 'bigbluebutton_api#join'
-    if 'true'.casecmp?(ENV['RECORDING_DISABLED'])
+    if Rails.configuration.x.recording_disabled
       get('getRecordings', to: 'bigbluebutton_api#get_recordings_disabled', as: :get_recordings)
       get('publishRecordings', to: 'bigbluebutton_api#recordings_disabled', as: :publish_recordings)
       get('updateRecordings', to: 'bigbluebutton_api#recordings_disabled', as: :update_recordings)
