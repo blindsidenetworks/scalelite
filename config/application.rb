@@ -94,5 +94,8 @@ module Scalelite
 
     # Whether to generate ids for servers based on the hostname rather than random UUIDs
     config.x.server_id_is_hostname = ENV['SERVER_ID_IS_HOSTNAME']&.downcase == 'true'
+
+    # Recording feature will be disabled, if set to 'true'. Defaults to false.
+    config.x.recording_disabled = ENV.fetch('RECORDING_DISABLED', 'false').casecmp?('true')
   end
 end
