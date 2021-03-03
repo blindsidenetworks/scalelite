@@ -1041,51 +1041,55 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   test 'getRecordings returns noRecordings if RECORDING_DISABLED flag is set to true' do
     create_list(:recording, 3)
     params = encode_bbb_params('getRecordings', '')
-    mock_env('RECORDING_DISABLED' => 'true') do
-      reload_routes!
-      get bigbluebutton_api_get_recordings_url, params: params
-    end
+    Rails.configuration.x.recording_disabled = true
+    reload_routes!
+    get bigbluebutton_api_get_recordings_url, params: params
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>messageKey', 'noRecordings'
     assert_select 'response>message', 'There are not recordings for the meetings'
+    Rails.configuration.x.recording_disabled = false
+    reload_routes!
   end
 
   test 'publishRecordings returns notFound if RECORDING_DISABLED flag is set to true' do
     params = encode_bbb_params('publishRecordings', { publish: 'true' }.to_query)
-    mock_env('RECORDING_DISABLED' => 'true') do
-      reload_routes!
-      get 'http://www.example.com/bigbluebutton/api/publishRecordings', params: params
-    end
+    Rails.configuration.x.recording_disabled = true
+    reload_routes!
+    get 'http://www.example.com/bigbluebutton/api/publishRecordings', params: params
     assert_response :success
     assert_select 'response>returncode', 'FAILED'
     assert_select 'response>messageKey', 'notFound'
     assert_select 'response>message', 'We could not find recordings'
+    Rails.configuration.x.recording_disabled = false
+    reload_routes!
   end
 
   test 'updateRecordings returns notFound if RECORDING_DISABLED flag is set to true' do
     params = encode_bbb_params('updateRecordings', '')
-    mock_env('RECORDING_DISABLED' => 'true') do
-      reload_routes!
-      get 'http://www.example.com/bigbluebutton/api/updateRecordings', params: params
-    end
+    Rails.configuration.x.recording_disabled = true
+    reload_routes!
+    get 'http://www.example.com/bigbluebutton/api/updateRecordings', params: params
     assert_response :success
     assert_select 'response>returncode', 'FAILED'
     assert_select 'response>messageKey', 'notFound'
     assert_select 'response>message', 'We could not find recordings'
+    Rails.configuration.x.recording_disabled = false
+    reload_routes!
   end
 
   test 'deleteRecordings returns notFound if RECORDING_DISABLED flag is set to TRUE' do
     r = create(:recording)
     params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
-    mock_env('RECORDING_DISABLED' => 'true') do
-      reload_routes!
-      get 'http://www.example.com/bigbluebutton/api/deleteRecordings', params: params
-    end
+    Rails.configuration.x.recording_disabled = true
+    reload_routes!
+    get 'http://www.example.com/bigbluebutton/api/deleteRecordings', params: params
     assert_response :success
     assert_select 'response>returncode', 'FAILED'
     assert_select 'response>messageKey', 'notFound'
     assert_select 'response>message', 'We could not find recordings'
+    Rails.configuration.x.recording_disabled = false
+    reload_routes!
   end
 
   # get_meetings_api_disabled
