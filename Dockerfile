@@ -53,8 +53,8 @@ RUN apt-get update \
     && apt-get download bbb-playback bbb-playback-presentation \
     && dpkg -i --force-depends *.deb
 
-### recordings with support for bbb23: step 2
-FROM alpine AS bbb23-recordings
+### recordings: step 2
+FROM alpine AS recordings
 RUN apk add --no-cache nginx tini gettext \
     && ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log

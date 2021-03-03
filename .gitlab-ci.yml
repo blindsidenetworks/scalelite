@@ -108,6 +108,21 @@ docker:
       --tag $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
       --tag $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
       .
+    - docker build
+      --target bbb23-playback
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --cache-from $CI_REGISTRY_IMAGE/bbb-playback:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/bbb23-playback:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/bbb23-playback:git-$CI_COMMIT_SHA
+      .
+    - docker build
+      --target recordings
+      --build-arg BUILDKIT_INLINE_CACHE=1
+      --cache-from $CI_REGISTRY_IMAGE/bbb23-playback:$CI_COMMIT_REF_SLUG
+      --cache-from $CI_REGISTRY_IMAGE/recordings:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/recordings:$CI_COMMIT_REF_SLUG
+      --tag $CI_REGISTRY_IMAGE/recordings:git-$CI_COMMIT_SHA
+      .
     - docker push $CI_REGISTRY_IMAGE/builder:$CI_COMMIT_REF_SLUG
     - docker push $CI_REGISTRY_IMAGE/builder:git-$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_IMAGE/api:$CI_COMMIT_REF_SLUG
@@ -120,6 +135,10 @@ docker:
     - docker push $CI_REGISTRY_IMAGE/bbb-playback:git-$CI_COMMIT_SHA
     - docker push $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_SLUG
     - docker push $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/bbb23-playback:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/bbb23-playback:git-$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/recordings:$CI_COMMIT_REF_SLUG
+    - docker push $CI_REGISTRY_IMAGE/recordings:git-$CI_COMMIT_SHA
 
 .dockerhub:
   extends: .docker
@@ -148,14 +167,17 @@ publish_dockerhub:
     - docker pull $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
     - docker pull $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA
     - docker pull $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/recordings:git-$CI_COMMIT_SHA
     - docker tag $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-api
     - docker tag $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-poller
     - docker tag $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-recording-importer
     - docker tag $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-nginx
+    - docker tag $CI_REGISTRY_IMAGE/recordings:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-recordings
     - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-api
     - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-poller
     - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-recording-importer
     - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-nginx
+    - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-recordings
 
 publish_dockerhub_latest:
   extends: .dockerhub
@@ -168,14 +190,17 @@ publish_dockerhub_latest:
     - docker pull $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
     - docker pull $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA
     - docker pull $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/recordings:git-$CI_COMMIT_SHA
     - docker tag $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:latest-api
     - docker tag $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:latest-poller
     - docker tag $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:latest-recording-importer
     - docker tag $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:latest-nginx
+    - docker tag $CI_REGISTRY_IMAGE/recordings:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:latest-recordings
     - docker push $DOCKERHUB_IMAGE:latest-api
     - docker push $DOCKERHUB_IMAGE:latest-poller
     - docker push $DOCKERHUB_IMAGE:latest-recording-importer
     - docker push $DOCKERHUB_IMAGE:latest-nginx
+    - docker push $DOCKERHUB_IMAGE:latest-recordings
 
 publish_dockerhub_v1:
   extends: .dockerhub
@@ -187,14 +212,17 @@ publish_dockerhub_v1:
     - docker pull $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
     - docker pull $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA
     - docker pull $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/recordings:git-$CI_COMMIT_SHA
     - docker tag $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:v1-api
     - docker tag $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:v1-poller
     - docker tag $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:v1-recording-importer
     - docker tag $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:v1-nginx
+    - docker tag $CI_REGISTRY_IMAGE/recordings:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:v1-recordings
     - docker push $DOCKERHUB_IMAGE:v1-api
     - docker push $DOCKERHUB_IMAGE:v1-poller
     - docker push $DOCKERHUB_IMAGE:v1-recording-importer
     - docker push $DOCKERHUB_IMAGE:v1-nginx
+    - docker push $DOCKERHUB_IMAGE:v1-recordings
 
 publish_dockerhub_all_branches:
   extends: .dockerhub
@@ -206,11 +234,14 @@ publish_dockerhub_all_branches:
     - docker pull $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA
     - docker pull $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA
     - docker pull $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/recordings:git-$CI_COMMIT_SHA
     - docker tag $CI_REGISTRY_IMAGE/api:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-api
     - docker tag $CI_REGISTRY_IMAGE/poller:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-poller
     - docker tag $CI_REGISTRY_IMAGE/recording-importer:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-recording-importer
     - docker tag $CI_REGISTRY_IMAGE/nginx:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-nginx
+    - docker tag $CI_REGISTRY_IMAGE/recordings:git-$CI_COMMIT_SHA $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-recordings
     - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-api
     - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-poller
     - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-recording-importer
     - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-nginx
+    - docker push $DOCKERHUB_IMAGE:$CI_COMMIT_REF_NAME-recordings
