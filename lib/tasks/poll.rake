@@ -45,7 +45,14 @@ namespace :poll do
 
         load_min_user_count = Rails.configuration.x.load_min_user_count
         x_minutes_ago = Rails.configuration.x.load_join_buffer_time.ago
+        weight_meetings = Rails.configuration.x.weight_meetings
+        weight_users = Rails.configuration.x.weight_users
+        weight_audio_rx = Rails.configuration.x.weight_audio_rx
+        weight_audio_tx = Rails.configuration.x.weight_audio_tx
+        weight_video_rx = Rails.configuration.x.weight_video_rx
+        weight_video_tx = Rails.configuration.x.weight_video_tx
 
+        load = 0.0
         meetings.each do |meeting|
           created_time = Time.zone.at(meeting.xpath('.//createTime').text.to_i / 1000)
           actual_attendees = meeting.xpath('.//participantCount').text.to_i + meeting.xpath('.//moderatorCount').text.to_i
@@ -58,25 +65,38 @@ namespace :poll do
 
           next if meeting.xpath('.//isBreakout').text.eql?('true')
 
-          total_attendees += if created_time > x_minutes_ago
-                               [actual_attendees, load_min_user_count].max
-                             else
-                               actual_attendees
-                             end
+          attendees = if created_time > x_minutes_ago
+                        [actual_attendees, load_min_user_count].max
+                      else
+                        actual_attendees
+                      end
+          audio = meeting.at('voiceParticipantCount')&.content.to_i
+          video = meeting.at('videoCount')&.content.to_i
+          load += weight_meetings * 1
+          # Account for users in main rooms only - they join two rooms at the same time.
+          load += weight_users * attendees if meeting.xpath('.//isBreakout').text.eql?('false')
+          # Audio is mixed server-side -> Only one downstream per user
+          load += weight_audio_rx * audio
+          load += weight_audio_tx * attendees if audio
+          # Video is NOT mixed server-side -> One downstream per user per video
+          load += weight_video_rx * video
+          load += weight_video_tx * attendees * video
         end
+        load *= server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d
+
         # Reset unhealthy counter so that only consecutive unhealthy calls are counted
         server.reset_unhealthy_counter
 
         if server.online
           # Update the load if the server is currently online
-          server.load = total_attendees * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
+          server.load = load
         else
           # Only bring the server online if the number of successful requests is >= the acceptable threshold
           next if server.increment_healthy < Rails.configuration.x.server_healthy_threshold
 
           Rails.logger.info("Server id=#{server.id} is healthy. Bringing back online...")
           server.reset_counters
-          server.load = total_attendees * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
+          server.load = load
           server.online = true
         end
 
