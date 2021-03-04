@@ -95,6 +95,24 @@ module Scalelite
     # Whether to generate ids for servers based on the hostname rather than random UUIDs. Default to false.
     config.x.server_id_is_hostname = ENV.fetch('SERVER_ID_IS_HOSTNAME', 'false').casecmp?('true')
 
+    # The weight the number of meetings will have in calculating server load
+    config.x.weight_meetings = ENV.fetch('LOAD_WEIGHT_MEETINGS', 1.0).to_d
+
+    # The weight the number of users will have in calculating server load
+    config.x.weight_users = ENV.fetch('LOAD_WEIGHT_USERS', 0).to_d
+
+    # The weight the number of audio-rx-streams will have in calculating server load. Can use same weight for both.
+    config.x.weight_audio_rx = (ENV.fetch('LOAD_WEIGHT_AUDIO_RX') { ENV.fetch('LOAD_WEIGHT_AUDIO', 0) }).to_d
+
+    # The weight the number of audio-tx-streams will have in calculating server load. Can use same weight for both.
+    config.x.weight_audio_tx = (ENV.fetch('LOAD_WEIGHT_AUDIO_TX') { ENV.fetch('LOAD_WEIGHT_AUDIO', 0) }).to_d
+
+    # The weight the number of video-rx-streams will have in calculating server load. Can use same weight for both.
+    config.x.weight_video_rx = (ENV.fetch('LOAD_WEIGHT_VIDEO_RX') { ENV.fetch('LOAD_WEIGHT_VIDEO', 0) }).to_d
+
+    # The weight the number of video-tx-streams will have in calculating server load. Can use same weight for both.
+    config.x.weight_video_tx = (ENV.fetch('LOAD_WEIGHT_VIDEO_TX') { ENV.fetch('LOAD_WEIGHT_VIDEO', 0) }).to_d
+
     # Recording feature will be disabled, if set to 'true'. Defaults to false.
     config.x.recording_disabled = ENV.fetch('RECORDING_DISABLED', 'false').casecmp?('true')
     # List of BBB server attributes that should not be modified by create API call
