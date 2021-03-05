@@ -50,7 +50,8 @@ task status: :environment do
                         meetings: meetings.length,
                         users: server_users,
                         largest: users_in_largest_meeting,
-                        videos: video_streams
+                        videos: video_streams,
+                        load: server.load
                       ))
     # Sort list of servers
     servers_info = servers_info.sort_by(&:hostname)
@@ -64,6 +65,7 @@ task status: :environment do
     t.add_column('USERS', &:users)
     t.add_column('LARGEST MEETING', &:largest)
     t.add_column('VIDEOS', &:videos)
+    t.add_column('LOAD', &:load)
   end
 
   puts table.pack
