@@ -1,6 +1,6 @@
 FROM alpine:3.11 AS alpine
 
-FROM ubuntu:16.04 AS bbb-playback
+FROM ubuntu:18.04 AS bbb-playback
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y language-pack-en \
@@ -9,12 +9,12 @@ ENV LANG=en_US.UTF-8
 RUN apt-get update \
     && apt-get install -y software-properties-common curl net-tools
 RUN curl -sL https://ubuntu.bigbluebutton.org/repo/bigbluebutton.asc | apt-key add - \
-    && echo "deb http://ubuntu.bigbluebutton.org/xenial-220/ bigbluebutton-xenial main" >/etc/apt/sources.list.d/bigbluebutton.list
+    && echo "deb http://ubuntu.bigbluebutton.org/bionic-230-dev/ bigbluebutton-bionic main" >/etc/apt/sources.list.d/bigbluebutton.list
 RUN useradd --system --user-group --home-dir /var/bigbluebutton bigbluebutton
 RUN touch /.dockerenv
 RUN apt-get update \
-    && apt-get download bbb-playback-notes bbb-playback-podcast bbb-playback-presentation bbb-playback-screenshare \
-    && dpkg -i --force-depends *.deb
+    && apt-get download bbb-playback bbb-playback-presentation \
+    && dpkg -i --force-depends *.deb ; true
 
 FROM alpine AS nginx
 RUN apk add --no-cache nginx tini gettext \
