@@ -33,6 +33,8 @@ OptionParser.new do |opts|
   opts.on('-m', '--meeting-id MEETING_ID', 'Internal Meeting ID') do |v|
     meeting_id = v
   end
+  opts.on('-f', '--format FORMAT', 'Recording Format') do |v|
+  end
 end.parse!
 
 unless meeting_id
@@ -70,7 +72,6 @@ begin
       || raise('Failed to create recording archive')
   end
 
-  FileUtils.mkdir_p(spool_dir)
   BigBlueButton.logger.info("Transferring recording archive to #{spool_dir}")
   system('rsync', '--verbose', '--protect-args', *extra_rsync_opts, archive_file, spool_dir) \
     || raise('Failed to transfer recording archive')
