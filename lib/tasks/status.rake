@@ -16,7 +16,7 @@ task status: :environment do
       users_in_largest_meeting = 0
 
       # Scan only servers that are online
-      if server.online 
+      if server.online
         response = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
         meetings = response.xpath('/response/meetings/meeting')
 
