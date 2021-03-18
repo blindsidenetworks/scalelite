@@ -1,0 +1,9 @@
+access_log stderr combined;
+
+server {
+  listen 80 default_server;
+  listen [::]:80 default_server;
+
+  # BigBlueButton recording playback
+  include /etc/bigbluebutton/nginx/*.nginx;
+}

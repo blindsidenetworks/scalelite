@@ -5,7 +5,7 @@ server {
   listen [::]:80 default_server;
 
   location / {
-    proxy_pass http://$SCALELITE_API:3000;
+    proxy_pass http://scalelite-api:3000;
 
     proxy_read_timeout 60s;
     proxy_redirect off;

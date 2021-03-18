@@ -20,14 +20,27 @@
 require 'optparse'
 require 'psych'
 require 'fileutils'
+require File.expand_path('../../lib/recordandplayback', __dir__)
+
+logger = Logger.new('/var/log/bigbluebutton/post_publish.log', 'weekly')
+logger.level = Logger::INFO
+BigBlueButton.logger = logger
+
+BigBlueButton.logger.info('Recording transferring to Scalelite starts')
 
 meeting_id = nil
 OptionParser.new do |opts|
   opts.on('-m', '--meeting-id MEETING_ID', 'Internal Meeting ID') do |v|
     meeting_id = v
   end
+  opts.on('-f', '--format FORMAT', 'Recording Format') do |v|
+  end
 end.parse!
-raise 'Meeting ID was not provided' unless meeting_id
+
+unless meeting_id
+  msg = 'Meeting ID was not provided'
+  BigBlueButton.logger.info(msg) && raise(msg)
+end
 
 props = Psych.load_file(File.join(__dir__, '../bigbluebutton.yml'))
 published_dir = props['published_dir'] || raise('Unable to determine published_dir from bigbluebutton.yml')
@@ -36,33 +49,34 @@ work_dir = scalelite_props['work_dir'] || raise('Unable to determine work_dir fr
 spool_dir = scalelite_props['spool_dir'] || raise('Unable to determine spool_dir from scalelite.yml')
 extra_rsync_opts = scalelite_props['extra_rsync_opts'] || []
 
-puts("Transferring recording for #{meeting_id} to Scalelite")
+BigBlueButton.logger.info("Transferring recording for #{meeting_id} to Scalelite")
 format_dirs = []
 FileUtils.cd(published_dir) do
   format_dirs = Dir.glob("*/#{meeting_id}")
 end
 if format_dirs.empty?
-  puts('No published recording formats found')
+  BigBlueButton.logger.info('No published recording formats found')
   exit
 end
 
 format_dirs.each do |format_dir|
-  puts("Found recording format: #{format_dir}")
+  BigBlueButton.logger.info("Found recording format: #{format_dir}")
 end
 
 archive_file = "#{work_dir}/#{meeting_id}.tar"
 begin
-  puts('Creating recording archive')
+  BigBlueButton.logger.info('Creating recording archive')
   FileUtils.mkdir_p(work_dir)
   FileUtils.cd(published_dir) do
     system('tar', '--create', '--file', archive_file, *format_dirs) \
       || raise('Failed to create recording archive')
   end
 
-  FileUtils.mkdir_p(spool_dir)
-  puts("Transferring recording archive to #{spool_dir}")
+  BigBlueButton.logger.info("Transferring recording archive to #{spool_dir}")
   system('rsync', '--verbose', '--protect-args', *extra_rsync_opts, archive_file, spool_dir) \
     || raise('Failed to transfer recording archive')
+
+  BigBlueButton.logger.info('Recording transferring to Scalelite ends')
 ensure
   FileUtils.rm_f(archive_file)
 end

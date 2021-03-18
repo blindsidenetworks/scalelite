@@ -6,22 +6,24 @@ module ApiHelper
   extend ActiveSupport::Concern
   include BBBErrors
 
-  REQUEST_TIMEOUT = 10
   CHECKSUM_LENGTH = 40
 
   # Verify checksum
   def verify_checksum
     raise ChecksumError unless params[:checksum].present? && params[:checksum].length == CHECKSUM_LENGTH
 
-    check_string = request.query_string.gsub(
-      /&checksum=#{params[:checksum]}|checksum=#{params[:checksum]}&|checksum=#{params[:checksum]}/,
-      ''
+    # Camel case (ex) get_meetings to getMeetings to match BBB server
+    check_string = action_name.camelcase(:lower)
+    check_string += request.query_string.gsub(
+      /&checksum=#{params[:checksum]}|checksum=#{params[:checksum]}&|checksum=#{params[:checksum]}/, ''
     )
 
-    # Camel case (ex) get_meetings to getMeetings to match BBB server
-    checksum = Digest::SHA1.hexdigest(action_name.camelcase(:lower) + check_string + Rails.configuration.x.loadbalancer_secret)
+    return if Rails.configuration.x.loadbalancer_secrets.any? do |secret|
+      checksum = Digest::SHA1.hexdigest(check_string + secret)
+      ActiveSupport::SecurityUtils.fixed_length_secure_compare(checksum, params[:checksum])
+    end
 
-    raise ChecksumError unless ActiveSupport::SecurityUtils.fixed_length_secure_compare(checksum, params[:checksum])
+    raise ChecksumError
   end
 
   # Encode URI and append checksum
@@ -35,8 +37,22 @@ module ApiHelper
     uri
   end
 
+  # Calculate a timeout based on server state to pass to get_post_req options
+  def bbb_req_timeout(server)
+    unless server.online
+      # Use values that are 1/10 the normal values, but clamp to a minimum.
+      # If the original configured timeout value is below the minimum, then use that instead.
+      return {
+        open_timeout: [[0.2, Rails.configuration.x.open_timeout].min, Rails.configuration.x.open_timeout / 10].max,
+        read_timeout: [[0.5, Rails.configuration.x.read_timeout].min, Rails.configuration.x.read_timeout / 10].max,
+      }
+    end
+
+    {}
+  end
+
   # GET/POST request
-  def get_post_req(uri, body = '')
+  def get_post_req(uri, body = '', **options)
     # If body is passed and has a value, setup POST request
     if body.present?
       req = Net::HTTP::Post.new(uri.request_uri)
@@ -46,8 +62,13 @@ module ApiHelper
       req = Net::HTTP::Get.new(uri.request_uri)
     end
 
-    Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https',
-                                        open_timeout: REQUEST_TIMEOUT, read_timeout: REQUEST_TIMEOUT) do |http|
+    Net::HTTP.start(
+      uri.host,
+      uri.port,
+      use_ssl: uri.scheme == 'https',
+      open_timeout: options.fetch(:open_timeout) { Rails.configuration.x.open_timeout },
+      read_timeout: options.fetch(:read_timeout) { Rails.configuration.x.read_timeout }
+    ) do |http|
       res = http.request(req)
       doc = Nokogiri::XML(res.body)
       returncode = doc.at_xpath('/response/returncode')

@@ -3,7 +3,7 @@
 class BigBlueButtonApiController < ApplicationController
   include ApiHelper
 
-  before_action :verify_checksum, except: :index
+  before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled]
 
   def index
     # Return the scalelite build number if passed as an env variable
@@ -40,7 +40,7 @@ class BigBlueButtonApiController < ApplicationController
 
     begin
       # Send a GET request to the server
-      response = get_post_req(uri)
+      response = get_post_req(uri, **bbb_req_timeout(server))
     rescue BBBError
       # Reraise the error
       raise
@@ -74,7 +74,7 @@ class BigBlueButtonApiController < ApplicationController
 
     begin
       # Send a GET request to the server
-      response = get_post_req(uri)
+      response = get_post_req(uri, **bbb_req_timeout(server))
     rescue BBBError
       # Reraise the error
       raise
@@ -131,6 +131,11 @@ class BigBlueButtonApiController < ApplicationController
     render(xml: meetings_node.children.empty? ? no_meetings_response : all_meetings)
   end
 
+  def get_meetings_disabled
+    logger.debug('The get meetings api has been disabled')
+    render(xml: no_meetings_response)
+  end
+
   def create
     params.require(:meetingID)
 
@@ -168,7 +173,7 @@ class BigBlueButtonApiController < ApplicationController
       body = request.post? ? request.body.read : ''
 
       # Send a GET/POST request to the server
-      response = get_post_req(uri, body)
+      response = get_post_req(uri, body, **bbb_req_timeout(server))
     rescue BBBError
       # Reraise the error to return error xml to caller
       raise
@@ -203,7 +208,7 @@ class BigBlueButtonApiController < ApplicationController
       meeting.destroy!
 
       # Send a GET request to the server
-      response = get_post_req(uri)
+      response = get_post_req(uri, **bbb_req_timeout(server))
     rescue BBBError => e
       if e.message_key == 'notFound'
         # If the meeting is not found, delete the meeting from the load balancer database
@@ -212,7 +217,7 @@ class BigBlueButtonApiController < ApplicationController
       end
       # Reraise the error
       raise e
-    rescue RecordNotDestroyed => e
+    rescue ApplicationRedisRecord::RecordNotDestroyed => e
       logger.warn("Error #{e} deleting meeting #{params[:meetingID]} from server #{server.id}")
     rescue StandardError => e
       logger.warn("Error #{e} accessing meeting #{params[:meetingID]} on server #{server.id}.")
@@ -359,6 +364,17 @@ class BigBlueButtonApiController < ApplicationController
     render(:delete_recordings)
   end
 
+  def get_recordings_disabled
+    logger.debug('The recording feature have been disabled')
+    @recordings = []
+    render(:get_recordings)
+  end
+
+  def recordings_disabled
+    logger.debug('The recording feature have been disabled')
+    raise BBBError.new('notFound', 'We could not find recordings')
+  end
+
   private
 
   # Filter out unneeded params when passing through to join and create calls
@@ -373,7 +389,8 @@ class BigBlueButtonApiController < ApplicationController
       xml.response do
         xml.returncode('SUCCESS')
         xml.messageKey('noMeetings')
-        xml.message('No meetings were found on this server.')
+        xml.message('no meetings were found on this server')
+        xml.meetings
       end
     end
   end
