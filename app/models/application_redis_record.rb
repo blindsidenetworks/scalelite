@@ -41,6 +41,17 @@ class ApplicationRedisRecord
     end
   end
 
+  # Raised by the create!, save!, and destroy! methods when the modification was aborted
+  # because of a conflicting concurrent modification. The change should be retried.
+  class ConcurrentModificationError < ApplicationRedisError
+    attr_reader :record
+
+    def initialize(message = nil, record = nil)
+      @record = record
+      super(message)
+    end
+  end
+
   # Initialize a new object. You can optionally pass a hash of attributes to assign.
   def initialize(attributes = {})
     super(attributes)

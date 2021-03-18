@@ -41,6 +41,15 @@ class Server < ApplicationRedisRecord
       raise RecordNotSaved.new('Cannot update id field', self) if id_changed?
 
       # Default values
+      if id.nil?
+        self.id = \
+          if Rails.configuration.x.server_id_is_hostname
+            URI.parse(url).host.downcase(:ascii)
+          else
+            SecureRandom.uuid
+          end
+      end
+
       self.id = SecureRandom.uuid if id.nil?
       self.online = false if online.nil?
 
@@ -50,28 +59,36 @@ class Server < ApplicationRedisRecord
         clear_attribute_changes([:load])
       end
 
-      server_key = key
-      redis.multi do
-        redis.hset(server_key, 'url', url) if url_changed?
-        redis.hset(server_key, 'secret', secret) if secret_changed?
-        redis.hset(server_key, 'online', online ? 'true' : 'false') if online_changed?
-        redis.hset(server_key, 'load_multiplier', load_multiplier) if load_multiplier_changed?
-        redis.sadd('servers', id) if id_changed?
-        if enabled_changed?
-          if enabled
-            redis.sadd('server_enabled', id)
-          else
-            redis.srem('server_enabled', id)
-            redis.zrem('server_load', id)
+      redis.watch('servers') do
+        exists = redis.sismember('servers', id)
+        raise RecordNotSaved.new("Server already exists with id '#{id}'", self) if id_changed? && exists
+        raise RecordNotSaved.new("Server with id '#{id}' is deleted", self) if !id_changed? && !exists
+
+        server_key = key
+        result = redis.multi do
+          redis.hset(server_key, 'url', url) if url_changed?
+          redis.hset(server_key, 'secret', secret) if secret_changed?
+          redis.hset(server_key, 'online', online ? 'true' : 'false') if online_changed?
+          redis.hset(server_key, 'load_multiplier', load_multiplier) if load_multiplier_changed?
+          redis.sadd('servers', id) if id_changed?
+          if enabled_changed?
+            if enabled
+              redis.sadd('server_enabled', id)
+            else
+              redis.srem('server_enabled', id)
+              redis.zrem('server_load', id)
+            end
+          end
+          if load_changed?
+            if load.present?
+              redis.zadd('server_load', load, id)
+            else
+              redis.zrem('server_load', id)
+            end
           end
         end
-        if load_changed?
-          if load.present?
-            redis.zadd('server_load', load, id)
-          else
-            redis.zrem('server_load', id)
-          end
-        end
+
+        raise ConcurrentModificationError.new('Servers list concurrently modified', self) if result.nil?
       end
     end
 
