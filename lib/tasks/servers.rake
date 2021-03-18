@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 desc('List configured BigBlueButton servers')
-task servers: :environment do
-  servers = Server.all
-  puts('No servers are configured') if servers.empty?
+task :servers, [:search] => :environment do |_t, args|
+  servers = args.search.nil? ? Server.all : Server.find_all(args.search)
+  puts('No servers found') if servers.empty?
   servers.each do |server|
     puts("id: #{server.id}")
     puts("\turl: #{server.url}")
@@ -35,75 +35,82 @@ namespace :servers do
     puts("id: #{server.id}")
   end
 
-  desc 'Remove a BigBlueButton server'
-  task :remove, [:id] => :environment do |_t, args|
-    server = Server.find(args.id)
-    server.destroy!
+  desc 'Remove BigBlueButton servers'
+  task :remove, [:search] => :environment do |_t, args|
+    Server.find_all(args.search).each(&:destroy!)
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
-    puts("ERROR: No server found with id: #{args.id}")
+    puts("ERROR: No server found matching: #{args.id}")
   end
 
   desc 'Mark a BigBlueButton server as available for scheduling new meetings'
-  task :enable, [:id] => :environment do |_t, args|
-    server = Server.find(args.id)
-    server.enabled = true
-    server.save!
+  task :enable, [:search] => :environment do |_t, args|
+    servers = Server.find_all(args.search)
+    servers.each do |server|
+      server.enabled = true
+      server.save!
+    end
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
-    puts("ERROR: No server found with id: #{args.id}")
+    puts("ERROR: No server found matching: #{args.search}")
   end
 
   desc 'Mark a BigBlueButton server as unavailable to stop scheduling new meetings'
-  task :disable, [:id] => :environment do |_t, args|
-    server = Server.find(args.id)
-    server.enabled = false
-    server.save!
+  task :disable, [:search] => :environment do |_t, args|
+    servers = Server.find_all(args.search)
+    servers.each do |server|
+      server.enabled = false
+      server.save!
+    end
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
-    puts("ERROR: No server found with id: #{args.id}")
+    puts("ERROR: No server found matching: #{args.search}")
   end
 
   desc 'Mark a BigBlueButton server as unavailable, and clear all meetings from it'
-  task :panic, [:id, :keep_state] => :environment do |_t, args|
+  task :panic, [:search, :keep_state] => :environment do |_t, args|
     args.with_defaults(keep_state: false)
     include ApiHelper
 
-    server = Server.find(args.id)
-    server.enabled = false unless args.keep_state
-    server.save!
+    servers = Server.find_all(args.search)
+    servers.each do |server|
+      server.enabled = false unless args.keep_state
+      server.save!
 
-    meetings = Meeting.all.select { |m| m.server_id == server.id }
-    meetings.each do |meeting|
-      puts("Clearing Meeting id=#{meeting.id}")
-      meeting.destroy!
+      meetings = Meeting.all.select { |m| m.server_id == server.id }
+      meetings.each do |meeting|
+        puts("Clearing Meeting id=#{meeting.id}")
+        meeting.destroy!
 
-      get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id))
-    rescue ApplicationRedisRecord::RecordNotDestroyed => e
-      puts("WARNING: Could not destroy meeting id=#{meeting.id}: #{e}")
-    rescue StandardError => e
-      puts("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
+        get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id))
+      rescue ApplicationRedisRecord::RecordNotDestroyed => e
+        puts("WARNING: Could not destroy meeting id=#{meeting.id}: #{e}")
+      rescue StandardError => e
+        puts("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
+      end
     end
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
-    puts("ERROR: No server found with id: #{args.id}")
+    puts("ERROR: No server found matching: #{args.search}")
   end
 
   desc 'Set the load-multiplier of a BigBlueButton server'
-  task :loadMultiplier, [:id, :load_multiplier] => :environment do |_t, args|
-    server = Server.find(args.id)
-    tmp_load_multiplier = 1.0
-    unless args.load_multiplier.nil?
-      tmp_load_multiplier = args.load_multiplier.to_d
-      if tmp_load_multiplier.zero?
-        puts('WARNING! Load-multiplier was not readable or 0, so it is now 1')
-        tmp_load_multiplier = 1.0
+  task :loadMultiplier, [:search, :load_multiplier] => :environment do |_t, args|
+    servers = Server.find_all(args.search)
+    servers.each do |server|
+      tmp_load_multiplier = 1.0
+      unless args.load_multiplier.nil?
+        tmp_load_multiplier = args.load_multiplier.to_d
+        if tmp_load_multiplier.zero?
+          puts('WARNING! Load-multiplier was not readable or 0, so it is now 1')
+          tmp_load_multiplier = 1.0
+        end
       end
+      server.load_multiplier = tmp_load_multiplier
+      server.save!
     end
-    server.load_multiplier = tmp_load_multiplier
-    server.save!
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
-    puts("ERROR: No server found with id: #{args.id}")
+    puts("ERROR: No server found matching: #{args.search}")
   end
 end
