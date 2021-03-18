@@ -256,6 +256,38 @@ class ServerTest < ActiveSupport::TestCase
     end
   end
 
+  test 'Server create id is UUID' do
+    Rails.configuration.x.stub(:server_id_is_hostname, false) do
+      server = Server.new
+      server.url = 'https://test.example.com/bigbluebutton/api'
+      server.secret = 'test-secret'
+      server.enabled = false
+      server.save!
+
+      assert_match(/\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/, server.id)
+    end
+  end
+
+  test 'Server create id is hostname' do
+    Rails.configuration.x.stub(:server_id_is_hostname, true) do
+      server1 = Server.new
+      server1.url = 'https://test.example.com/bigbluebutton/api'
+      server1.secret = 'test-secret'
+      server1.enabled = false
+      server1.save!
+
+      assert_equal('test.example.com', server.id)
+
+      server2 = Server.new
+      server2.url = 'https://TEST.example.CoM/bigbluebutton/api'
+      server2.secret = 'test2-secret'
+      server2.enabled = false
+      assert_raises(ApplicationRedisRecord::RecordNotSaved) do
+        server2.save!
+      end
+    end
+  end
+
   test 'Server update id' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')

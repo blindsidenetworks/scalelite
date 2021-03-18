@@ -19,15 +19,15 @@ Many BigBlueButton servers will create many recordings.  Scalelite can serve a l
 ## Before you begin
 
 The Scalelite installation process requires advanced technical knowledge.  You should, at a minimum, be very familar with
-  
+
    * Setup and administration of a BigBlueButton server
    * Setup and administration of a Linux server and using common tools, such as `systemd`, to manage processes on the server
    * How the [BigBlueButton API](http://docs.bigbluebutton.org/dev/api.html) works with a front-end
-   * How [docker](https://www.docker.com/) containers work 
+   * How [docker](https://www.docker.com/) containers work
    * How UDP and TCP/IP work together
    * How to administrate a Linux Firewall
    * How to setup a TURN server
-   
+
 If you are a beginner, you will have a difficult time getting any part of this deployment correct.  If you require help, see [Getting Help](#getting-help)
 
 ## Architecture of Scalelite
@@ -38,7 +38,7 @@ There are several components required to get Scalelite up and running:
 2. Scalelite LoadBalancer Server
 3. NFS Shared Volume
 4. PostgreSQL Database
-5. Redis Cache 
+5. Redis Cache
 
 An example Scalelite deployment will look like this:
 
@@ -51,7 +51,7 @@ For the Scalelite Server, the minimum recommended server requirements are:
 - 8 GB Memory
 
 For **each** BigBlueButton server, the minimum requirements can be found [here](http://docs.bigbluebutton.org/2.2/install.html#minimum-server-requirements).
-  
+
 For the external Postgres Database, the minimum recommended server requirements are:
 - 2 CPU Cores
 - 2 GB Memory
@@ -78,7 +78,7 @@ See [Setting up a shared volume for recordings](sharedvolume-README.md)
 
 Setting up a PostgreSQL Database depends heavily on the infrastructure you use to setup Scalelite. We recommend you refer to your infrastructure provider's documentation.
 
-Ensure the `DATABASE_URL` that you set in `/etc/default/scalelite` (in the [next step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your PostgreSQL Database. 
+Ensure the `DATABASE_URL` that you set in `/etc/default/scalelite` (in the [next step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your PostgreSQL Database.
 
 For more configuration options, see [configuration](#Configuration).
 
@@ -86,7 +86,7 @@ For more configuration options, see [configuration](#Configuration).
 
 Setting up a Redis Cache depends heavily on the infrastructure you use to setup Scalelite. We recommend you refer to your infrastructure provider's documentation.
 
-Ensure the `REDIS_URL` that you set in `/etc/default/scalelite` (in the [next step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your Redis Cache. 
+Ensure the `REDIS_URL` that you set in `/etc/default/scalelite` (in the [next step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your Redis Cache.
 
 For more configuration options, see [configuration](#Configuration).
 
@@ -110,16 +110,17 @@ To switch your Front-End application to use Scalelite instead of a single BigBlu
 * `URL_HOST`: The hostname that the application API endpoint is accessible from. Used to protect against DNS rebinding attacks. Should be left blank if deploying Scalelite behind a Network Loadbalancer.
 * `SECRET_KEY_BASE`: A secret used internally by Rails. Should be unique per deployment. Generate with `bundle exec rake secret` or `openssl rand -hex 64`.
 * `LOADBALANCER_SECRET`: The shared secret that applications will use when calling BigBlueButton APIs on the load balancer. Generate with `openssl rand -hex 32`
-* `LOADBALANCER_SECRETS`: Additional shared secrets, separated by `:`. Any of these secrets will work. In an environment where multiple applications need to integrate with a single scalelite server, it may be sensible to give each application its own secret. This way, revoking individual secrets later will not disturb other applications. 
+* `LOADBALANCER_SECRETS`: Additional shared secrets, separated by `:`. Any of these secrets will work. In an environment where multiple applications need to integrate with a single scalelite server, it may be sensible to give each application its own secret. This way, revoking individual secrets later will not disturb other applications.
 * `DATABASE_URL`: URL for connecting to the PostgreSQL database, see the [Rails documentation](https://guides.rubyonrails.org/configuring.html#configuring-a-database). The URL should be in the form of `postgresql://username:password@connection_url`. Note that instead of using this environment variable, you can configure the database server in `config/database.yml`.
-* `REDIS_URL`: URL for connecting to the Redis server, see the [Redis gem documentation](https://rubydoc.info/github/redis/redis-rb/master/Redis#initialize-instance_method). The URL should be in the form of `redis://username:password@connection_url`. Note that instead of using this environment variable, you can configure the redis server in `config/redis_store.yml` (see below). 
+* `REDIS_URL`: URL for connecting to the Redis server, see the [Redis gem documentation](https://rubydoc.info/github/redis/redis-rb/master/Redis#initialize-instance_method). The URL should be in the form of `redis://username:password@connection_url`. Note that instead of using this environment variable, you can configure the redis server in `config/redis_store.yml` (see below).
 
 #### Docker-Specific
 
 These variables are used by the service startup scripts in the Docker images, but are not used if you are deploying the application in a different way.
 
 * `NGINX_SSL`: Set this variable to "true" to enable the "nginx" image to listen on SSL. If you enable this, then you must bind mount the files `/etc/nginx/ssl/live/$URL_HOST/fullchain.pem` and `/etc/nginx/ssl/live/$URL_HOST/privkey.pem` (containing the certificate plus intermediates and the private key respectively) into the Docker image. Alternately, you can mount the entire `/etc/letsencrypt` directory from certbot to `/etc/nginx/ssl` instead.
-* `BEHIND_PROXY`: Set to true if scalelite is behind a proxy or load balancer.
+* `NGINX_BEHIND_PROXY`: Set to true if scalelite is behind a proxy or load balancer.
+* `NGINX_RECORDINGS_ONLY`: Set to true if scalelite-nginx will be used for proxying recordings only.
 * `POLL_INTERVAL`: Used by the "poller" image to set the interval at which BigBlueButton servers are polled, in seconds. Defaults to 60.
 * `RECORDING_IMPORT_POLL`: Whether or not to poll the recording spool directory for new recordings. Defaults to "true". If the recording poll directory is on a local filesystem where inotify works, you can set this to "false" to reduce CPU overhead.
 * `RECORDING_IMPORT_POLL_INTERVAL`: How often to check the recording spool directory for new recordings, in seconds (when running in poll mode). Defaults to 60.
@@ -146,6 +147,11 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `RECORDING_DISABLED`: Disable the recording feature and all its associated api's, by setting this value as `true`.
 * `GET_MEETINGS_API_DISABLED`: Disable GET_MEETINGS API by setting this value as `true`.
 * `POLLER_THREADS`: The number of threads to run in the poller process. The default is 5.
+* `CONNECT_TIMEOUT`: The timeout for establishing a network connection to the BigBlueButton server in the load balancer and poller in seconds. Default is 5 seconds. Floating point numbers can be used for timeouts less than 1 second.
+* `RESPONSE_TIMEOUT`: The timeout to wait for a response after sending a request to the BigBlueButton server in the load balancer and poller in seconds. Default is 10 seconds. Floating point numbers can be used for timeouts less than 1 second.
+* `LOAD_MIN_USER_COUNT`: Minimum user count of a meeting, used for calculating server load. Defaults to 15.
+* `LOAD_JOIN_BUFFER_TIME`: The time(in minutes) until the `LOAD_MIN_USER_COUNT` will be used for calculating server load. Defaults to 15.
+* `SERVER_ID_IS_HOSTNAME`: If set to "true", then instead of generating random UUIDs as the server ID when adding a server Scalelite will use the hostname of the server as the id. Server hostnames will be checked for uniqueness. Defaults to "false".
 
 ### Redis Connection (`config/redis_store.yml`)
 
@@ -164,7 +170,7 @@ Additionally, these options can be set:
 
 ## Upgrading
 
-Upgrading Scalelite to the latest version can be done using one command: 
+Upgrading Scalelite to the latest version can be done using one command:
 
 `systemctl restart scalelite.target`
 

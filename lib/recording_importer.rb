@@ -9,6 +9,8 @@ class RecordingImporter
   end
 
   def self.import(filename)
+    return if Rails.configuration.x.recording_disabled
+
     logger.info("Importing recording from file: #{filename}")
 
     recording = nil
