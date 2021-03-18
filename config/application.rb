@@ -92,6 +92,9 @@ module Scalelite
     # The time(in minutes) until the `load_min_user_count` will be used for calculating server load
     config.x.load_join_buffer_time = ENV.fetch('LOAD_JOIN_BUFFER_TIME', 15).to_i.minutes
 
+    # Whether to generate ids for servers based on the hostname rather than random UUIDs. Default to false.
+    config.x.server_id_is_hostname = ENV.fetch('SERVER_ID_IS_HOSTNAME', 'false').casecmp?('true')
+
     # Recording feature will be disabled, if set to 'true'. Defaults to false.
     config.x.recording_disabled = ENV.fetch('RECORDING_DISABLED', 'false').casecmp?('true')
   end

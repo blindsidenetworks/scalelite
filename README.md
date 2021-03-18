@@ -151,6 +151,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `RESPONSE_TIMEOUT`: The timeout to wait for a response after sending a request to the BigBlueButton server in the load balancer and poller in seconds. Default is 10 seconds. Floating point numbers can be used for timeouts less than 1 second.
 * `LOAD_MIN_USER_COUNT`: Minimum user count of a meeting, used for calculating server load. Defaults to 15.
 * `LOAD_JOIN_BUFFER_TIME`: The time(in minutes) until the `LOAD_MIN_USER_COUNT` will be used for calculating server load. Defaults to 15.
+* `SERVER_ID_IS_HOSTNAME`: If set to "true", then instead of generating random UUIDs as the server ID when adding a server Scalelite will use the hostname of the server as the id. Server hostnames will be checked for uniqueness. Defaults to "false".
 
 ### Redis Connection (`config/redis_store.yml`)
 
