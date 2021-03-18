@@ -392,7 +392,8 @@ class BigBlueButtonApiController < ApplicationController
       xml.response do
         xml.returncode('SUCCESS')
         xml.messageKey('noMeetings')
-        xml.message('No meetings were found on this server.')
+        xml.message('no meetings were found on this server')
+        xml.meetings
       end
     end
   end

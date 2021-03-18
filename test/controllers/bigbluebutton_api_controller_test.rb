@@ -227,7 +227,8 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
     assert_equal 'noMeetings', response_xml.at_xpath('/response/messageKey').text
-    assert_equal 'No meetings were found on this server.', response_xml.at_xpath('/response/message').text
+    assert_equal 'no meetings were found on this server', response_xml.at_xpath('/response/message').text
+    assert_equal '', response_xml.at_xpath('/response/meetings').text
   end
 
   test 'getMeetings only makes a request to online servers' do
@@ -1102,6 +1103,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>messageKey', 'noMeetings'
-    assert_select 'response>message', 'No meetings were found on this server.'
+    assert_select 'response>message', 'no meetings were found on this server'
+    assert_select 'response>meetings', ''
   end
 end
