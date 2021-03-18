@@ -111,7 +111,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   test 'isMeetingRunning responds with the correct meeting status' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 0)
-    meeting1 = Meeting.find_or_create_with_server('Demo Meeting', server1)
+    meeting1 = Meeting.find_or_create_with_server('Demo Meeting', server1, 'mp')
 
     stub_request(:get, encode_bbb_uri('isMeetingRunning', server1.url, server1.secret, 'meetingID' => meeting1.id))
       .to_return(body: '<response><returncode>SUCCESS</returncode><running>true</running></response>')
@@ -128,7 +128,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   test 'isMeetingRunning responds with appropriate error on timeout' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 0)
-    meeting1 = Meeting.find_or_create_with_server('Demo Meeting', server1)
+    meeting1 = Meeting.find_or_create_with_server('Demo Meeting', server1, 'mp')
 
     stub_request(:get, encode_bbb_uri('isMeetingRunning', server1.url, server1.secret, 'meetingID' => meeting1.id))
       .to_timeout
@@ -294,7 +294,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
                             secret: 'test-1-secret', enabled: true, load: 0)
 
     params = {
-      meetingID: 'test-meeting-1',
+      meetingID: 'test-meeting-1', moderatorPW: 'mp',
     }
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
@@ -322,7 +322,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
                             secret: 'test-1-secret', enabled: true, load: 0)
 
     params = {
-      meetingID: 'test-meeting-1',
+      meetingID: 'test-meeting-1', moderatorPW: 'mp',
     }
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
@@ -344,7 +344,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
                             secret: 'test-1-secret', enabled: true, load: 0, load_multiplier: 7.0)
 
     params = {
-      meetingID: 'test-meeting-1',
+      meetingID: 'test-meeting-1', moderatorPW: 'mp',
     }
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
@@ -365,7 +365,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
                             secret: 'test-1-secret', enabled: true, load: 0)
 
     params = {
-      meetingID: 'test-meeting-1',
+      meetingID: 'test-meeting-1', moderatorPW: 'mp',
     }
 
     stub_request(:post, encode_bbb_uri('create', server1.url, server1.secret, params))
@@ -560,7 +560,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   test 'end responds with sentEndMeetingRequest if meeting exists and password is correct' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
-    Meeting.find_or_create_with_server('test-meeting-1', server1)
+    Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
 
     params = {
       meetingID: 'test-meeting-1',
@@ -588,7 +588,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   test 'end returns error on timeout but still deletes meeting' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
-    Meeting.find_or_create_with_server('test-meeting-1', server1)
+    Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
 
     params = {
       meetingID: 'test-meeting-1',
@@ -643,7 +643,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   test 'join redirects user to the corrent join url' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
-    meeting = Meeting.find_or_create_with_server('test-meeting-1', server1)
+    meeting = Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
 
     params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name' }
 

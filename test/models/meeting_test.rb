@@ -83,7 +83,7 @@ class MeetingTest < ActiveSupport::TestCase
     end
 
     server = Server.find('test-server-1')
-    meeting = Meeting.find_or_create_with_server('Demo Meeting', server)
+    meeting = Meeting.find_or_create_with_server('Demo Meeting', server, 'mp')
     assert_equal('Demo Meeting', meeting.id)
     assert_same(server, meeting.server)
     assert_equal('test-server-1', meeting.server_id)
@@ -109,7 +109,7 @@ class MeetingTest < ActiveSupport::TestCase
     assert_equal('test-server-1', meeting.server_id)
 
     server = Server.find('test-server-2')
-    meeting = Meeting.find_or_create_with_server('Demo Meeting', server)
+    meeting = Meeting.find_or_create_with_server('Demo Meeting', server, 'mp')
     assert_equal('Demo Meeting', meeting.id)
     assert_not_same(server, meeting.server)
     assert_equal('test-server-1', meeting.server_id)
