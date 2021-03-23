@@ -29,8 +29,8 @@ class RecordingImporter
           FileUtils.mkdir_p(publish_format_dir)
           FileUtils.mv("#{playback_format.format}/#{recording.record_id}", publish_format_dir, force: true)
         end
-
-        recording.update!(published: true)
+        publish_status = Rails.configuration.x.recording_import_unpublished ? false : true
+        recording.update!(published: publish_status)
       end
     end
 

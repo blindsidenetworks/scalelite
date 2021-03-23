@@ -97,10 +97,14 @@ module Scalelite
 
     # Recording feature will be disabled, if set to 'true'. Defaults to false.
     config.x.recording_disabled = ENV.fetch('RECORDING_DISABLED', 'false').casecmp?('true')
+
     # List of BBB server attributes that should not be modified by create API call
     config.x.create_exclude_params = ENV['CREATE_EXCLUDE_PARAMS']&.split(',') || []
 
     # List of BBB server attributes that should not be modified by join API call
     config.x.join_exclude_params = ENV['JOIN_EXCLUDE_PARAMS']&.split(',') || []
+
+    # Recordings imported will be unpublished by default, if set to 'true'. Defaults to false.
+    config.x.recording_import_unpublished = ENV.fetch('RECORDING_IMPORT_UNPUBLISHED', 'false').casecmp?('true')
   end
 end
