@@ -88,8 +88,12 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def get_meetings
-    # Get all servers
-    servers = Server.all
+    # Get all available servers
+    begin
+      servers = Server.available
+    rescue ApplicationRedisRecord::RecordNotFound
+      raise InternalError, 'Could not find any available servers.'
+    end
 
     logger.warn('No servers are currently available') if servers.empty?
 
