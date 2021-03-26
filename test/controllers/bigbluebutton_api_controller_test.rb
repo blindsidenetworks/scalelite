@@ -172,8 +172,10 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   # getMeetings
 
   test 'getMeetings responds with the correct meetings' do
-    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true)
-    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true)
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true,
+                            enabled: true)
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true,
+                            enabled: true)
 
     stub_request(:get, encode_bbb_uri('getMeetings', server1.url, server1.secret))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
@@ -194,9 +196,12 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getMeetings responds with appropriate error on timeout' do
-    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true)
-    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true)
-    server3 = Server.create(url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret', load: 1, online: true)
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true,
+                            enabled: true)
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true,
+                            enabled: true)
+    server3 = Server.create(url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret', load: 1, online: true,
+                            enabled: true)
 
     stub_request(:get, encode_bbb_uri('getMeetings', server1.url, server1.secret))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
@@ -232,10 +237,12 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getMeetings only makes a request to online servers' do
-    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true)
-    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true)
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true,
+                            enabled: true)
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true,
+                            enabled: true)
     server3 = Server.create(url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1,
-                            online: false)
+                            online: false, enabled: true)
 
     stub_request(:get, encode_bbb_uri('getMeetings', server1.url, server1.secret))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
