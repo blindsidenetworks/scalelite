@@ -40,6 +40,7 @@ RUN apk add --no-cache \
     ruby-json \
     tini \
     tzdata \
+    shared-mime-info \
     && addgroup scalelite \
     && adduser -h /srv/scalelite -G scalelite -D scalelite
 WORKDIR /srv/scalelite
