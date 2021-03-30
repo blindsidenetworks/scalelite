@@ -172,8 +172,10 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   # getMeetings
 
   test 'getMeetings responds with the correct meetings' do
-    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true)
-    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true)
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true,
+                            enabled: true)
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true,
+                            enabled: true)
 
     stub_request(:get, encode_bbb_uri('getMeetings', server1.url, server1.secret))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
@@ -194,9 +196,12 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getMeetings responds with appropriate error on timeout' do
-    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true)
-    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true)
-    server3 = Server.create(url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret', load: 1, online: true)
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true,
+                            enabled: true)
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true,
+                            enabled: true)
+    server3 = Server.create(url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret', load: 1, online: true,
+                            enabled: true)
 
     stub_request(:get, encode_bbb_uri('getMeetings', server1.url, server1.secret))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
@@ -232,10 +237,12 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getMeetings only makes a request to online servers' do
-    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true)
-    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true)
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true,
+                            enabled: true)
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true,
+                            enabled: true)
     server3 = Server.create(url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1,
-                            online: false)
+                            online: false, enabled: true)
 
     stub_request(:get, encode_bbb_uri('getMeetings', server1.url, server1.secret))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
@@ -394,11 +401,13 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     create_params = {
       meetingID: 'test-meeting-1',
+      moderatorPW: 'test-password',
     }
 
     params = {
-      duration: 3600,
       meetingID: 'test-meeting-1',
+      moderatorPW: 'test-password',
+      duration: 3600,
     }
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
@@ -423,11 +432,13 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     create_params = {
       duration: 5000,
       meetingID: 'test-meeting-1',
+      moderatorPW: 'test-password',
     }
 
     params = {
       duration: 3600,
       meetingID: 'test-meeting-1',
+      moderatorPW: 'test-password',
     }
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
@@ -452,11 +463,13 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     create_params = {
       duration: 0,
       meetingID: 'test-meeting-1',
+      moderatorPW: 'test-password',
     }
 
     params = {
       duration: 3600,
       meetingID: 'test-meeting-1',
+      moderatorPW: 'test-password',
     }
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
@@ -481,11 +494,13 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     create_params = {
       duration: 1200,
       meetingID: 'test-meeting-1',
+      moderatorPW: 'test-password',
     }
 
     params = {
       duration: 1200,
       meetingID: 'test-meeting-1',
+      moderatorPW: 'test-password',
     }
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
@@ -501,6 +516,76 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
       assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
     end
+  end
+
+  test 'create creates the room successfully  with only permitted params for create' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+
+    params = {
+      meetingID: 'test-meeting-1', test4: '', test2: '', moderatorPW: 'test-password',
+    }
+    filtered_params = { meetingID: 'test-meeting-1', moderatorPW: 'test-password' }
+    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, filtered_params))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
+      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+
+    mocked_method = MiniTest::Mock.new
+    return_value = { 'meetingID' => 'test-meeting-1' }
+
+    Rails.configuration.x.stub(:create_exclude_params, %w[test4 test2]) do
+      mocked_method.expect(:pass_through_params, return_value, [Rails.configuration.x.create_exclude_params])
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_create_url, params: params
+      end
+      mocked_method.pass_through_params(%w[test4 test2])
+      mocked_method.verify
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+    # Reload
+    server1 = Server.find(server1.id)
+    meeting = Meeting.find(params[:meetingID])
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal params[:meetingID], meeting.id
+    assert_equal server1.id, meeting.server.id
+    assert_equal 1, server1.load
+  end
+
+  test 'create creates the room successfully with given params if excluded params list is empty' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+
+    params = {
+      meetingID: 'test-meeting-1', test4: '', test2: '', moderatorPW: 'test-password',
+    }
+    filtered_params = { meetingID: 'test-meeting-1', test4: '', test2: '', moderatorPW: 'test-password' }
+    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, filtered_params))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
+      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+
+    mocked_method = MiniTest::Mock.new
+    return_value = { 'meetingID': 'test-meeting-1', test4: '', test2: '' }
+
+    Rails.configuration.x.stub(:create_exclude_params, []) do
+      mocked_method.expect(:pass_through_params, return_value, [Rails.configuration.x.create_exclude_params])
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_create_url, params: params
+      end
+      mocked_method.pass_through_params([])
+      mocked_method.verify
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+    # Reload
+    server1 = Server.find(server1.id)
+    meeting = Meeting.find(params[:meetingID])
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal params[:meetingID], meeting.id
+    assert_equal server1.id, meeting.server.id
+    assert_equal 1, server1.load
   end
 
   # end
@@ -652,6 +737,39 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, params).to_s
+  end
+
+  test 'join redirects user to the current join url with only permitted params for join' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+    meeting = Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
+    params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name', test1: '', test2: '' }
+    Rails.configuration.x.stub(:join_exclude_params, %w[test1 test2]) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_join_url, params: params
+      end
+      filtered_params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name' }
+      assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, filtered_params).to_s
+    end
+  end
+
+  test 'join redirects user to the current join url with given params if excluded params list is empty' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+    meeting = Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
+    params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name', test1: '', test2: '' }
+    Rails.configuration.x.stub(:join_exclude_params, []) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_join_url, params: params
+      end
+      assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, params).to_s
+    end
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_join_url, params: params
+    end
+    filtered_params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name' }
+    assert_equal Rails.configuration.x.join_exclude_params, %w[test1 test2]
+    assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, filtered_params).to_s
   end
 
   # getRecordings

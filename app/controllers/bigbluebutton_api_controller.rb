@@ -105,7 +105,7 @@ class BigBlueButtonApiController < ApplicationController
 
     # Make individual getMeetings call for each server and append result to all_meetings
     servers.each do |server|
-      next unless server.online # only send getMeetings requests to servers that are online
+      next unless server.online && server.enabled # only send getMeetings requests to servers that are online and enabled
 
       uri = encode_bbb_uri('getMeetings', server.url, server.secret)
 
@@ -168,8 +168,12 @@ class BigBlueButtonApiController < ApplicationController
     end
 
     logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
-    # Pass along all params except the built in rails ones
-    uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params)
+
+    # Get list of params that should not be modified by create API call
+    excluded_params = Rails.configuration.x.create_exclude_params
+
+    # Pass along all params except the built in rails ones and excluded_params
+    uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params(excluded_params))
 
     begin
       # Read the body if POST
@@ -244,8 +248,11 @@ class BigBlueButtonApiController < ApplicationController
 
     server = meeting.server
 
-    # Pass along all params except the built in rails ones
-    uri = encode_bbb_uri('join', server.url, server.secret, pass_through_params)
+    # Get list of params that should not be modified by join API call
+    excluded_params = Rails.configuration.x.join_exclude_params
+
+    # Pass along all params except the built in rails ones and excluded_params
+    uri = encode_bbb_uri('join', server.url, server.secret, pass_through_params(excluded_params))
 
     # Redirect the user to the join url
     logger.debug("Redirecting user to join url: #{uri}")
@@ -382,8 +389,10 @@ class BigBlueButtonApiController < ApplicationController
 
   # Filter out unneeded params when passing through to join and create calls
   # Has to be to_unsafe_hash since to_h only accepts permitted attributes
-  def pass_through_params
-    params.except(:format, :controller, :action, :checksum).to_unsafe_hash
+  def pass_through_params(excluded_params)
+    params.except(*(excluded_params +
+    [:format, :controller, :action, :checksum]))
+          .to_unsafe_hash
   end
 
   # Success response if there are no meetings on any servers
