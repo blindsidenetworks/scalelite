@@ -1,0 +1,112 @@
+env:
+  RUBY_VERSION: 2.7.2
+
+name: CI Build Release
+on:
+  release:
+    types: [released]
+
+jobs:
+  main:
+    name: Build Docker Image
+    env:
+      DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract Docker Repository
+        id: ci_docker_repository
+        shell: bash
+        run: echo "##[set-output name=repository;]$(echo ${DOCKER_REPOSITORY:-$GITHUB_REPOSITORY})"
+
+      - name: Extract Tag Release Major
+        id: ci_tag_release_major
+        shell: bash
+        run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/} | cut -f1-1 -d'.')"
+
+      - name: Extract Tag Release Minor
+        id: ci_tag_release_minor
+        shell: bash
+        run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/} | cut -f1-2 -d'.')"
+
+      - name: Extract Tag Release Revision
+        id: ci_tag_release_revision
+        shell: bash
+        run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/})"
+
+      - name: Build and Push nginx
+        id: docker_build_nginx
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          target: nginx
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-nginx"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-nginx"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-nginx"
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Build and Push api
+        id: docker_build_api
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          target: api
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-api"
+          build-args: "BUILD_NUMBER=${{ steps.ci_tag_release_revision.outputs.tag }}"
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Build and Push poller
+        id: docker_build_poller
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          target: poller
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-poller"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-poller"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-poller"
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Build and Push recording-importer
+        id: docker_build_recording_importer
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          target: recording-importer
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-recording-importer"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-recording-importer"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-recording-importer"
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
