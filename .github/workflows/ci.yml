@@ -5,7 +5,9 @@ env:
 name: CI
 on:
   push:
-    branches: "*"
+    branches-ignore:
+      - master
+      - v1.0-stable
   pull_request:
     branches: "*"
 
@@ -58,14 +60,3 @@ jobs:
           DATABASE_URL: postgres://postgres:password@localhost:5432/scalelite_test
         run:  |
           bundler exec rails test:db
-
-      # - name: Trigger Build Workflow
-      #   env:
-      #     CR_PAT: ${{ secrets.CR_PAT }}
-      #   if: ${{env.CR_PAT}} && success()
-      #   uses: peter-evans/repository-dispatch@v1
-      #   with:
-      #     token: ${{env.CR_PAT}} || ''
-      #     repository: ${{ github.repository }}
-      #     event-type: trigger-build
-      #     client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
