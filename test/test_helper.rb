@@ -6,6 +6,7 @@ require 'rails/test_help'
 require 'fakeredis/minitest'
 require 'webmock/minitest'
 require 'minitest/stub_any_instance'
+require 'minitest/mock'
 
 module ActiveSupport
   class TestCase
