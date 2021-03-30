@@ -84,6 +84,9 @@ jobs:
           push: true
           target: api
           tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}"
             "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-api"
             "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-api"
             "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-api"
