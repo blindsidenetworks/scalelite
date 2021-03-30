@@ -276,7 +276,7 @@ class ServerTest < ActiveSupport::TestCase
       server1.enabled = false
       server1.save!
 
-      assert_equal('test.example.com', server.id)
+      assert_equal('test.example.com', server1.id)
 
       server2 = Server.new
       server2.url = 'https://TEST.example.CoM/bigbluebutton/api'
