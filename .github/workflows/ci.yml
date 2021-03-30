@@ -8,7 +8,6 @@ on:
     branches-ignore:
       - master
       - v1.0-stable
-      - SL-113
   pull_request:
     branches: "*"
 
