@@ -30,7 +30,6 @@ COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback
 COPY nginx /etc/nginx/
 EXPOSE 80
 ENV NGINX_HOSTNAME=localhost
-ENV NGINX_RECORDINGS_ONLY=true
 CMD [ "/etc/nginx/start", "-g", "daemon off;" ]
 
 FROM alpine AS base
