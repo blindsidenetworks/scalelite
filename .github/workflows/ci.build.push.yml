@@ -100,7 +100,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       # Alternate Images for bbb-bionic-230 with alpine
-      - name: Build and Push nginx
+      - name: Alternate Alpine Build and Push nginx
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
@@ -111,7 +111,7 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
-      - name: Build and Push api
+      - name: Alternate Alpine Build and Push api
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
@@ -125,7 +125,7 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
-      - name: Build and Push poller
+      - name: Alternate Alpine Build and Push poller
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
@@ -136,7 +136,7 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
-      - name: Build and Push recording-importer
+      - name: Alternate Alpine Build and Push recording-importer
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
@@ -148,7 +148,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       # Alternate Images for bbb-bionic-230 with amazonlinux
-      - name: Build and Push nginx
+      - name: Alternate Amazon Linux Build and Push nginx
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
@@ -159,7 +159,7 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
-      - name: Build and Push api
+      - name: Alternate Amazon Linux Build and Push api
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
@@ -173,7 +173,7 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
-      - name: Build and Push poller
+      - name: Alternate Amazon Linux Build and Push poller
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
@@ -184,7 +184,7 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
-      - name: Build and Push recording-importer
+      - name: Alternate Amazon Linux Build and Push recording-importer
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
