@@ -23,7 +23,8 @@ RUN apk add --no-cache nginx tini gettext \
 RUN rm /etc/nginx/conf.d/default.conf
 COPY --from=bbb-playback /etc/bigbluebutton/nginx /etc/bigbluebutton/nginx/
 COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback/
-COPY nginx /etc/nginx/
+RUN mkdir -p /etc/nginx/config.d
+COPY nginx/* /etc/nginx/
 EXPOSE 80
 EXPOSE 443
 ENV NGINX_HOSTNAME=localhost
