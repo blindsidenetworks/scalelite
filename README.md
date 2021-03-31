@@ -230,6 +230,8 @@ The `loadMultiplier` can be used to give individual servers a higher or lower pr
 This command will print out the ID of the newly created server, and `OK` if it was successful.
 Note that servers are added in the disabled state; see "Enable a server" below to enable it.
 
+Note: Be sure if you don't have space between url, secret and loadMultipler value and comma. It can be cause "rake aborted!" error.
+
 ### Remove a server
 
 ```sh
