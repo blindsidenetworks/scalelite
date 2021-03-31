@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 class Meeting < ApplicationRedisRecord
-  define_attribute_methods :id, :server_id
+  define_attribute_methods :id, :server_id, :moderator_pw
 
-  # Meeting ID provided on create request
-  application_redis_attr :id
+  # Meeting ID and moderator_pw provided on create request
+  application_redis_attr :id, :moderator_pw
 
   # ID of the server that the meeting was created on
   attr_reader :server_id
@@ -72,14 +72,15 @@ class Meeting < ApplicationRedisRecord
 
   # Atomic operation to either find an existing meeting, or create one assigned to a specific server
   # Intended for use with the BigBlueButton "create" api command.
-  def self.find_or_create_with_server(id, server)
+  def self.find_or_create_with_server(id, server, moderator_pw)
     raise ArgumentError, 'id is nil' if id.nil?
     raise ArgumentError, "Provided server doesn't have an id" if server.nil? || server.id.nil?
 
     with_connection do |redis|
       meeting_key = key(id)
-      created, hash, _sadd = redis.multi do
+      created, _password_set, hash, _sadd_id = redis.multi do
         redis.hsetnx(meeting_key, 'server_id', server.id)
+        redis.hsetnx(meeting_key, 'moderator_pw', moderator_pw)
         redis.hgetall(meeting_key)
         redis.sadd('meetings', id)
       end

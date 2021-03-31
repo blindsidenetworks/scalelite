@@ -45,6 +45,8 @@ namespace :poll do
         meetings.each do |meeting|
           created_time = Time.zone.at(meeting.xpath('.//createTime').text.to_i / 1000)
           actual_attendees = meeting.xpath('.//participantCount').text.to_i + meeting.xpath('.//moderatorCount').text.to_i
+          next if meeting.xpath('.//isBreakout').text.eql?('true')
+
           total_attendees += if created_time > x_minutes_ago
                                [actual_attendees, load_min_user_count].max
                              else
