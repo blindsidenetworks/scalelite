@@ -1,4 +1,4 @@
-FROM alpine:3.13 AS alpine
+FROM alpine:3.11 AS alpine
 
 FROM ubuntu:18.04 AS bbb-playback
 ENV DEBIAN_FRONTEND=noninteractive
@@ -27,8 +27,7 @@ RUN apk add --no-cache nginx tini gettext \
 RUN rm /etc/nginx/conf.d/default.conf
 COPY --from=bbb-playback /etc/bigbluebutton/nginx /etc/bigbluebutton/nginx/
 COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback/
-RUN mkdir -p /etc/nginx/config.d
-COPY nginx/* /etc/nginx/
+COPY nginx /etc/nginx/
 EXPOSE 80
 ENV NGINX_HOSTNAME=localhost
 CMD [ "/etc/nginx/start", "-g", "daemon off;" ]
