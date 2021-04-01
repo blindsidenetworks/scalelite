@@ -1,10 +1,40 @@
 # Deploying Scalelite Docker Containers
-The recommended method to deploy this release of Scalelite is to use systemd to start and manage the Docker containers. Some initial preparation is required on each host that will run Scalelite containers.
+
+Scalelite is released through Docker Images published on [DockerHub](https://hub.docker.com/r/blindsidenetwks/scalelite).
+
+As part of the first release (v1.0) there are four images.
+
+- blindsidenetwks/scalelite:[\<version tag>-nginx](#web-frontend-scalelite-api-and-scalelite-nginx)
+- blindsidenetwks/scalelite:[\<version tag>-api](#web-frontend-scalelite-api-and-scalelite-nginx)
+- blindsidenetwks/scalelite:[\<version tag>-poller](#meeting-status-poller-scalelite-poller)
+- blindsidenetwks/scalelite:[\<version tag>-recording-importer](#recording-importer-scalelite-recording-importer)
+
+But because Scalelite can be deployed in several different ways, and since the api, poller and recording-importer images are essetially the same base code (with a different starter), starting with v1.1 there is also a general referrenced only by the '<version tag>'.
+
+- blindsidenetwks/scalelite:<version tag>
+
+There are also some extra sets of images that include components for handling BigBlueButton 2.3 recordings, bundled in Alpine and Amazon Linux as the base.
+
+- blindsidenetwks/scalelite:\<version tag>-bionic230-alpine
+- blindsidenetwks/scalelite:\<version tag>-bionic230-alpine-nginx
+- blindsidenetwks/scalelite:\<version tag>-bionic230-alpine-api
+- blindsidenetwks/scalelite:\<version tag>-bionic230-alpine-poller
+- blindsidenetwks/scalelite:\<version tag>-bionic230-alpine-recording-importer
+
+and
+
+- blindsidenetwks/scalelite:\<version tag>-bionic230-amazonlinux
+- blindsidenetwks/scalelite:\<version tag>-bionic230-amazonlinux-nginx
+- blindsidenetwks/scalelite:\<version tag>-bionic230-amazonlinux-api
+- blindsidenetwks/scalelite:\<version tag>-bionic230-amazonlinux-poller
+- blindsidenetwks/scalelite:\<version tag>-bionic230-amazonlinux-recording-importer
+
+The recommended method to deploy Scalelite is to use systemd to start and manage the Docker containers. Some initial preparation is required on each host that will run Scalelite containers.
 
 ## Install Docker on the host system
-To install the several components required by Scalelite, Docker must be installed on the host system. 
+To install the several components required by Scalelite, Docker must be installed on the host system.
 
-To install Docker, please follow the instructions provided by Docker on their website: 
+To install Docker, please follow the instructions provided by Docker on their website:
 
 https://docs.docker.com/install/linux/docker-ce/ubuntu/
 
@@ -13,7 +43,7 @@ For communication between Scalelite containers, a private network should be crea
 
 `docker network create scalelite`
 
-Create a file `/etc/default/scalelite` with the environment variables to configure the application. Reference the [Required Configuration](README.md#required) section for details as needed. For most deployments, you will need to include the following variables at a minimum. 
+Create a file `/etc/default/scalelite` with the environment variables to configure the application. Reference the [Required Configuration](README.md#required) section for details as needed. For most deployments, you will need to include the following variables at a minimum.
 
 ```
 URL_HOST
@@ -49,13 +79,13 @@ The scalelite-api container holds the application code responsible for respondin
 
 Create a systemd unit file `/etc/systemd/system/scalelite-api.service` with the content found in the [scalelite-api.service](systemd/scalelite-api.service) file.
 
-And enable it by running 
+And enable it by running
 
 `systemctl enable scalelite-api.service`
 
 Create a systemd unit file `/etc/systemd/system/scalelite-nginx.service` with the content found in the [scalelite-nginx.service](systemd/scalelite-nginx.service) file.
 
-And enable it by running systemctl 
+And enable it by running systemctl
 
 `systemctl enable scalelite-nginx.service`
 
@@ -75,7 +105,7 @@ If this is a fresh install, you can load the database schema into PostgreSQL by 
 
 `docker exec -it scalelite-api bin/rake db:setup`
 
-You should restart all Scalelite services again afterwards by running 
+You should restart all Scalelite services again afterwards by running
 
 `systemctl restart scalelite.target`
 
@@ -85,7 +115,7 @@ Only a single poller is required in a deployment, but running multiple pollers w
 
 Create a systemd unit file `/etc/systemd/system/scalelite-poller.service` with the content found in the [scalelite-poller.service](systemd/scalelite-poller.service) file.
 
-And enable it by running 
+And enable it by running
 
 `systemctl enable scalelite-poller.service`
 
@@ -112,7 +142,7 @@ You **MAY** colocate the recording importer and meeting status poller on the sam
 
 Create a systemd unit file `/etc/systemd/system/scalelite-recording-importer.service` with the content found in the [scalelite-recording-importer.service](systemd/scalelite-recording-importer.service) file.
 
-And enable it by running 
+And enable it by running
 
 `systemctl enable scalelite-recording-importer.service`
 
