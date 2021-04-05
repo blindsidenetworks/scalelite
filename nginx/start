@@ -25,6 +25,7 @@ else
 	nginx_template=/etc/nginx/conf.d/scalelite.template
 fi
 envsubst '$URL_HOST' <$nginx_template >/etc/nginx/conf.d/scalelite.conf
+envsubst '$URL_HOST' <$nginx_template >/etc/nginx/http.d/scalelite.conf
 unset nginx_template
 
 mkdir -p /run/nginx

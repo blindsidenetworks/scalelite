@@ -35,7 +35,9 @@ COPY --from=bbb-playback /etc/bigbluebutton/nginx /etc/bigbluebutton/nginx/
 COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback/
 RUN mkdir -p /etc/nginx/config.d
 COPY nginx/* /etc/nginx/
+RUN cp -R /etc/nginx/conf.d/* /etc/nginx/http.d/
 EXPOSE 80
+EXPOSE 443
 ENV NGINX_HOSTNAME=localhost
 CMD [ "/etc/nginx/start", "-g", "daemon off;" ]
 
