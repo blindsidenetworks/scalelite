@@ -1,4 +1,4 @@
-FROM alpine:3.11 AS alpine
+FROM alpine:3.13 AS alpine
 
 FROM ubuntu:18.04 AS bbb-playback
 ENV DEBIAN_FRONTEND=noninteractive
