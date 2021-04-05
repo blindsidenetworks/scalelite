@@ -33,9 +33,9 @@ RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log
 COPY --from=bbb-playback /etc/bigbluebutton/nginx /etc/bigbluebutton/nginx/
 COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback/
-RUN mkdir -p /etc/nginx/conf.d
+COPY nginx/start /etc/nginx/start
+COPY nginx/dhparam.pem /etc/nginx/dhparam.pem
 COPY nginx/conf.d /etc/nginx/conf.d/
-COPY nginx /etc/nginx/
 EXPOSE 80
 EXPOSE 443
 ENV NGINX_HOSTNAME=localhost
