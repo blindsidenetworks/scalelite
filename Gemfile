@@ -35,6 +35,13 @@ gem 'tabulo', '~> 2.3.0'
 # Used by recording watch task. Version limit is for compat with rails auto-reloader.
 gem 'listen', '>= 3.0.5', '< 3.2'
 
+# Used to run background jobs
+gem 'delayed_job_active_record'
+
+gem 'daemons'
+
+gem 'jwt'
+
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]

@@ -174,8 +174,15 @@ class BigBlueButtonApiController < ApplicationController
 
     # Pass along all params except the built in rails ones and excluded_params
     uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params(excluded_params))
+    callback_data = nil
 
     begin
+      if params['meta_bn-recording-ready-url']
+        callback_attributes = { recording_ready_url: params['meta_bn-recording-ready-url'] }
+        callback_data = CallbackData.create!(meeting_id: meeting.id, callback_attributes: callback_attributes)
+        params['meta_bn-recording-ready-url'] = nil
+      end
+
       # Read the body if POST
       body = request.post? ? request.body.read : ''
 
@@ -185,6 +192,7 @@ class BigBlueButtonApiController < ApplicationController
       # Reraise the error to return error xml to caller
       raise
     rescue StandardError => e
+      callback_data.destroy! if callback_data.present?
       logger.warn("Error #{e} creating meeting #{params[:meetingID]} on server #{server.id}.")
       raise InternalError, 'Unable to create meeting on server.'
     end

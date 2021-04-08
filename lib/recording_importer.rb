@@ -14,7 +14,6 @@ class RecordingImporter
     logger.info("Importing recording from file: #{filename}")
 
     recording = nil
-
     Dir.mktmpdir(Rails.configuration.x.recording_work_dir) do |tmpdir|
       FileUtils.cd(tmpdir) do
         system('tar', '--verbose', '--extract', '--file', filename) \
@@ -29,11 +28,12 @@ class RecordingImporter
           FileUtils.mkdir_p(publish_format_dir)
           FileUtils.mv("#{playback_format.format}/#{recording.record_id}", publish_format_dir, force: true)
         end
-
         recording.update!(published: true)
+        callback_data = CallbackData.find_by(meeting_id: recording.meeting_id)
+        callback_data&.update(recording_id: recording.id)
       end
     end
-
     FileUtils.rm(filename)
+    PostPublishScripts.run(recording.id) if recording
   end
 end
