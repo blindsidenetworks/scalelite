@@ -169,6 +169,21 @@ class BigBlueButtonApiController < ApplicationController
 
     logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
 
+    callback_data = nil
+    callback_url = params['meta_bn-recording-ready-url']
+    # For compatibility with some 3rd party implementations, look up for meta_bbb-recording-ready-url or
+    # meta_canvas-recording-ready, when meta_bn-recording-ready-url is not included.
+    callback_url ||= params['meta_bbb-recording-ready-url']
+    callback_url ||= params['meta_canvas-recording-ready-url']
+
+    if callback_url.present?
+      callback_attributes = { recording_ready_url: callback_url }
+      callback_data = CallbackData.find_or_create_by!(meeting_id: meeting.id, callback_attributes: callback_attributes)
+      params.delete('meta_bbb-recording-ready-url')
+      params.delete('meta_canvas-recording-ready-url')
+      params.delete('meta_bn-recording-ready-url')
+    end
+
     # Get list of params that should not be modified by create API call
     excluded_params = Rails.configuration.x.create_exclude_params
 
@@ -185,6 +200,7 @@ class BigBlueButtonApiController < ApplicationController
       # Reraise the error to return error xml to caller
       raise
     rescue StandardError => e
+      callback_data&.destroy!
       logger.warn("Error #{e} creating meeting #{params[:meetingID]} on server #{server.id}.")
       raise InternalError, 'Unable to create meeting on server.'
     end

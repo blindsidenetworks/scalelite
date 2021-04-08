@@ -10,10 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_11_23_180008) do
+ActiveRecord::Schema.define(version: 2021_04_25_184558) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "callback_data", force: :cascade do |t|
+    t.string "meeting_id"
+    t.integer "recording_id"
+    t.text "callback_attributes"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
 
   create_table "metadata", force: :cascade do |t|
     t.bigint "recording_id"
