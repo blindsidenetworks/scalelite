@@ -9,10 +9,14 @@ class RecordingImporter
   end
 
   def self.import(filename)
-    return if Rails.configuration.x.recording_disabled
+    lockfile_name = '/tmp/global.lock'
+    f = File.open(lockfile_name, File::CREAT)
+
+    # returns false if locked, 0 if not
+    locked = !f.flock(File::LOCK_EX | File::LOCK_NB)
+    return if locked || Rails.configuration.x.recording_disabled
 
     logger.info("Importing recording from file: #{filename}")
-
     recording = nil
     unpublish_status = Rails.configuration.x.recording_import_unpublished
 
@@ -34,6 +38,9 @@ class RecordingImporter
         end
         recording.update!(published: false) if unpublish_status
       end
+    ensure
+      f.flock(File::LOCK_UN)
+      f.close
     end
 
     FileUtils.rm(filename)
