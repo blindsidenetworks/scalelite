@@ -14,6 +14,7 @@ class RecordingImporter
     logger.info("Importing recording from file: #{filename}")
 
     recording = nil
+    unpublish_status = Rails.configuration.x.recording_import_unpublished
 
     Dir.mktmpdir(Rails.configuration.x.recording_work_dir) do |tmpdir|
       FileUtils.cd(tmpdir) do
@@ -26,11 +27,12 @@ class RecordingImporter
           recording, playback_format = Recording.create_from_metadata_xml(metadata, published: false)
 
           publish_format_dir = "#{Rails.configuration.x.recording_publish_dir}/#{playback_format.format}"
-          FileUtils.mkdir_p(publish_format_dir)
-          FileUtils.mv("#{playback_format.format}/#{recording.record_id}", publish_format_dir, force: true)
+          unpublish_format_dir = "#{Rails.configuration.x.recording_unpublish_dir}/#{playback_format.format}"
+          format_dir = unpublish_status ? unpublish_format_dir : publish_format_dir
+          FileUtils.mkdir_p(format_dir)
+          FileUtils.mv("#{playback_format.format}/#{recording.record_id}", format_dir, force: true)
         end
-
-        recording.update!(published: true)
+        recording.update!(published: false) if unpublish_status
       end
     end
 

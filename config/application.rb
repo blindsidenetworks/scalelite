@@ -102,5 +102,8 @@ module Scalelite
 
     # List of BBB server attributes that should not be modified by join API call
     config.x.join_exclude_params = ENV['JOIN_EXCLUDE_PARAMS']&.split(',') || []
+
+    # Recordings imported will be unpublished by default, if set to 'true'. Defaults to false.
+    config.x.recording_import_unpublished = ENV.fetch('RECORDING_IMPORT_UNPUBLISHED', 'false').casecmp?('true')
   end
 end
