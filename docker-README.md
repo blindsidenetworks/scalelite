@@ -9,11 +9,11 @@ As part of the first release (v1.0) there are four images.
 - blindsidenetwks/scalelite:[\<version tag>-poller](#meeting-status-poller-scalelite-poller)
 - blindsidenetwks/scalelite:[\<version tag>-recording-importer](#recording-importer-scalelite-recording-importer)
 
-But because Scalelite can be deployed in several different ways, and since the api, poller and recording-importer images are essetially the same base code (with a different starter), starting with v1.1 there is also a general referrenced only by the '<version tag>'.
+But because Scalelite can be deployed in several different ways, and since the api, poller and recording-importer images are essentially the same base code (with a different starter), starting with v1.1 there is also a general image that is referenced only by the '<version tag>'.
 
-- blindsidenetwks/scalelite:<version tag>
+- blindsidenetwks/scalelite:\<version tag>
 
-There are also some extra sets of images that include components for handling BigBlueButton 2.3 recordings, bundled in Alpine and Amazon Linux as the base.
+There are also some extra sets of images that include components for handling BigBlueButton 2.3 recordings, bundled in Alpine and Amazon Linux as the base image.
 
 - blindsidenetwks/scalelite:\<version tag>-bionic230-alpine
 - blindsidenetwks/scalelite:\<version tag>-bionic230-alpine-nginx
@@ -56,8 +56,14 @@ REDIS_URL
 Add the following lines to configure the docker image tag to use and the location of the recording directory to mount into the containers:
 
 ```
-SCALELITE_TAG=v1
+SCALELITE_TAG=v1.1
 SCALELITE_RECORDING_DIR=/mnt/scalelite-recordings/var/bigbluebutton
+```
+
+For using one of the extra sets of docker images the `SCALELITE_TAG` should be set accordingly. For example:
+
+```
+SCALELITE_TAG=v1.1-bionic230-amazonlinux
 ```
 
 **If Scalelite is responsible for serving via HTTPS**, you must add the following lines to enable HTTPs configuration:
