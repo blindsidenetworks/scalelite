@@ -215,7 +215,7 @@ DEPENDENCIES
   hiredis (~> 0.6.3)
   listen (>= 3.0.5, < 3.2)
   minitest-stub_any_instance
-  pg
+  pg (~> 1.2)
   puma (~> 5.2)
   rails (~> 6.0.3, >= 6.0.3.4)
   redis (~> 4.1.3)

@@ -17,7 +17,7 @@ RUN apt-get update \
     && dpkg -i --force-depends *.deb
 
 FROM alpine AS nginx
-RUN apk add --no-cache nginx tini gettext \
+RUN apk add --no-cache nginx=1.18.0-r13 tini gettext \
     && ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log
 RUN rm /etc/nginx/conf.d/default.conf
@@ -39,6 +39,7 @@ RUN apk add --no-cache \
     libxml2 \
     libxslt \
     ruby \
+    ruby-irb \
     ruby-bigdecimal \
     ruby-bundler \
     ruby-json \
