@@ -21,7 +21,7 @@ gem 'redis', '~> 4.1.3'
 gem 'redis-namespace', '~> 1.7.0'
 
 # Use postgresql as the database for Active Record
-gem 'pg'
+gem 'pg', '~> 1.2'
 
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '>= 1.4.2', require: false
