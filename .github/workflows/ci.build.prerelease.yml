@@ -1,7 +1,7 @@
 env:
   RUBY_VERSION: 2.7.2
 
-name: CI Build Release
+name: CI Build Pre-Release
 on:
   release:
     types: [published]
