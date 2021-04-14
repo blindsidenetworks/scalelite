@@ -4,12 +4,11 @@ env:
 name: CI Build Pre-Release
 on:
   release:
-    types: [published]
+    types: [prereleased]
 
 jobs:
   main:
     name: Build Docker Image
-    if: "github.event.release.prerelease"
     env:
       DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
       DOCKER_BUILD_ENABLED: ${{ secrets.DOCKER_BUILD_ENABLED }}
