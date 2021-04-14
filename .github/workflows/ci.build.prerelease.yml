@@ -111,7 +111,6 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Alpine Build and Push api
-        id: docker_build_api
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
@@ -126,7 +125,6 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Alpine Build and Push poller
-        id: docker_build_poller
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
@@ -139,7 +137,6 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Alpine Build and Push recording-importer
-        id: docker_build_recording_importer
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
@@ -165,7 +162,6 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Amazon Linux Build and Push api
-        id: docker_build_api
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
@@ -180,7 +176,6 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Amazon Linux Build and Push poller
-        id: docker_build_poller
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
@@ -193,7 +188,6 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Amazon Linux Build and Push recording-importer
-        id: docker_build_recording_importer
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
