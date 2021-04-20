@@ -5,19 +5,26 @@ if [ $$ == 1 ]; then
 	exec /sbin/tini -- $0 "$@"
 fi
 
+# For backward compatibility, set NGINX_BEHIND_PROXY if not defined but BEHIND_PROXY is.
+if [ -z "$NGINX_BEHIND_PROXY" ] && [ -n "$BEHIND_PROXY" ] ; then
+  NGINX_BEHIND_PROXY="true"
+fi
+
 echo "Generating templated nginx configuration..."
-if [ "$NGINX_SSL" = "true" ] ; then
+if [ "$NGINX_RECORDINGS_ONLY" = "true" ] ; then
+	echo "Using nginx recordings only configuration template."
+	nginx_template=/etc/nginx/conf.d/scalelite-recordings-only.template
+elif [ "$NGINX_BEHIND_PROXY" = "true" ] ; then
+	echo "Using proxy configuration template."
+	nginx_template=/etc/nginx/conf.d/scalelite-proxy.template
+elif [ "$NGINX_SSL" = "true" ] ; then
 	echo "Using SSL configuration template."
 	nginx_template=/etc/nginx/conf.d/scalelite-ssl.template
-elif [ -n "$BEHIND_PROXY" ] ; then
-  echo "Using proxy configuration template."
-  nginx_template=/etc/nginx/conf.d/scalelite-proxy.template
 else
 	echo "Using non-SSL configuration template."
 	nginx_template=/etc/nginx/conf.d/scalelite.template
 fi
-SCALELITE_API=${SCALELITE_API-scalelite-api}
-envsubst '$URL_HOST:$SCALELITE_API' <$nginx_template >/etc/nginx/conf.d/scalelite.conf
+envsubst '$URL_HOST' <$nginx_template >/etc/nginx/conf.d/scalelite.conf
 unset nginx_template
 
 mkdir -p /run/nginx
@@ -28,7 +35,6 @@ while :; do
 	echo "Reloading nginx..."
 	nginx -s reload
 done &
-
 
 echo "Starting nginx..."
 exec nginx -g 'daemon off;'

@@ -60,6 +60,14 @@ module Scalelite
     # and set it to offline
     config.x.server_unhealthy_threshold = ENV.fetch('SERVER_UNHEALTHY_THRESHOLD', '2').to_i
 
+    # Request connection timeout. This is the timeout for the initial TCP/TLS connection, not including
+    # waiting for a response.
+    config.x.open_timeout = ENV.fetch('CONNECT_TIMEOUT', '5').to_f
+
+    # Request response timeout. This is the timeout for waiting for a response after the connection has
+    # been established and the request has been sent.
+    config.x.read_timeout = ENV.fetch('RESPONSE_TIMEOUT', '10').to_f
+
     # Directory to monitor for recordings transferred from BigBlueButton servers
     config.x.recording_spool_dir = File.absolute_path(
       ENV.fetch('RECORDING_SPOOL_DIR') { '/var/bigbluebutton/spool' }
@@ -77,5 +85,25 @@ module Scalelite
     config.x.recording_unpublish_dir = File.absolute_path(
       ENV.fetch('RECORDING_UNPUBLISH_DIR') { '/var/bigbluebutton/unpublished' }
     )
+
+    # Minimum user count of a meeting, used for calculating server load. Defaults to 15.
+    config.x.load_min_user_count = ENV.fetch('LOAD_MIN_USER_COUNT', 15).to_i
+
+    # The time(in minutes) until the `load_min_user_count` will be used for calculating server load
+    config.x.load_join_buffer_time = ENV.fetch('LOAD_JOIN_BUFFER_TIME', 15).to_i.minutes
+
+    # Whether to generate ids for servers based on the hostname rather than random UUIDs. Default to false.
+    config.x.server_id_is_hostname = ENV.fetch('SERVER_ID_IS_HOSTNAME', 'false').casecmp?('true')
+
+    # Recording feature will be disabled, if set to 'true'. Defaults to false.
+    config.x.recording_disabled = ENV.fetch('RECORDING_DISABLED', 'false').casecmp?('true')
+    # List of BBB server attributes that should not be modified by create API call
+    config.x.create_exclude_params = ENV['CREATE_EXCLUDE_PARAMS']&.split(',') || []
+
+    # List of BBB server attributes that should not be modified by join API call
+    config.x.join_exclude_params = ENV['JOIN_EXCLUDE_PARAMS']&.split(',') || []
+
+    # Recordings imported will be unpublished by default, if set to 'true'. Defaults to false.
+    config.x.recording_import_unpublished = ENV.fetch('RECORDING_IMPORT_UNPUBLISHED', 'false').casecmp?('true')
   end
 end

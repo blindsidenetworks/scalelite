@@ -15,8 +15,8 @@ task status: :environment do
       video_streams = 0
       users_in_largest_meeting = 0
 
-      # Scan only enabled servers that are online
-      if server.online && server.enabled
+      # Scan only servers that are online
+      if server.online
         response = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
         meetings = response.xpath('/response/meetings/meeting')
 

@@ -40,7 +40,7 @@ class BigBlueButtonApiController < ApplicationController
 
     begin
       # Send a GET request to the server
-      response = get_post_req(uri)
+      response = get_post_req(uri, **bbb_req_timeout(server))
     rescue BBBError
       # Reraise the error
       raise
@@ -74,7 +74,7 @@ class BigBlueButtonApiController < ApplicationController
 
     begin
       # Send a GET request to the server
-      response = get_post_req(uri)
+      response = get_post_req(uri, **bbb_req_timeout(server))
     rescue BBBError
       # Reraise the error
       raise
@@ -105,7 +105,7 @@ class BigBlueButtonApiController < ApplicationController
 
     # Make individual getMeetings call for each server and append result to all_meetings
     servers.each do |server|
-      next unless server.online # only send getMeetings requests to servers that are online
+      next unless server.online && server.enabled # only send getMeetings requests to servers that are online and enabled
 
       uri = encode_bbb_uri('getMeetings', server.url, server.secret)
 
@@ -147,7 +147,10 @@ class BigBlueButtonApiController < ApplicationController
 
     # Create meeting in database
     logger.debug("Creating meeting #{params[:meetingID]} in database.")
-    meeting = Meeting.find_or_create_with_server(params[:meetingID], server)
+
+    moderator_pwd = params[:moderatorPW].presence || SecureRandom.alphanumeric(8)
+    params[:moderatorPW] = moderator_pwd
+    meeting = Meeting.find_or_create_with_server(params[:meetingID], server, moderator_pwd)
 
     # Update with old server if meeting already existed in database
     server = meeting.server
@@ -165,15 +168,19 @@ class BigBlueButtonApiController < ApplicationController
     end
 
     logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
-    # Pass along all params except the built in rails ones
-    uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params)
+
+    # Get list of params that should not be modified by create API call
+    excluded_params = Rails.configuration.x.create_exclude_params
+
+    # Pass along all params except the built in rails ones and excluded_params
+    uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params(excluded_params))
 
     begin
       # Read the body if POST
       body = request.post? ? request.body.read : ''
 
       # Send a GET/POST request to the server
-      response = get_post_req(uri, body)
+      response = get_post_req(uri, body, **bbb_req_timeout(server))
     rescue BBBError
       # Reraise the error to return error xml to caller
       raise
@@ -208,7 +215,7 @@ class BigBlueButtonApiController < ApplicationController
       meeting.destroy!
 
       # Send a GET request to the server
-      response = get_post_req(uri)
+      response = get_post_req(uri, **bbb_req_timeout(server))
     rescue BBBError => e
       if e.message_key == 'notFound'
         # If the meeting is not found, delete the meeting from the load balancer database
@@ -217,7 +224,7 @@ class BigBlueButtonApiController < ApplicationController
       end
       # Reraise the error
       raise e
-    rescue RecordNotDestroyed => e
+    rescue ApplicationRedisRecord::RecordNotDestroyed => e
       logger.warn("Error #{e} deleting meeting #{params[:meetingID]} from server #{server.id}")
     rescue StandardError => e
       logger.warn("Error #{e} accessing meeting #{params[:meetingID]} on server #{server.id}.")
@@ -241,8 +248,11 @@ class BigBlueButtonApiController < ApplicationController
 
     server = meeting.server
 
-    # Pass along all params except the built in rails ones
-    uri = encode_bbb_uri('join', server.url, server.secret, pass_through_params)
+    # Get list of params that should not be modified by join API call
+    excluded_params = Rails.configuration.x.join_exclude_params
+
+    # Pass along all params except the built in rails ones and excluded_params
+    uri = encode_bbb_uri('join', server.url, server.secret, pass_through_params(excluded_params))
 
     # Redirect the user to the join url
     logger.debug("Redirecting user to join url: #{uri}")
@@ -379,8 +389,10 @@ class BigBlueButtonApiController < ApplicationController
 
   # Filter out unneeded params when passing through to join and create calls
   # Has to be to_unsafe_hash since to_h only accepts permitted attributes
-  def pass_through_params
-    params.except(:format, :controller, :action, :checksum).to_unsafe_hash
+  def pass_through_params(excluded_params)
+    params.except(*(excluded_params +
+    [:format, :controller, :action, :checksum]))
+          .to_unsafe_hash
   end
 
   # Success response if there are no meetings on any servers
@@ -389,7 +401,8 @@ class BigBlueButtonApiController < ApplicationController
       xml.response do
         xml.returncode('SUCCESS')
         xml.messageKey('noMeetings')
-        xml.message('No meetings were found on this server.')
+        xml.message('no meetings were found on this server')
+        xml.meetings
       end
     end
   end
