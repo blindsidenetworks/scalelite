@@ -174,13 +174,21 @@ class BigBlueButtonApiController < ApplicationController
 
     # Pass along all params except the built in rails ones and excluded_params
     uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params(excluded_params))
+
     callback_data = nil
+    callback_url = params['meta_bn-recording-ready-url']
+    # For compatibility with some 3rd party implementations, look up for meta_bbb-recording-ready-url or
+    # meta_canvas-recording-ready, when meta_bn-recording-ready-url is not included.
+    callback_url ||= params['meta_bbb-recording-ready-url']
+    callback_url ||= params['meta_canvas-recording-ready-url']
 
     begin
-      if params['meta_bn-recording-ready-url'].present?
-        callback_attributes = { recording_ready_url: params['meta_bn-recording-ready-url'] }
-        callback_data = CallbackData.create!(meeting_id: meeting.id, callback_attributes: callback_attributes)
+      if callback_url.present?
+        callback_attributes = { recording_ready_url: callback_url }
+        callback_data = CallbackData.first_or_create!(meeting_id: meeting.id, callback_attributes: callback_attributes)
         params['meta_bn-recording-ready-url'] = nil
+        params['meta_bbb-recording-ready-url'] = nil
+        params['meta_canvas-recording-ready-url'] = nil
       end
 
       # Read the body if POST
