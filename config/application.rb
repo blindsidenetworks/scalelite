@@ -106,13 +106,7 @@ module Scalelite
     # List of BBB server attributes that should not be modified by join API call
     config.x.join_exclude_params = ENV['JOIN_EXCLUDE_PARAMS']&.split(',') || []
 
-    # Recording ready notification to run after x minutes, Defaults to 2
-    config.x.recording_ready_notifier_time = ENV['RECORDING_READY_NOTIFIER_TIME'] || 2
-
     # Recordings imported will be unpublished by default, if set to 'true'. Defaults to false.
     config.x.recording_import_unpublished = ENV.fetch('RECORDING_IMPORT_UNPUBLISHED', 'false').casecmp?('true')
-
-    # Recording ready notification to run after x minutes, Defaults to 2
-    config.x.recording_ready_notifier_time = ENV['RECORDING_READY_NOTIFIER_TIME'] || 2
   end
 end

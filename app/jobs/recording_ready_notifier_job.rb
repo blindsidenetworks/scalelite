@@ -6,8 +6,6 @@ require 'net/http'
 class RecordingReadyNotifierJob < ApplicationJob
   queue_as :call_back
 
-  LOGGER = Delayed::Worker.logger
-
   def perform(recording_id)
     recording = Recording.find(recording_id)
     meeting_id = recording.meeting_id
@@ -25,15 +23,14 @@ class RecordingReadyNotifierJob < ApplicationJob
   end
 
   def notify(callback_url, meeting_id, recording_id)
-    LOGGER.info("Recording Ready Notify for [#{meeting_id}] starts")
-    LOGGER.info('Making callback for recording ready notification')
+    logger.info("Recording Ready Notify for [#{meeting_id}] starts")
+    logger.info('Making callback for recording ready notification')
 
     payload = encoded_payload(meeting_id, recording_id)
     uri = URI.parse(callback_url)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = (uri.scheme == 'https')
-
-    LOGGER.info("Sending request to #{uri.scheme}://#{uri.host}#{uri.request_uri}")
+    logger.info("Sending request to #{uri.scheme}://#{uri.host}#{uri.request_uri}")
     request = Net::HTTP::Post.new(uri.request_uri)
     request.set_form_data(signed_parameters: payload)
 
@@ -51,8 +48,8 @@ class RecordingReadyNotifierJob < ApplicationJob
     end
     true
   rescue StandardError => e
-    LOGGER.info('Rescued')
-    LOGGER.info(e.to_s)
+    logger.info('Rescued')
+    logger.info(e.to_s)
     false
   end
 end
