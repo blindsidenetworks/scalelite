@@ -58,8 +58,8 @@ RUN amazon-linux-extras enable ruby2.6 \
   && gem install rails
 RUN yum -y install python3 python3-pip shadow-utils
 RUN \
-    groupadd scalelite --gid 988 && \
-    useradd -u 993 -d /srv/scalelite -g scalelite scalelite
+    groupadd scalelite --gid 1000 && \
+    useradd -u 1000 -d /srv/scalelite -g scalelite scalelite
 WORKDIR /srv/scalelite
 
 FROM base as builder

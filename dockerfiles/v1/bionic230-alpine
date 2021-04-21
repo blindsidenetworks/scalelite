@@ -50,8 +50,8 @@ RUN apk add --no-cache \
     tini \
     tzdata \
     shared-mime-info \
-    && addgroup scalelite --gid 988 \
-    && adduser -u 993 -h /srv/scalelite -G scalelite -D scalelite
+    && addgroup scalelite --gid 1000 \
+    && adduser -u 1000 -h /srv/scalelite -G scalelite -D scalelite
 WORKDIR /srv/scalelite
 
 FROM base as builder
