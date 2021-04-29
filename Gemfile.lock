@@ -94,6 +94,7 @@ GEM
     i18n (1.8.9)
       concurrent-ruby (~> 1.0)
     jaro_winkler (1.5.4)
+    jwt (2.2.3)
     listen (3.1.5)
       rb-fsevent (~> 0.9, >= 0.9.4)
       rb-inotify (~> 0.9, >= 0.9.7)
@@ -213,6 +214,7 @@ DEPENDENCIES
   factory_bot_rails
   fakeredis!
   hiredis (~> 0.6.3)
+  jwt (= 2.2.3)
   listen (>= 3.0.5, < 3.2)
   minitest-stub_any_instance
   pg (~> 1.2)
