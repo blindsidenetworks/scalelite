@@ -1,17 +1,48 @@
 # frozen_string_literal: true
 
 desc('List configured BigBlueButton servers')
-task servers: :environment do
+task :servers, [:format] => :environment do |_t, args|
   servers = Server.all
-  puts('No servers are configured') if servers.empty?
-  servers.each do |server|
-    puts("id: #{server.id}")
-    puts("\turl: #{server.url}")
-    puts("\tsecret: #{server.secret}")
-    puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
-    puts("\tload: #{server.load.presence || 'unavailable'}")
-    puts("\tload multiplier: #{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
-    puts("\t#{server.online ? 'online' : 'offline'}")
+  case args.format
+  when 'json'
+    puts('{')
+    puts(' "servers":[')
+    item = 1
+    servers.each do |server|
+      puts('{')
+      puts('"id":"' + server.id.to_s + '",')
+      puts('"url":"' + server.url.to_s + '",')
+      puts('"secret":"' + server.secret.to_s + '",')
+      print('"enable_status":"')
+      print(server.enabled ? 'enabled' : 'disabled')
+      puts('",')
+      print('"load":"')
+      print(server.load.presence.to_s || 'unavailable')
+      puts('",')
+      print('"load_multiplier":"')
+      print(server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
+      puts('",')
+      print('"online_status":"')
+      print(server.online ? 'online' : 'offline')
+      puts('"')
+      puts('}')
+      puts(',') if item < servers.count
+      item = item.next
+    end
+    puts(']')
+    puts('}')
+    exit(0)
+  else
+    puts('No servers are configured') if servers.empty?
+    servers.each do |server|
+      puts("id: #{server.id}")
+      puts("\turl: #{server.url}")
+      puts("\tsecret: #{server.secret}")
+      puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
+      puts("\tload: #{server.load.presence || 'unavailable'}")
+      puts("\tload multiplier: #{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
+      puts("\t#{server.online ? 'online' : 'offline'}")
+    end
   end
 end
 
