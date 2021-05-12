@@ -38,17 +38,20 @@ task status: :environment do
       users_in_largest_meeting = 0
     end
 
+    state = server.state
+    enabled = server.enabled
+    serverstatus, state = server.state.present? ? status_with_state(state) : status_without_state(enabled)
+
     # Convert to openstruct to allow dot syntax usage
     servers_info.push(OpenStruct.new(
                         hostname: URI.parse(server.url).host,
-                        state: server.enabled ? 'enabled' : 'disabled',
-                        status: server.online ? 'online' : 'offline',
+                        state: state,
+                        status: serverstatus,
                         meetings: meetings.length,
                         users: server_users,
                         largest: users_in_largest_meeting,
                         videos: video_streams
                       ))
-
     # Sort list of servers
     servers_info = servers_info.sort_by(&:hostname)
   end
@@ -64,4 +67,22 @@ task status: :environment do
   end
 
   puts table.pack
+end
+
+def status_with_state(state)
+  if state.eql?('cordoned')
+    %w[online cordoned]
+  elsif state.eql?('enabled')
+    %w[online enabled]
+  else
+    %w[offline disabled]
+  end
+end
+
+def status_without_state(enabled)
+  if enabled
+    %w[online enabled]
+  else
+    %w[offline disabled]
+  end
 end
