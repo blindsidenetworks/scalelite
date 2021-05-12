@@ -3,6 +3,7 @@
 class Recording < ApplicationRecord
   has_many :metadata, dependent: :destroy
   has_many :playback_formats, dependent: :destroy
+  has_one :callback_data, dependent: :destroy
 
   validates :record_id, presence: true
   validates :meeting_id, presence: true

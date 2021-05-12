@@ -588,6 +588,59 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1, server1.load
   end
 
+  test 'create creates a record in callback_data if  params["meta_bn-recording-ready-url"] is present in request' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+    params = {
+      meetingID: 'test-meeting-1', test4: '', test2: '', moderatorPW: 'test-password',
+      'meta_bn-recording-ready-url' => 'https://test-1.example.com/bigbluebutton/api/',
+    }
+
+    bbb_params = {
+      meetingID: 'test-meeting-1', test4: '', test2: '', moderatorPW: 'test-password',
+    }
+    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, bbb_params))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
+      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_create_url, params: params
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+    callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal callback_data.callback_attributes, recording_ready_url: 'https://test-1.example.com/bigbluebutton/api/'
+  end
+
+  test 'create does not create a record in callback_data if  params["meta_bn-recording-ready-url"] is present in request but
+        create request to bbb_server fails responds with error' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+
+    params = {
+      meetingID: 'test-meeting-new', test4: '', test2: '', moderatorPW: 'test-password',
+      'meta_bn-recording-ready-url' => 'https://test-1.example.com/bigbluebutton/api/',
+    }
+
+    bbb_params = {
+      meetingID: 'test-meeting-new', test4: '', test2: '', moderatorPW: 'test-password',
+    }
+
+    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, bbb_params))
+      .to_timeout
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_create_url, params: params
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').content
+    callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
+    assert_nil callback_data, nil
+  end
+
   # end
 
   test 'end responds with MissingMeetingIDError if meeting ID is not passed to end' do
