@@ -26,6 +26,7 @@ COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback
 COPY nginx/start /etc/nginx/start
 COPY nginx/dhparam.pem /etc/nginx/dhparam.pem
 COPY nginx/conf.d /etc/nginx/http.d/
+COPY nginx/conf.d/scalelite-ssl.template /etc/nginx/conf.d/
 # This will be needed with alpine 3.14 since conf.d is being phased out.
 # RUN ln -s /etc/nginx/http.d/ /etc/nginx/conf.d
 EXPOSE 80
