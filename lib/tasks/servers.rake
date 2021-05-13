@@ -8,7 +8,11 @@ task servers: :environment do
     puts("id: #{server.id}")
     puts("\turl: #{server.url}")
     puts("\tsecret: #{server.secret}")
-    puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
+    if server.state.present?
+      puts("\t#{server.state}")
+    else
+      puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
+    end
     puts("\tload: #{server.load.presence || 'unavailable'}")
     puts("\tload multiplier: #{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
     puts("\t#{server.online ? 'online' : 'offline'}")
