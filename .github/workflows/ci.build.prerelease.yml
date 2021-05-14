@@ -1,5 +1,5 @@
 env:
-  RUBY_VERSION: 2.7
+  RUBY_VERSION: 2.7.x
 
 name: CI Build Pre-Release
 on:
