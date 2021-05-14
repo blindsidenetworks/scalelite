@@ -39,6 +39,8 @@ CMD [ "/etc/nginx/start", "-g", "daemon off;" ]
 
 FROM alpine AS base
 RUN apk add --no-cache \
+    libpq
+RUN apk add --no-cache \
     libpq \
     libxml2 \
     libxslt \
