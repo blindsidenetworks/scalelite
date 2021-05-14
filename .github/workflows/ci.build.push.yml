@@ -12,6 +12,7 @@ jobs:
     env:
       DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
       DOCKER_BUILD_ENABLED: ${{ secrets.DOCKER_BUILD_ENABLED }}
+      DOCKER_BUILD_ALTERNATE_ENABLED: ${{ secrets.DOCKER_BUILD_ALTERNATE_ENABLED }}
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
