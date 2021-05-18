@@ -105,7 +105,8 @@ class BigBlueButtonApiController < ApplicationController
 
     # Make individual getMeetings call for each server and append result to all_meetings
     servers.each do |server|
-      next unless server.online && server.enabled # only send getMeetings requests to servers that are online and enabled
+      # only send getMeetings requests to servers that have state as enabled/cordoned
+      next if server.offline? || server.disabled?
 
       uri = encode_bbb_uri('getMeetings', server.url, server.secret)
 
@@ -253,17 +254,19 @@ class BigBlueButtonApiController < ApplicationController
 
   def join
     params.require(:meetingID)
-
     begin
       meeting = Meeting.find(params[:meetingID])
+      server = meeting.server
+      raise ServerUnavailableError if server.offline? || server.disabled?
+    rescue ServerUnavailableError
+      logger.error("The server #{server.id} for meeting #{meeting.id} is offline") if server.offline?
+      logger.error("The server #{server.id} for meeting #{meeting.id} has been disabled") if server.disabled?
+      raise ServerDisabledError
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with MeetingNotFoundError if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
       raise MeetingNotFoundError
     end
-
-    server = meeting.server
-
     # Get list of params that should not be modified by join API call
     excluded_params = Rails.configuration.x.join_exclude_params
 
