@@ -40,13 +40,13 @@ task status: :environment do
 
     state = server.state
     enabled = server.enabled
-    serverstatus, state = server.state.present? ? status_with_state(state) : status_without_state(enabled)
+    state = server.state.present? ? status_with_state(state) : status_without_state(enabled)
 
     # Convert to openstruct to allow dot syntax usage
     servers_info.push(OpenStruct.new(
                         hostname: URI.parse(server.url).host,
                         state: state,
-                        status: serverstatus,
+                        status: server.online ? 'online' : 'offline',
                         meetings: meetings.length,
                         users: server_users,
                         largest: users_in_largest_meeting,
@@ -70,19 +70,16 @@ task status: :environment do
 end
 
 def status_with_state(state)
-  if state.eql?('cordoned')
-    %w[online cordoned]
-  elsif state.eql?('enabled')
-    %w[online enabled]
+  case state
+  when 'cordoned'
+    'cordoned'
+  when 'enabled'
+    'enabled'
   else
-    %w[offline disabled]
+    'disabled'
   end
 end
 
 def status_without_state(enabled)
-  if enabled
-    %w[online enabled]
-  else
-    %w[offline disabled]
-  end
+  enabled ? 'enabled' : 'disabled'
 end
