@@ -236,7 +236,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal '', response_xml.at_xpath('/response/meetings').text
   end
 
-  test 'getMeetings only makes a request to online servers' do
+  test 'getMeetings only makes a request to online and enabled servers' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true,
                             enabled: true)
     server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true,
@@ -260,6 +260,34 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     response_xml = Nokogiri::XML(@response.body)
 
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert response_xml.xpath('//meeting[text()="test-meeting-1"]').present?
+    assert response_xml.xpath('//meeting[text()="test-meeting-2"]').present?
+    assert_not response_xml.xpath('//meeting[text()="test-meeting-3"]').present?
+  end
+
+  test 'getMeetings only makes a request to online and servers in state cordoned/enabled' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true,
+                            state: 'cordoned')
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true,
+                            state: 'enabled')
+    Server.create(url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret', load: 1,
+                  online: false)
+    Server.create(url: 'https://test-4.example.com/bigbluebutton/api', secret: 'test-4-secret', load: 1,
+                  online: true, state: 'disabled')
+
+    stub_request(:get, encode_bbb_uri('getMeetings', server1.url, server1.secret))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
+                       '<meeting>test-meeting-1<meeting></meetings></response>')
+    stub_request(:get, encode_bbb_uri('getMeetings', server2.url, server2.secret))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
+                       '<meeting>test-meeting-2<meeting></meetings></response>')
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_get_meetings_url
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
     assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
     assert response_xml.xpath('//meeting[text()="test-meeting-1"]').present?
     assert response_xml.xpath('//meeting[text()="test-meeting-2"]').present?
@@ -780,7 +808,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   test 'join redirects user to the corrent join url' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
-                            secret: 'test-1-secret', enabled: true, load: 0)
+                            secret: 'test-1-secret', enabled: true, load: 0, online: true)
     meeting = Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
 
     params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name' }
@@ -794,7 +822,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   test 'join redirects user to the current join url with only permitted params for join' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
-                            secret: 'test-1-secret', enabled: true, load: 0)
+                            secret: 'test-1-secret', enabled: true, load: 0, online: true)
     meeting = Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
     params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name', test1: '', test2: '' }
     Rails.configuration.x.stub(:join_exclude_params, %w[test1 test2]) do
@@ -808,7 +836,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   test 'join redirects user to the current join url with given params if excluded params list is empty' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
-                            secret: 'test-1-secret', enabled: true, load: 0)
+                            secret: 'test-1-secret', enabled: true, load: 0, online: true)
     meeting = Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
     params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name', test1: '', test2: '' }
     Rails.configuration.x.stub(:join_exclude_params, []) do
@@ -823,6 +851,38 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     filtered_params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name' }
     assert_equal Rails.configuration.x.join_exclude_params, %w[test1 test2]
     assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, filtered_params).to_s
+  end
+
+  test 'join responds with ServerUnavailableError if server is disabled' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: false, load: 0, online: true)
+    Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_join_url, params: { meetingID: 'test-meeting-1' }
+    end
+    response_xml = Nokogiri::XML(@response.body)
+
+    expected_error = ServerUnavailableError.new
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
+    assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
+    assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+  end
+
+  test 'join responds with ServerUnavailableError if server is offline' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', load: 0, online: false, enabled: true)
+    Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_join_url, params: { meetingID: 'test-meeting-1' }
+    end
+    response_xml = Nokogiri::XML(@response.body)
+
+    expected_error = ServerUnavailableError.new
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
+    assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
+    assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
   end
 
   # getRecordings

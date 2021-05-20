@@ -8,7 +8,11 @@ task servers: :environment do
     puts("id: #{server.id}")
     puts("\turl: #{server.url}")
     puts("\tsecret: #{server.secret}")
-    puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
+    if server.state.present?
+      puts("\t#{server.state}")
+    else
+      puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
+    end
     puts("\tload: #{server.load.presence || 'unavailable'}")
     puts("\tload multiplier: #{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
     puts("\t#{server.online ? 'online' : 'offline'}")
@@ -47,7 +51,18 @@ namespace :servers do
   desc 'Mark a BigBlueButton server as available for scheduling new meetings'
   task :enable, [:id] => :environment do |_t, args|
     server = Server.find(args.id)
-    server.enabled = true
+    server.state = 'enabled'
+    server.save!
+    puts('OK')
+  rescue ApplicationRedisRecord::RecordNotFound
+    puts("ERROR: No server found with id: #{args.id}")
+  end
+
+  desc 'Mark a BigBlueButton server as cordoned to stop scheduling new meetings but consider for
+        load calculation and joining existing meetings'
+  task :cordon, [:id] => :environment do |_t, args|
+    server = Server.find(args.id)
+    server.state = 'cordoned'
     server.save!
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
@@ -56,8 +71,31 @@ namespace :servers do
 
   desc 'Mark a BigBlueButton server as unavailable to stop scheduling new meetings'
   task :disable, [:id] => :environment do |_t, args|
+    include ApiHelper
     server = Server.find(args.id)
-    server.enabled = false
+    response = true
+    if server.load.to_f > 0.0
+      puts("WARNING: You are trying to disable a server with active load. You should use the cordon option if
+          you do not want to clear all the meetings")
+      puts('If you still wish to continue please enter `yes`')
+      response = STDIN.gets.chomp.casecmp('yes').zero?
+      if response
+        meetings = Meeting.all.select { |m| m.server_id == server.id }
+        meetings.each do |meeting|
+          ActiveRecord::Base.transaction do
+            puts("Clearing Meeting id=#{meeting.id}")
+            moderator_pw = meeting.try(:moderator_pw)
+            get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
+            meeting.destroy!
+          end
+        rescue ApplicationRedisRecord::RecordNotDestroyed => e
+          puts("WARNING: Could not destroy meeting id=#{meeting.id}: #{e}")
+        rescue StandardError => e
+          puts("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
+        end
+      end
+    end
+    server.state = 'disabled' if response
     server.save!
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
@@ -70,16 +108,17 @@ namespace :servers do
     include ApiHelper
 
     server = Server.find(args.id)
-    server.enabled = false unless args.keep_state
+    server.state = 'disabled' unless args.keep_state
     server.save!
 
     meetings = Meeting.all.select { |m| m.server_id == server.id }
     meetings.each do |meeting|
-      puts("Clearing Meeting id=#{meeting.id}")
-      meeting.destroy!
-      moderator_pw = meeting.try(:moderator_pw)
-      get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
-
+      ActiveRecord::Base.transaction do
+        puts("Clearing Meeting id=#{meeting.id}")
+        moderator_pw = meeting.try(:moderator_pw)
+        get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
+        meeting.destroy!
+      end
     rescue ApplicationRedisRecord::RecordNotDestroyed => e
       puts("WARNING: Could not destroy meeting id=#{meeting.id}: #{e}")
     rescue StandardError => e
