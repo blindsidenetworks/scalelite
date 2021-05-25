@@ -18,7 +18,7 @@ gem 'puma', '~> 5.2'
 gem 'connection_pool', '~> 2.2.2'
 gem 'hiredis', '~> 0.6.3'
 gem 'redis', '~> 4.2'
-gem 'redis-namespace', '~> 1.7.0'
+gem 'redis-namespace', '~> 1.8'
 
 # Use postgresql as the database for Active Record
 gem 'pg', '~> 1.2'

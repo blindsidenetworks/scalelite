@@ -158,7 +158,7 @@ GEM
     rb-inotify (0.10.1)
       ffi (~> 1.0)
     redis (4.2.5)
-    redis-namespace (1.7.0)
+    redis-namespace (1.8.1)
       redis (>= 3.0.4)
     rexml (3.2.5)
     rubocop (0.79.0)
@@ -221,7 +221,7 @@ DEPENDENCIES
   puma (~> 5.2)
   rails (~> 6.0.3, >= 6.0.3.4)
   redis (~> 4.2)
-  redis-namespace (~> 1.7.0)
+  redis-namespace (~> 1.8)
   rubocop (~> 0.79.0)
   rubocop-rails (~> 2.4.0)
   spring
