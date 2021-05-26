@@ -113,6 +113,7 @@ To switch your Front-End application to use Scalelite instead of a single BigBlu
 * `LOADBALANCER_SECRETS`: Additional shared secrets, separated by `:`. Any of these secrets will work. In an environment where multiple applications need to integrate with a single scalelite server, it may be sensible to give each application its own secret. This way, revoking individual secrets later will not disturb other applications.
 * `DATABASE_URL`: URL for connecting to the PostgreSQL database, see the [Rails documentation](https://guides.rubyonrails.org/configuring.html#configuring-a-database). The URL should be in the form of `postgresql://username:password@connection_url`. Note that instead of using this environment variable, you can configure the database server in `config/database.yml`.
 * `REDIS_URL`: URL for connecting to the Redis server, see the [Redis gem documentation](https://rubydoc.info/github/redis/redis-rb/master/Redis#initialize-instance_method). The URL should be in the form of `redis://username:password@connection_url`. Note that instead of using this environment variable, you can configure the redis server in `config/redis_store.yml` (see below).
+* `REDIS_SSL`: Set to `true` if using Redis over SSL/TSL connection. Defaults to `false`.
 
 #### Docker-Specific
 

@@ -16,7 +16,7 @@ module RedisStore
 
         namespace = Rails.configuration.x.redis_store.namespace
         redis = Redis::Namespace.new(namespace, redis: redis) if namespace
-
+        redis.ssl = true if Rails.configuration.x.redis_ssl
         redis
       end
     end
