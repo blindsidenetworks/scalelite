@@ -172,7 +172,7 @@ class BigBlueButtonApiController < ApplicationController
     params_hash = params
 
     # EventHandler will handle all the events associated with the create action
-    params, event_data = EventHandler.new(params_hash, meeting.id).handle
+    params = EventHandler.new(params_hash, meeting.id).handle
     # Get list of params that should not be modified by create API call
     excluded_params = Rails.configuration.x.create_exclude_params
 
@@ -189,7 +189,6 @@ class BigBlueButtonApiController < ApplicationController
       # Reraise the error to return error xml to caller
       raise
     rescue StandardError => e
-      event_data&.destroy!
       logger.warn("Error #{e} creating meeting #{params[:meetingID]} on server #{server.id}.")
       raise InternalError, 'Unable to create meeting on server.'
     end
@@ -390,6 +389,27 @@ class BigBlueButtonApiController < ApplicationController
   def recordings_disabled
     logger.debug('The recording feature have been disabled')
     raise BBBError.new('notFound', 'We could not find recordings')
+  end
+
+  def analytics_callback
+    meeting_id = params['meeting_id']
+    logger.info("Making analytics callback for #{meeting_id}")
+    callback_data = CallbackData.find_by_meeting_id(meeting_id)
+    analytics_callback_url = callback_data&.callback_attributes&.dig(:analytics_callback_url)
+    return if analytics_callback_url.nil?
+
+    uri = URI.parse(analytics_callback_url)
+    response = post_req(uri, params)
+    code = response.code.to_i
+
+    if code < 200 || code >= 300
+      logger.info("Analytics callback request failed: #{response.code} #{response.message} (code #{code})")
+    else
+      logger.info("Analytics callback successful for meeting: #{meeting_id} (code #{code})")
+    end
+  rescue StandardError => e
+    logger.info('Rescued')
+    logger.info(e.to_s)
   end
 
   private

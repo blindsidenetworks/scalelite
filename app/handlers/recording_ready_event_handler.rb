@@ -14,8 +14,11 @@ class RecordingReadyEventHandler < EventHandler
     params.delete('meta_bbb-recording-ready-url')
     params.delete('meta_canvas-recording-ready-url')
     params.delete('meta_bn-recording-ready-url')
-    callback_attributes = { recording_ready_url: callback_url }
-    CallbackData.find_or_create_by!(meeting_id: meeting_id, callback_attributes: callback_attributes)
+
+    callback_data = CallbackData.find_or_create_by!(meeting_id: meeting_id)
+    callback_attributes = callback_data.callback_attributes || {}
+    callback_data.callback_attributes = callback_attributes.merge!(recording_ready_url: callback_url)
+    callback_data.save!
   end
 
   def set_callback_url
