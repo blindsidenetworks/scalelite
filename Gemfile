@@ -16,7 +16,6 @@ gem 'puma', '~> 5.2'
 
 # Redis connection setup for live session (server and meeting) tracking
 gem 'connection_pool', '~> 2.2.2'
-gem 'hiredis', '~> 0.6.3'
 gem 'redis', '~> 4.2'
 gem 'redis-namespace', '~> 1.8'
 
