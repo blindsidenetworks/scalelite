@@ -76,7 +76,7 @@ RUN rm -rf nginx
 
 FROM base AS application
 USER scalelite:scalelite
-ENV RAILS_ENV=production
+ENV RAILS_ENV=production RAILS_LOG_TO_STDOUT=true
 COPY --from=builder --chown=scalelite:scalelite /srv/scalelite ./
 
 ARG BUILD_NUMBER
