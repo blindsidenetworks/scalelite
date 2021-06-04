@@ -267,7 +267,19 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def get_recordings
-    query = Recording.includes(playback_formats: [:thumbnails], metadata: [])
+    query = Recording.includes(playback_formats: [:thumbnails], metadata: []).references(:metadata)
+    query = query.where(state: params[:state].split(',')) if params[:state].present?
+    meta_params = params.select { |key, _value| key.to_s.match(/^meta_/) }.permit!.to_h.to_a
+    if meta_params.present?
+      meta_query = '(metadata.key = ? and metadata.value in (?))'
+      meta_values = [meta_params[0][0].remove('meta_'), meta_params[0][1].split(',')]
+      meta_params[1..-1].each do |val|
+        meta_query += ' or (metadata.key = ? and metadata.value in (?))'
+        meta_values << val[0].remove('meta_')
+        meta_values << val[1].split(',')
+      end
+      query = query.where(meta_query.to_s, *meta_values)
+    end
     query = query.with_recording_id_prefixes(params[:recordID].split(',')) if params[:recordID].present?
     query = query.where(meeting_id: params[:meetingID].split(',')) if params[:meetingID].present?
 
