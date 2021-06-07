@@ -53,9 +53,10 @@ RUN amazon-linux-extras enable ruby2.6 \
   && yum -y install git tar gzip yarn shared-mime-info libxslt zlib-devel sqlite-devel mariadb-devel postgresql-devel ruby-devel rubygems-devel rubygem-bundler rubygem-io-console rubygem-irb rubygem-json rubygem-minitest rubygem-net-http-persistent rubygem-net-telnet rubygem-power_assert rubygem-rake rubygem-test-unit rubygem-thor rubygem-xmlrpc rubygem-bigdecimal \
   && gem install rails
 RUN yum -y install python3 python3-pip shadow-utils
-RUN \
-    groupadd scalelite --gid 1000 && \
+RUN groupadd scalelite --gid 1000 && \
     useradd -u 1000 -d /srv/scalelite -g scalelite scalelite
+RUN groupadd scalelite-spool --gid 2000 && \
+    usermod -a -G scalelite-spool scalelite
 WORKDIR /srv/scalelite
 
 FROM base as builder
