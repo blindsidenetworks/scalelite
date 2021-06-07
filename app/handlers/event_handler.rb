@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class EventHandler
-  attr_accessor :params, :meeting_id, :event_data
+  attr_accessor :params, :meeting_id
 
   def initialize(params, *args)
     @params = params
@@ -9,11 +9,8 @@ class EventHandler
   end
 
   def handle
-    @event_data = RecordingReadyEventHandler.new(params, meeting_id, event_data).handle
-    return_values
-  end
-
-  def return_values
-    [params, event_data]
+    AnalyticsCallbackEventHandler.new(params, meeting_id).handle
+    RecordingReadyEventHandler.new(params, meeting_id).handle
+    params
   end
 end
