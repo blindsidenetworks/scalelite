@@ -641,32 +641,54 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal callback_data.callback_attributes, recording_ready_url: 'https://test-1.example.com/bigbluebutton/api/'
   end
 
-  test 'create does not create a record in callback_data if  params["meta_bn-recording-ready-url"] is present in request but
-        create request to bbb_server fails responds with error' do
+  test 'create creates a record in callback_data if  params["meta_analytics-callback-url"] is present in request' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
-
     params = {
-      meetingID: 'test-meeting-new', test4: '', test2: '', moderatorPW: 'test-password',
-      'meta_bn-recording-ready-url' => 'https://test-1.example.com/bigbluebutton/api/',
+      meetingID: 'test-meeting-66', test4: '', test2: '', moderatorPW: 'test-password',
+      'meta_analytics-callback-url' => 'https://test.scalelite.com/bigbluebutton/api/analytics_callback',
     }
 
-    bbb_params = {
-      meetingID: 'test-meeting-new', test4: '', test2: '', moderatorPW: 'test-password',
+    Rails.configuration.x.stub(:url_host, 'test.scalelite.com') do
+      stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
+        .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
+      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_create_url, params: params
+      end
+    end
+    response_xml = Nokogiri::XML(@response.body)
+    callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal callback_data.callback_attributes, analytics_callback_url: 'https://test.scalelite.com/bigbluebutton/api/analytics_callback'
+  end
+
+  # analytics_callback
+
+  test 'analytics_callback makes a callback to the specific meetings analytics_callback_url stored in
+        callback_attributes table' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+    params = {
+      meetingID: 'test-meeting-1111', test4: '', test2: '', moderatorPW: 'test-password',
+      'meta_analytics-callback-url' => 'https://test.scalelite.com/bigbluebutton/api/analytics_callback',
     }
 
-    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, bbb_params))
-      .to_timeout
+    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
+    '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+    stub_request(:post, 'https://test.scalelite.com/bigbluebutton/api/analytics_callback')
+      .to_return(status: :ok, body: '', headers: {})
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
-      get bigbluebutton_api_create_url, params: params
+      Rails.configuration.x.stub(:url_host, 'test.scalelite.com') do
+        get bigbluebutton_api_create_url, params: params
+        post bigbluebutton_api_analytics_callback_url, params: { meeting_id: 'test-meeting-1111' }
+      end
     end
-
-    response_xml = Nokogiri::XML(@response.body)
-
-    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').content
     callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
-    assert_nil callback_data, nil
+    assert_equal 204, @response.status
+    assert_equal callback_data.callback_attributes, analytics_callback_url: 'https://test.scalelite.com/bigbluebutton/api/analytics_callback'
   end
 
   # end
@@ -1012,6 +1034,68 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>recordings>recording', 2
+  end
+
+  test 'getRecordings filter based on recording states' do
+    create_list(:recording, 5)
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'unpublished')
+    r3 = create(:recording)
+
+    params = encode_bbb_params('getRecordings', {
+      recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
+      state: %w[published unpublished].join(','),
+    }.to_query)
+    get bigbluebutton_api_get_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 2
+  end
+
+  test 'getRecordings filter based on recording states and meta_params' do
+    create_list(:recording, 5)
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'unpublished')
+    r3 = create(:recording)
+    create(:metadatum, recording: r1, key: 'bbb-context-name', value: 'test1')
+    create(:metadatum, recording: r3, key: 'bbb-origin-tag', value: 'GL')
+    create(:metadatum, recording: r2, key: 'bbb-origin-tag', value: 'GL')
+
+    params = encode_bbb_params('getRecordings', {
+      recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
+      state: %w[published unpublished].join(','),
+      'meta_bbb-context-name': %w[test1 test2].join(','),
+      'meta_bbb-origin-tag': ['GL'].join(','),
+    }.to_query)
+    get bigbluebutton_api_get_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 2
+  end
+
+  test 'getRecordings filter based on recording states and meta_params and
+       returns no recordings if no match found' do
+    create_list(:recording, 5)
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'unpublished')
+    r3 = create(:recording)
+    create(:metadatum, recording: r1, key: 'bbb-context-name', value: 'test12')
+    create(:metadatum, recording: r3, key: 'bbb-origin-tag', value: 'GL1')
+    create(:metadatum, recording: r2, key: 'bbb-origin-tag', value: 'GL2')
+
+    params = encode_bbb_params('getRecordings', {
+      recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
+      state: %w[published unpublished].join(','),
+      'meta_bbb-context-name': %w[test1 test2].join(','),
+      'meta_bbb-origin-tag': ['GL'].join(','),
+    }.to_query)
+    get bigbluebutton_api_get_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 0
   end
 
   # publishRecordings
