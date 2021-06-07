@@ -1036,6 +1036,68 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>recordings>recording', 2
   end
 
+  test 'getRecordings filter based on recording states' do
+    create_list(:recording, 5)
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'unpublished')
+    r3 = create(:recording)
+
+    params = encode_bbb_params('getRecordings', {
+      recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
+      state: %w[published unpublished].join(','),
+    }.to_query)
+    get bigbluebutton_api_get_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 2
+  end
+
+  test 'getRecordings filter based on recording states and meta_params' do
+    create_list(:recording, 5)
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'unpublished')
+    r3 = create(:recording)
+    create(:metadatum, recording: r1, key: 'bbb-context-name', value: 'test1')
+    create(:metadatum, recording: r3, key: 'bbb-origin-tag', value: 'GL')
+    create(:metadatum, recording: r2, key: 'bbb-origin-tag', value: 'GL')
+
+    params = encode_bbb_params('getRecordings', {
+      recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
+      state: %w[published unpublished].join(','),
+      'meta_bbb-context-name': %w[test1 test2].join(','),
+      'meta_bbb-origin-tag': ['GL'].join(','),
+    }.to_query)
+    get bigbluebutton_api_get_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 2
+  end
+
+  test 'getRecordings filter based on recording states and meta_params and
+       returns no recordings if no match found' do
+    create_list(:recording, 5)
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'unpublished')
+    r3 = create(:recording)
+    create(:metadatum, recording: r1, key: 'bbb-context-name', value: 'test12')
+    create(:metadatum, recording: r3, key: 'bbb-origin-tag', value: 'GL1')
+    create(:metadatum, recording: r2, key: 'bbb-origin-tag', value: 'GL2')
+
+    params = encode_bbb_params('getRecordings', {
+      recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
+      state: %w[published unpublished].join(','),
+      'meta_bbb-context-name': %w[test1 test2].join(','),
+      'meta_bbb-origin-tag': ['GL'].join(','),
+    }.to_query)
+    get bigbluebutton_api_get_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 0
+  end
+
   # publishRecordings
 
   test 'publishRecordings with no parameters returns checksum error' do
