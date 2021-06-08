@@ -307,20 +307,6 @@ After changing the server needs to be polled at least once to see the new load.
 When you add a server to the pool, it may take upwards of 60 seconds (default value for `INTERVAL` for the background server polling process) before Scalelite marks the server as `online`.
 You can run the above task to have it poll the server right away without waiting.
 
-### Check the status of the entire deployment
-
-```sh
-./bin/rake status
-```
-
-This will print a table displaying a list of all servers and some basic statistics that can be used for monitoring the overall status of the deployment
-
-```
-     HOSTNAME        STATE   STATUS  MEETINGS  USERS  LARGEST MEETING  VIDEOS
- bbb1.example.com  enabled   online        12     25                7      15
- bbb2.example.com  enabled   online         4     14                4       5
-```
-
 ### Add multiple servers through a config file
 
 ```sh
@@ -341,6 +327,20 @@ servers:
 
 The command will print out each added server's `url` and `id` once it has been successfully added.
 Note that all servers are added in the disabled state; see "Enable a server" above to enable them.
+
+### Check the status of the entire deployment
+
+```sh
+./bin/rake status
+```
+
+This will print a table displaying a list of all servers and some basic statistics that can be used for monitoring the overall status of the deployment
+
+```
+     HOSTNAME        STATE   STATUS  MEETINGS  USERS  LARGEST MEETING  VIDEOS
+ bbb1.example.com  enabled   online        12     25                7      15
+ bbb2.example.com  enabled   online         4     14                4       5
+```
 
 ## Getting Help
 

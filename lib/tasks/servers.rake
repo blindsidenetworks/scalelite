@@ -155,5 +155,7 @@ namespace :servers do
       puts "server: #{created.url}"
       puts "id: #{created.id}"
     end
+  rescue StandardError => e
+    puts(e)
   end
 end
