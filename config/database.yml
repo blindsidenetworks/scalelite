@@ -3,6 +3,7 @@ default: &default
   timeout: 5000
   adapter: postgresql
   encoding: unicode
+  prepared_statements: <%= ENV.fetch('PREPARED_STATEMENT') {true} %>
 
 development:
   <<: *default
