@@ -40,7 +40,6 @@ class RecordingImporter
           FileUtils.mkdir_p(format_dir)
           FileUtils.mv("#{playback_format.format}/#{recording.record_id}", format_dir, force: true)
         end
-        recording.update!(published: true)
         callback_data = CallbackData.find_by(meeting_id: recording.meeting_id)
         callback_data&.update(recording_id: recording.id)
       end
