@@ -155,6 +155,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `SERVER_ID_IS_HOSTNAME`: If set to "true", then instead of generating random UUIDs as the server ID when adding a server Scalelite will use the hostname of the server as the id. Server hostnames will be checked for uniqueness. Defaults to "false".
 * `CREATE_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by create API call. Should be in the format 'CREATE_EXCLUDE_PARAMS="param1,param2,param3"'.
 * `JOIN_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by join API call. Should be in the format 'JOIN_EXCLUDE_PARAMS="param1,param2,param3"'.
+* `PREPARED_STATEMENT`: Enable/Disable Active Record prepared statements feature, can be disabled by setting the value as `false`. Defaults to `true`.
 
 ### Redis Connection (`config/redis_store.yml`)
 

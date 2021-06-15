@@ -27,6 +27,7 @@ ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini.asc /
 RUN gpg --batch --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 595E85A6B1B4779EA4DAAEC70B588DFF0527A9B7
 RUN gpg --batch --verify /tini.asc /sbin/tini
 RUN chmod +x /sbin/tini
+RUN yum -y install redhat-rpm-config
 
 FROM amazonlinux-base AS nginx
 RUN yes | amazon-linux-extras install nginx1
@@ -45,8 +46,9 @@ CMD [ "/etc/nginx/start", "-g", "daemon off;" ]
 
 FROM amazonlinux-base AS base
 # Install Node.js (needed for yarn)
-RUN curl -sL https://rpm.nodesource.com/setup_10.x | bash -
-RUN yum -y install nodejs gcc-c++ make
+RUN yum -y install gcc-c++ make
+RUN curl -sL https://rpm.nodesource.com/setup_14.x | bash -
+RUN yum -y install nodejs
 # Install Ruby & Rails
 RUN curl -sL -o /etc/yum.repos.d/yarn.repo https://dl.yarnpkg.com/rpm/yarn.repo
 RUN amazon-linux-extras enable ruby2.6 \
