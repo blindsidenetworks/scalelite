@@ -52,6 +52,73 @@ class BigBlueButtonApiController < ApplicationController
     # Render response from the server
     render(xml: response)
   end
+  
+    def createhook
+    params.require(:meetingID)
+    params.require(:callbackURL)
+
+    begin
+      meeting = Meeting.find(params[:meetingID])
+    rescue ApplicationRedisRecord::RecordNotFound
+      # Respond with MeetingNotFoundError if the meeting could not be found
+      logger.info("The requested meeting #{params[:meetingID]} does not exist")
+      raise MeetingNotFoundError
+    end
+
+    server = meeting.server
+    # Construct getMeetingInfo call with the right url + secret and checksum
+    uri = encode_bbb_uri('hooks/create',
+                         server.url,
+                         server.secret,
+                         callbackURL: params[:callbackURL], meetingID: params[:meetingID])
+
+    begin
+      # Send a GET request to the server
+      response = get_post_req(uri, **bbb_req_timeout(server))
+    rescue BBBError
+      # Reraise the error
+      raise
+    rescue StandardError => e
+      logger.warn("Error #{e} accessing meeting #{params[:meetingID]} on server.")
+      raise InternalError, 'Unable to access meeting on server.'
+    end
+
+    # Render response from the server
+    render(xml: response)
+  end
+
+  def listhook
+    params.require(:meetingID)
+
+    begin
+      meeting = Meeting.find(params[:meetingID])
+    rescue ApplicationRedisRecord::RecordNotFound
+      # Respond with MeetingNotFoundError if the meeting could not be found
+      logger.info("The requested meeting #{params[:meetingID]} does not exist")
+      raise MeetingNotFoundError
+    end
+
+    server = meeting.server
+    # Construct getMeetingInfo call with the right url + secret and checksum
+    uri = encode_bbb_uri('hooks/list',
+                         server.url,
+                         server.secret,
+                         meetingID: params[:meetingID])
+
+    begin
+      # Send a GET request to the server
+      response = get_post_req(uri, **bbb_req_timeout(server))
+    rescue BBBError
+      # Reraise the error
+      raise
+    rescue StandardError => e
+      logger.warn("Error #{e} accessing meeting #{params[:meetingID]} on server.")
+      raise InternalError, 'Unable to access meeting on server.'
+    end
+
+    # Render response from the server
+    render(xml: response)
+  end
 
   def is_meeting_running
     params.require(:meetingID)
