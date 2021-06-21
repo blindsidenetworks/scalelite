@@ -46,4 +46,10 @@ module BBBErrors
       super('internalError', error)
     end
   end
+
+  class ServerUnavailableError < BBBError
+    def initialize
+      super('serverUnavailable', 'The server for this meeting is disabled/offline.')
+    end
+  end
 end

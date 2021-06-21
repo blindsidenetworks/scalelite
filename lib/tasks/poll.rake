@@ -68,6 +68,9 @@ namespace :poll do
           server.load = total_attendees * (server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
           server.online = true
         end
+
+        server.state = 'disabled' if server.cordoned? && server.load.to_f.zero?
+
       rescue StandardError => e
         Rails.logger.warn("Failed to get server id=#{server.id} status: #{e}")
 
@@ -96,7 +99,7 @@ namespace :poll do
         end
       end
     end
-    Concurrent::Promises.zip_futures_on(pool, *tasks).wait!
+    Concurrent::Promises.zip_futures_on(pool, *tasks).rescue {}
     pool.shutdown
     pool.wait_for_termination(5) || pool.kill
   end
@@ -128,7 +131,7 @@ namespace :poll do
         Rails.logger.warn("Failed to check meeting id=#{meeting.id} status: #{e}")
       end
     end
-    Concurrent::Promises.zip_futures_on(pool, *tasks).wait!
+    Concurrent::Promises.zip_futures_on(pool, *tasks).rescue {}
 
     pool.shutdown
     pool.wait_for_termination(5) || pool.kill

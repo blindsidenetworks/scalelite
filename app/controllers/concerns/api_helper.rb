@@ -51,6 +51,27 @@ module ApiHelper
     {}
   end
 
+  def encoded_token(payload)
+    secret = Rails.configuration.x.loadbalancer_secrets[0]
+    JWT.encode(payload, secret, 'HS512', typ: 'JWT')
+  end
+
+  def post_req(uri, body)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = (uri.scheme == 'https')
+    exp = Time.now.to_i + 24 * 3600
+    token = encoded_token(exp: exp)
+    # Setup a request and attach our JWT token
+    request = Net::HTTP::Post.new(uri.request_uri,
+                                  'Content-Type' => 'application/json',
+                                  'Authorization' => "Bearer #{token}",
+                                  'User-Agent' => 'BigBlueButton Analytics Callback')
+    # Send out data as json body
+    request.body = body.to_json
+    logger.info("Sending request to #{uri.scheme}://#{uri.host}#{uri.request_uri}")
+    http.request(request)
+  end
+
   # GET/POST request
   def get_post_req(uri, body = '', **options)
     # If body is passed and has a value, setup POST request

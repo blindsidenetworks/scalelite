@@ -156,6 +156,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `SERVER_ID_IS_HOSTNAME`: If set to "true", then instead of generating random UUIDs as the server ID when adding a server Scalelite will use the hostname of the server as the id. Server hostnames will be checked for uniqueness. Defaults to "false".
 * `CREATE_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by create API call. Should be in the format 'CREATE_EXCLUDE_PARAMS="param1,param2,param3"'.
 * `JOIN_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by join API call. Should be in the format 'JOIN_EXCLUDE_PARAMS="param1,param2,param3"'.
+* `PREPARED_STATEMENT`: Enable/Disable Active Record prepared statements feature, can be disabled by setting the value as `false`. Defaults to `true`.
 
 ### Redis Connection (`config/redis_store.yml`)
 
@@ -249,9 +250,9 @@ You should either wait for all meetings to end, or run the "Panic" function firs
 
 Mark the server as disabled.
 When a server is disabled, no new meetings will be started on the server.
-Any existing meetings will continue to run until they finish.
-The Poll process continues to run on disabled servers to update the "Online" status and detect ended meetings.
-This is useful to "drain" a server for updates without disrupting any ongoing meetings.
+You will not be able to join existing meetings.
+The Poll process does not update disabled servers.
+You should not disable a server if it has active load, you can either use the cordon option to drain the server or respond with `yes` to clear all meeting state.  
 
 ### Enable a server
 
@@ -272,6 +273,20 @@ Note that the server won't be used for new meetings until after the next time th
 Disable a server and clear all meeting state.
 This method is used to recover from a crashed BigBlueButton server.
 After the meeting state is cleared, anyone who tries to join a meeting that was previously on this server will instead be directed to a new meeting on a different server.
+
+### Cordon a server
+
+```sh
+./bin/rake servers:cordon[id]
+```
+
+Mark the server as cordoned.
+When a server is cordoned, no new meetings will be started on the server.
+Any existing meetings will continue to run until they finish.
+The Poll process continues to run on cordoned servers to update the "Online" status and detect ended meetings.
+The get_meetings API would also return all the active meetings in the cordoned server.
+This is useful to "drain" a server for updates without disrupting any ongoing meetings.
+The server state will be updated to `disabled` by the poller once the load in server becomes zero or nil.
 
 ### Edit the load-multiplier of a server
 
@@ -294,6 +309,27 @@ After changing the server needs to be polled at least once to see the new load.
 When you add a server to the pool, it may take upwards of 60 seconds (default value for `INTERVAL` for the background server polling process) before Scalelite marks the server as `online`.
 You can run the above task to have it poll the server right away without waiting.
 
+### Add multiple servers through a config file
+
+```sh
+./bin/rake servers:addAll[file]
+```
+
+Adds all the servers defined in a YAML file passed as an argument. The file passed in should have the following format:
+
+```yaml
+servers:
+  - url: "bbb1.example.com"
+    secret: "1bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+  - url: "bbb2.example.com"
+    secret: "2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+  - url: "bbb3.example.com"
+    secret: "3bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+```
+
+The command will print out each added server's `url` and `id` once it has been successfully added.
+Note that all servers are added in the disabled state; see "Enable a server" above to enable them.
+
 ### Check the status of the entire deployment
 
 ```sh
@@ -307,7 +343,6 @@ This will print a table displaying a list of all servers and some basic statisti
  bbb1.example.com  enabled   online        12     25                7      15
  bbb2.example.com  enabled   online         4     14                4       5
 ```
-
 
 ## Getting Help
 
