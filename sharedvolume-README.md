@@ -61,10 +61,12 @@ To match the mount configuration described in this document, the configuration f
 work_dir: /var/bigbluebutton/recording/scalelite
 # Directory to place recording files for scalelite to import
 spool_dir: /mnt/scalelite-recordings/var/bigbluebutton/spool
+# Extra rsync options for keeping the permissions of the copied files as defined for the directories.
+# extra_rsync_opts: ["-av", "--no-owner", "--chmod=F664"]
 ```
 
 **Next step is only needed if you have existing recordings on your BigBlueButton server**
 
 Once the configuration is performed, you can run the provided `scalelite_batch_import.sh` script to transfer any existing recordings from the BigBlueButton server to Scalelite.
 
-Once the recording transfer has been tested, you can **optionally** enable recording automatic deletion on the BigBlueButton server to remove the local copies of the recordings and free up disk space. 
+Once the recording transfer has been tested, you can **optionally** enable recording automatic deletion on the BigBlueButton server to remove the local copies of the recordings and free up disk space.

@@ -27,26 +27,35 @@ RUN apk add --no-cache nginx tini gettext \
 RUN rm /etc/nginx/conf.d/default.conf
 COPY --from=bbb-playback /etc/bigbluebutton/nginx /etc/bigbluebutton/nginx/
 COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback/
-RUN mkdir -p /etc/nginx/config.d
-COPY nginx/* /etc/nginx/
+COPY nginx/start /etc/nginx/start
+COPY nginx/dhparam.pem /etc/nginx/dhparam.pem
+COPY nginx/conf.d /etc/nginx/http.d/
+# This will be needed with alpine 3.14 since conf.d is being phased out.
+# RUN ln -s /etc/nginx/http.d/ /etc/nginx/conf.d
 EXPOSE 80
+EXPOSE 443
 ENV NGINX_HOSTNAME=localhost
 CMD [ "/etc/nginx/start", "-g", "daemon off;" ]
 
 FROM alpine AS base
 RUN apk add --no-cache \
+    libpq
+RUN apk add --no-cache \
     libpq \
     libxml2 \
     libxslt \
     ruby \
+    ruby-irb \
     ruby-bigdecimal \
     ruby-bundler \
     ruby-json \
     tini \
     tzdata \
-    shared-mime-info \
-    && addgroup scalelite \
-    && adduser -h /srv/scalelite -G scalelite -D scalelite
+    shared-mime-info
+RUN addgroup scalelite --gid 1000 && \
+    adduser -u 1000 -h /srv/scalelite -G scalelite -D scalelite
+RUN addgroup scalelite-spool --gid 2000 && \
+    addgroup scalelite scalelite-spool
 WORKDIR /srv/scalelite
 
 FROM base as builder
@@ -69,7 +78,7 @@ RUN rm -rf nginx
 
 FROM base AS application
 USER scalelite:scalelite
-ENV RAILS_ENV=production RAILS_LOG_TO_STDOUT=1
+ENV RAILS_ENV=production RAILS_LOG_TO_STDOUT=true
 COPY --from=builder --chown=scalelite:scalelite /srv/scalelite ./
 
 ARG BUILD_NUMBER

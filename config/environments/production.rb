@@ -61,7 +61,7 @@ Rails.application.configure do
   # require 'syslog/logger'
   # config.logger = ActiveSupport::TaggedLogging.new(Syslog::Logger.new 'app-name')
 
-  if ENV['RAILS_LOG_TO_STDOUT'].present?
+  if 'true'.casecmp?(ENV['RAILS_LOG_TO_STDOUT'])
     # Disable output buffering when STDOUT isn't a tty (e.g. Docker images, systemd services)
     STDOUT.sync = true
     logger = ActiveSupport::Logger.new(STDOUT)

@@ -105,7 +105,8 @@ class BigBlueButtonApiController < ApplicationController
 
     # Make individual getMeetings call for each server and append result to all_meetings
     servers.each do |server|
-      next unless server.online && server.enabled # only send getMeetings requests to servers that are online and enabled
+      # only send getMeetings requests to servers that have state as enabled/cordoned
+      next if server.offline? || server.disabled?
 
       uri = encode_bbb_uri('getMeetings', server.url, server.secret)
 
@@ -168,7 +169,10 @@ class BigBlueButtonApiController < ApplicationController
     end
 
     logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
+    params_hash = params
 
+    # EventHandler will handle all the events associated with the create action
+    params = EventHandler.new(params_hash, meeting.id).handle
     # Get list of params that should not be modified by create API call
     excluded_params = Rails.configuration.x.create_exclude_params
 
@@ -237,17 +241,19 @@ class BigBlueButtonApiController < ApplicationController
 
   def join
     params.require(:meetingID)
-
     begin
       meeting = Meeting.find(params[:meetingID])
+      server = meeting.server
+      raise ServerUnavailableError if server.offline? || server.disabled?
+    rescue ServerUnavailableError
+      logger.error("The server #{server.id} for meeting #{meeting.id} is offline") if server.offline?
+      logger.error("The server #{server.id} for meeting #{meeting.id} has been disabled") if server.disabled?
+      raise ServerDisabledError
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with MeetingNotFoundError if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
       raise MeetingNotFoundError
     end
-
-    server = meeting.server
-
     # Get list of params that should not be modified by join API call
     excluded_params = Rails.configuration.x.join_exclude_params
 
@@ -260,7 +266,19 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def get_recordings
-    query = Recording.includes(playback_formats: [:thumbnails], metadata: [])
+    query = Recording.includes(playback_formats: [:thumbnails], metadata: []).references(:metadata)
+    query = query.where(state: params[:state].split(',')) if params[:state].present?
+    meta_params = params.select { |key, _value| key.to_s.match(/^meta_/) }.permit!.to_h.to_a
+    if meta_params.present?
+      meta_query = '(metadata.key = ? and metadata.value in (?))'
+      meta_values = [meta_params[0][0].remove('meta_'), meta_params[0][1].split(',')]
+      meta_params[1..-1].each do |val|
+        meta_query += ' or (metadata.key = ? and metadata.value in (?))'
+        meta_values << val[0].remove('meta_')
+        meta_values << val[1].split(',')
+      end
+      query = query.where(meta_query.to_s, *meta_values)
+    end
     query = query.with_recording_id_prefixes(params[:recordID].split(',')) if params[:recordID].present?
     query = query.where(meeting_id: params[:meetingID].split(',')) if params[:meetingID].present?
 
@@ -383,6 +401,27 @@ class BigBlueButtonApiController < ApplicationController
   def recordings_disabled
     logger.debug('The recording feature have been disabled')
     raise BBBError.new('notFound', 'We could not find recordings')
+  end
+
+  def analytics_callback
+    meeting_id = params['meeting_id']
+    logger.info("Making analytics callback for #{meeting_id}")
+    callback_data = CallbackData.find_by_meeting_id(meeting_id)
+    analytics_callback_url = callback_data&.callback_attributes&.dig(:analytics_callback_url)
+    return if analytics_callback_url.nil?
+
+    uri = URI.parse(analytics_callback_url)
+    response = post_req(uri, params)
+    code = response.code.to_i
+
+    if code < 200 || code >= 300
+      logger.info("Analytics callback request failed: #{response.code} #{response.message} (code #{code})")
+    else
+      logger.info("Analytics callback successful for meeting: #{meeting_id} (code #{code})")
+    end
+  rescue StandardError => e
+    logger.info('Rescued')
+    logger.info(e.to_s)
   end
 
   private

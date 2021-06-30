@@ -1,10 +1,10 @@
 env:
   RUBY_VERSION: 2.7.x
 
-name: CI Build Push
+name: CI Build Pre-Release
 on:
-  push:
-    branches: "*"
+  release:
+    types: [prereleased]
 
 jobs:
   main:
@@ -12,7 +12,6 @@ jobs:
     env:
       DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
       DOCKER_BUILD_ENABLED: ${{ secrets.DOCKER_BUILD_ENABLED }}
-      DOCKER_BUILD_ALTERNATE_ENABLED: ${{ secrets.DOCKER_BUILD_ALTERNATE_ENABLED }}
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
@@ -45,17 +44,11 @@ jobs:
         shell: bash
         run: echo "##[set-output name=repository;]$(echo ${DOCKER_REPOSITORY:-$GITHUB_REPOSITORY})"
 
-      - name: Extract Branch Name
-        id: ci_branch_name
+      - name: Extract Tag Release Revision
+        id: ci_tag_release
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         shell: bash
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-
-      - name: Extract Commit Short SHA
-        id: ci_commit_short_sha
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        shell: bash
-        run: echo "##[set-output name=short_sha;]$(echo ${GITHUB_SHA} | cut -c1-7)"
+        run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/})"
 
       - name: Build and Push nginx
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
@@ -63,7 +56,8 @@ jobs:
         with:
           push: true
           target: nginx
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-nginx"
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-nginx"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -74,9 +68,9 @@ jobs:
           push: true
           target: api
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-api"
-          build-args: "BUILD_NUMBER=${{ steps.ci_branch_name.outputs.branch }}-${{ steps.ci_commit_short_sha.outputs.short_sha }}"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-api"
+          build-args: "BUILD_NUMBER=${{ steps.ci_tag_release.outputs.tag }}"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -86,7 +80,8 @@ jobs:
         with:
           push: true
           target: poller
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-poller"
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-poller"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -96,103 +91,110 @@ jobs:
         with:
           push: true
           target: recording-importer
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-recording-importer"
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-recording-importer"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       # Alternate Images for bbb-bionic-230 with alpine
       - name: Alternate Alpine Build and Push nginx
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic230-alpine
           push: true
           target: nginx
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-alpine-nginx"
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-bionic230-alpine-nginx"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Alpine Build and Push api
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic230-alpine
           push: true
           target: api
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-alpine"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-alpine-api"
-          build-args: "BUILD_NUMBER=${{ steps.ci_branch_name.outputs.branch }}-${{ steps.ci_commit_short_sha.outputs.short_sha }}"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-bionic230-alpine"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-bionic230-alpine-api"
+          build-args: "BUILD_NUMBER=${{ steps.ci_tag_release.outputs.tag }}"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Alpine Build and Push poller
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic230-alpine
           push: true
           target: poller
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-alpine-poller"
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-bionic230-alpine-poller"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Alpine Build and Push recording-importer
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic230-alpine
           push: true
           target: recording-importer
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-alpine-recording-importer"
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-bionic230-alpine-recording-importer"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       # Alternate Images for bbb-bionic-230 with amazonlinux
       - name: Alternate Amazon Linux Build and Push nginx
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic230-amazonlinux
           push: true
           target: nginx
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-amazonlinux-nginx"
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-bionic230-amazonlinux-nginx"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Amazon Linux Build and Push api
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic230-amazonlinux
           push: true
           target: api
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-amazonlinux"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-amazonlinux-api"
-          build-args: "BUILD_NUMBER=${{ steps.ci_branch_name.outputs.branch }}-${{ steps.ci_commit_short_sha.outputs.short_sha }}"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-bionic230-amazonlinux"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-bionic230-amazonlinux-api"
+          build-args: "BUILD_NUMBER=${{ steps.ci_tag_release.outputs.tag }}"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Amazon Linux Build and Push poller
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic230-amazonlinux
           push: true
           target: poller
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-amazonlinux-poller"
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-bionic230-amazonlinux-poller"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Amazon Linux Build and Push recording-importer
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic230-amazonlinux
           push: true
           target: recording-importer
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-amazonlinux-recording-importer"
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release.outputs.tag }}-bionic230-amazonlinux-recording-importer"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
