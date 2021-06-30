@@ -156,6 +156,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `CREATE_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by create API call. Should be in the format 'CREATE_EXCLUDE_PARAMS="param1,param2,param3"'.
 * `JOIN_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by join API call. Should be in the format 'JOIN_EXCLUDE_PARAMS="param1,param2,param3"'.
 * `PREPARED_STATEMENT`: Enable/Disable Active Record prepared statements feature, can be disabled by setting the value as `false`. Defaults to `true`.
+* `DB_CONNECTION_RETRY_COUNT`: The number of times db connection retries will be attempted, in case of a db connection failure. Defaults to `3`
 
 ### Redis Connection (`config/redis_store.yml`)
 
