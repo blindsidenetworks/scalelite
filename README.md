@@ -348,7 +348,7 @@ This will print a table displaying a list of all servers and some basic statisti
 
 ## Getting Help
 
-For commercial help with setup and deployment of Scalelite, contact us at [Blindside Networks](https://blindsidenetworks.com/scaling-bigbluebutton/).
+For commercial help with setup and deployment of Scalelite, contact us at [Blindside Networks](https://blindsidenetworks.com/contact).
 
 ## Trademarks
 
