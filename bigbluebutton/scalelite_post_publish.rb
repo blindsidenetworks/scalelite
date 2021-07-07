@@ -40,6 +40,8 @@ end
 
 props = Psych.load_file(File.join(__dir__, '../bigbluebutton.yml'))
 published_dir = props['published_dir'] || raise('Unable to determine published_dir from bigbluebutton.yml')
+recording_dir = props['recording_dir'] || raise('Unable to determine recording_dir from bigbluebutton.yml')
+
 scalelite_props = Psych.load_file(File.join(__dir__, '../scalelite.yml'))
 work_dir = scalelite_props['work_dir'] || raise('Unable to determine work_dir from scalelite.yml')
 spool_dir = scalelite_props['spool_dir'] || raise('Unable to determine spool_dir from scalelite.yml')
@@ -71,6 +73,11 @@ begin
   puts("Transferring recording archive to #{spool_dir}")
   system('rsync', '--verbose', '--protect-args', *extra_rsync_opts, archive_file, spool_dir) \
     || raise('Failed to transfer recording archive')
+
+  puts("Create sender.done file")
+  File.open("#{recording_dir}/status/published/#{meeting_id}-sender.done", "w") do |f|
+    f.write("Published #{meeting_id}")
+  end
 
   puts('Recording transferring to Scalelite ends')
 ensure
