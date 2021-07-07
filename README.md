@@ -156,6 +156,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `CREATE_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by create API call. Should be in the format 'CREATE_EXCLUDE_PARAMS="param1,param2,param3"'.
 * `JOIN_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by join API call. Should be in the format 'JOIN_EXCLUDE_PARAMS="param1,param2,param3"'.
 * `PREPARED_STATEMENT`: Enable/Disable Active Record prepared statements feature, can be disabled by setting the value as `false`. Defaults to `true`.
+* `DB_CONNECTION_RETRY_COUNT`: The number of times db connection retries will be attempted, in case of a db connection failure. Defaults to `3`
 
 ### Redis Connection (`config/redis_store.yml`)
 
@@ -231,6 +232,8 @@ The `loadMultiplier` can be used to give individual servers a higher or lower pr
 
 This command will print out the ID of the newly created server, and `OK` if it was successful.
 Note that servers are added in the disabled state; see "Enable a server" below to enable it.
+
+Make sure that there is no space between the parameters [url,secret,loadMultipler] and the comma as it causes a "rake aborted!" error.
 
 ### Remove a server
 
@@ -345,7 +348,7 @@ This will print a table displaying a list of all servers and some basic statisti
 
 ## Getting Help
 
-For commercial help with setup and deployment of Scalelite, contact us at [Blindside Networks](https://blindsidenetworks.com/scaling-bigbluebutton/).
+For commercial help with setup and deployment of Scalelite, contact us at [Blindside Networks](https://blindsidenetworks.com/contact).
 
 ## Trademarks
 
