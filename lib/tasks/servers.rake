@@ -82,14 +82,12 @@ namespace :servers do
       if response
         meetings = Meeting.all.select { |m| m.server_id == server.id }
         meetings.each do |meeting|
-          ActiveRecord::Base.transaction do
-            puts("Clearing Meeting id=#{meeting.id}")
-            moderator_pw = meeting.try(:moderator_pw)
-            get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
-            meeting.destroy!
-          end
+          puts("Clearing Meeting id=#{meeting.id}")
+          moderator_pw = meeting.try(:moderator_pw)
+          meeting.destroy!
+          get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
         rescue ApplicationRedisRecord::RecordNotDestroyed => e
-          puts("WARNING: Could not destroy meeting id=#{meeting.id}: #{e}")
+          raise("ERROR: Could not destroy meeting id=#{meeting.id}: #{e}")
         rescue StandardError => e
           puts("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
         end
@@ -108,22 +106,20 @@ namespace :servers do
     include ApiHelper
 
     server = Server.find(args.id)
-    server.state = 'disabled' unless args.keep_state
-    server.save!
 
     meetings = Meeting.all.select { |m| m.server_id == server.id }
     meetings.each do |meeting|
-      ActiveRecord::Base.transaction do
-        puts("Clearing Meeting id=#{meeting.id}")
-        moderator_pw = meeting.try(:moderator_pw)
-        get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
-        meeting.destroy!
-      end
+      puts("Clearing Meeting id=#{meeting.id}")
+      moderator_pw = meeting.try(:moderator_pw)
+      meeting.destroy!
+      get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
     rescue ApplicationRedisRecord::RecordNotDestroyed => e
-      puts("WARNING: Could not destroy meeting id=#{meeting.id}: #{e}")
+      raise("ERROR: Could not destroy meeting id=#{meeting.id}: #{e}")
     rescue StandardError => e
       puts("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
     end
+    server.state = 'disabled' unless args.keep_state
+    server.save!
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
