@@ -1038,9 +1038,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   test 'getRecordings filter based on recording states' do
     create_list(:recording, 5)
-    r1 = create(:recording, state: 'published')
+    r1 = create(:recording, state: 'processing')
     r2 = create(:recording, state: 'unpublished')
-    r3 = create(:recording)
+    r3 = create(:recording, state: 'deleted')
 
     params = encode_bbb_params('getRecordings', {
       recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
@@ -1050,21 +1050,21 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
-    assert_select 'response>recordings>recording', 2
+    assert_select 'response>recordings>recording', 1
   end
 
   test 'getRecordings filter based on recording states and meta_params' do
     create_list(:recording, 5)
     r1 = create(:recording, state: 'published')
     r2 = create(:recording, state: 'unpublished')
-    r3 = create(:recording)
+    r3 = create(:recording, state: 'deleted')
     create(:metadatum, recording: r1, key: 'bbb-context-name', value: 'test1')
     create(:metadatum, recording: r3, key: 'bbb-origin-tag', value: 'GL')
     create(:metadatum, recording: r2, key: 'bbb-origin-tag', value: 'GL')
 
     params = encode_bbb_params('getRecordings', {
       recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
-      state: %w[published unpublished].join(','),
+      state: %w[published unpublished deleted].join(','),
       'meta_bbb-context-name': %w[test1 test2].join(','),
       'meta_bbb-origin-tag': ['GL'].join(','),
     }.to_query)
@@ -1072,7 +1072,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
-    assert_select 'response>recordings>recording', 2
+    assert_select 'response>recordings>recording', 3
   end
 
   test 'getRecordings filter based on recording states and meta_params and
@@ -1324,7 +1324,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'deleteRecordings deletes the recording from the database if passed recordID' do
-    r = create(:recording)
+    r = create(:recording, record_id: 'amal123')
 
     params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
     get bigbluebutton_api_delete_recordings_url, params: params
@@ -1332,7 +1332,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>deleted', 'true'
 
-    assert_not Recording.exists?(record_id: r.record_id)
+    assert r.reload.state.eql?('deleted')
   end
 
   test 'deleteRecordings handles multiple recording IDs passed' do
@@ -1347,9 +1347,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>deleted', 'true'
 
-    assert_not Recording.exists?(record_id: r.record_id)
-    assert_not Recording.exists?(record_id: r1.record_id)
-    assert_not Recording.exists?(record_id: r2.record_id)
+    assert r.reload.state.eql?('deleted')
+    assert r1.reload.state.eql?('deleted')
+    assert r2.reload.state.eql?('deleted')
   end
 
   # RecordingDisabled
