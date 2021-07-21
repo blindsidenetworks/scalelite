@@ -111,5 +111,9 @@ module Scalelite
 
     # DB connection retry attempt counts
     config.x.db_connection_retry_count = ENV.fetch('DB_CONNECTION_RETRY_COUNT', '3').to_i
+
+    # Prevents get_recordings api from returning all recordings when recordID is not specified in the request, if set to 'true'.
+    # Defaults to false.
+    config.x.get_recordings_api_filtered = ENV.fetch('GET_RECORDINGS_API_FILTERED', 'false').casecmp?('true')
   end
 end
