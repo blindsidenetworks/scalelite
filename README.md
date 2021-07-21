@@ -149,12 +149,13 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `GET_MEETINGS_API_DISABLED`: Disable GET_MEETINGS API by setting this value as `true`.
 * `POLLER_THREADS`: The number of threads to run in the poller process. The default is 5.
 * `CONNECT_TIMEOUT`: The timeout for establishing a network connection to the BigBlueButton server in the load balancer and poller in seconds. Default is 5 seconds. Floating point numbers can be used for timeouts less than 1 second.
+* `POLLER_WAIT_TIMEOUT`: The timeout value set for the poller to finish polling a server. Defaults to 10.
 * `RESPONSE_TIMEOUT`: The timeout to wait for a response after sending a request to the BigBlueButton server in the load balancer and poller in seconds. Default is 10 seconds. Floating point numbers can be used for timeouts less than 1 second.
 * `LOAD_MIN_USER_COUNT`: Minimum user count of a meeting, used for calculating server load. Defaults to 15.
 * `LOAD_JOIN_BUFFER_TIME`: The time(in minutes) until the `LOAD_MIN_USER_COUNT` will be used for calculating server load. Defaults to 15.
 * `SERVER_ID_IS_HOSTNAME`: If set to "true", then instead of generating random UUIDs as the server ID when adding a server Scalelite will use the hostname of the server as the id. Server hostnames will be checked for uniqueness. Defaults to "false".
-* `CREATE_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by create API call. Should be in the format 'CREATE_EXCLUDE_PARAMS="param1,param2,param3"'.
-* `JOIN_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by join API call. Should be in the format 'JOIN_EXCLUDE_PARAMS="param1,param2,param3"'.
+* `CREATE_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by create API call. Should be in the format 'CREATE_EXCLUDE_PARAMS=param1,param2,param3'.
+* `JOIN_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by join API call. Should be in the format 'JOIN_EXCLUDE_PARAMS=param1,param2,param3'.
 * `PREPARED_STATEMENT`: Enable/Disable Active Record prepared statements feature, can be disabled by setting the value as `false`. Defaults to `true`.
 * `DB_CONNECTION_RETRY_COUNT`: The number of times db connection retries will be attempted, in case of a db connection failure. Defaults to `3`
 
