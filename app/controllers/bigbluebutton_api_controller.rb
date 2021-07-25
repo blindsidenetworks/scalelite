@@ -328,8 +328,7 @@ class BigBlueButtonApiController < ApplicationController
           FileUtils.mkdir_p(format_dir)
           FileUtils.mv(recording_path, format_dir)
         end
-
-        rec.update(published: publish)
+        rec.update(published: publish, publish_updated: true)
       rescue StandardError => e
         logger.warn("Error #{e} setting published=#{publish} recording #{rec.record_id}")
         raise InternalError, 'Unable to publish/unpublish recording.'
