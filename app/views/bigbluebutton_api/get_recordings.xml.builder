@@ -10,6 +10,7 @@ xml.response do
         xml.internalMeetingID recording.record_id
         xml.name recording.name
         xml.published recording.published ? 'true' : 'false'
+        xml.protected recording.protected
         xml.state recording.state unless recording.state.nil?
         xml.startTime((recording.starttime.to_r * 1000).to_i)
         xml.endTime((recording.endtime.to_r * 1000).to_i)
@@ -31,7 +32,7 @@ xml.response do
           recording.playback_formats.each do |format|
             xml.format do
               xml.type format.format
-              xml.url "#{@url_prefix}#{format.url}/"
+              xml.url BigBlueButtonApiHelper.recording_url(recording, @url_prefix, format.url)
               xml.length format.length
               xml.processingTime format.processing_time unless format.processing_time.nil?
               unless format.thumbnails.empty?

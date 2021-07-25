@@ -359,14 +359,17 @@ class BigBlueButtonApiController < ApplicationController
 
     logger.debug("Adding metadata: #{add_metadata}")
     logger.debug("Removing metadata: #{remove_metadata}")
-
     record_ids = params[:recordID].split(',')
+    recording_updated = false
     Metadatum.transaction do
       Metadatum.upsert_by_record_id(record_ids, add_metadata)
       Metadatum.delete_by_record_id(record_ids, remove_metadata)
+      if params[:protect].present?
+        recording_updated = Recording.find_by(record_id: record_ids.first).update!(protected: params[:protect])
+      end
     end
 
-    @updated = !(add_metadata.empty? && remove_metadata.empty?)
+    @updated = !(add_metadata.empty? && remove_metadata.empty?) || recording_updated
     render(:update_recordings)
   end
 

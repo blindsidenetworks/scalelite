@@ -111,5 +111,15 @@ module Scalelite
 
     # DB connection retry attempt counts
     config.x.db_connection_retry_count = ENV.fetch('DB_CONNECTION_RETRY_COUNT', '3').to_i
+
+    # Recording playback formats handled by Scalelite
+    config.x.recording_playback_formats = ENV.fetch('RECORDING_PLAYBACK_FORMATS',
+                                                    'presentation:video:screenshare:podcast:notes:capture').split(':')
+
+    # Recordings will proctected, if set to 'true'. Defaults to false.
+    config.x.protected_recordings_enabled = ENV.fetch('PROTECTED_RECORDINGS_ENABLED', 'false').casecmp?('true')
+
+    # Protected recordings url expiry timeout in hours. Defaults to 6.
+    config.x.protected_recordings_timeout = ENV.fetch('PROTECTED_RECORDINGS_TIMEOUT', '6').to_i
   end
 end
