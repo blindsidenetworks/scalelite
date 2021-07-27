@@ -30,7 +30,7 @@ class PlaybackController < ApplicationController
 
   def deliver_resource(permit)
     if permit
-      resource_path = request.original_fullpath
+      resource_path = request.path
       static_resource_path = "static-resource#{resource_path}"
       response.headers['X-Accel-Redirect'] =
         "/#{static_resource_path}"
