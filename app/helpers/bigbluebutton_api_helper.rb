@@ -7,7 +7,7 @@ module BigBlueButtonApiHelper
   def self.recording_url(recording, url_prefix, format_url)
     if recording.protected
       token = recording.generate_token
-      url = url_prefix + format_url
+      url = url_prefix + format_url + '/'
       uri = ::URI.parse(url)
       params = Hash[URI.decode_www_form(uri.query || '')].merge(token: token)
       uri.query = URI.encode_www_form(params)
