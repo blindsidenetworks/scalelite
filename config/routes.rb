@@ -39,6 +39,7 @@ Rails.application.routes.draw do
                                                                constraints: { player_version: %r{[^\/]+} })
 
   Rails.configuration.x.recording_playback_formats.each do |playback_format|
+    get("recording/:#{playback_format}/:record_id", to: 'playback#play', format: false)
     get("#{playback_format}/:record_id", to: 'playback#play', format: false)
     get("#{playback_format}(/*playback_resource)", to: 'playback#resource', format: false)
   end
