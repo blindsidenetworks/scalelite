@@ -40,7 +40,6 @@ Rails.application.routes.draw do
 
   Rails.configuration.x.recording_playback_formats.each do |playback_format|
     get("#{playback_format}/:record_id", to: 'playback#play', format: false)
-    get("#{playback_format}/:record_id(/*playback_resource)", to: 'playback#resource', format: false)
     get("#{playback_format}(/*playback_resource)", to: 'playback#resource', format: false)
   end
 
