@@ -13,7 +13,7 @@ module BigBlueButtonApiHelper
       uri.query = URI.encode_www_form(params)
       uri.to_s
     else
-      "#{url_prefix}#{format_url}".chomp('/') + '/'
+      "#{url_prefix}#{format_url}"
     end
   end
 end
