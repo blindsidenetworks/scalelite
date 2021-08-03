@@ -52,4 +52,7 @@ module BBBErrors
       super('serverUnavailable', 'The server for this meeting is disabled/offline.')
     end
   end
+
+  class RecordingNotFoundError < StandardError
+  end
 end
