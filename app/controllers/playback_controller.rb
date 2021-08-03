@@ -3,11 +3,14 @@
 class PlaybackController < ApplicationController
   include ApiHelper
   def play
-    recording = Recording.find_by!(record_id: playback_params[:record_id])
+    recording = Recording.find_by(record_id: playback_params[:record_id])
+    raise RecordingNotFoundError if recording.nil?
+
     if recording.protected
       begin
-        token = params.require(:token)
-        permit = recording.validate_token(token)
+        raise RecordingNotFoundError if params[:token].blank?
+
+        permit = recording.validate_token(params[:token])
         deliver_resource(permit)
       rescue JWT::DecodeError
         deliver_resource(false)
