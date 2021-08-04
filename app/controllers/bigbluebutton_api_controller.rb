@@ -3,7 +3,8 @@
 class BigBlueButtonApiController < ApplicationController
   include ApiHelper
 
-  before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled]
+  before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled,
+                                           :analytics_callback,]
 
   def index
     # Return the scalelite build number if passed as an env variable
@@ -411,6 +412,9 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def analytics_callback
+    token = request.headers['HTTP_AUTHORIZATION'].gsub!('Bearer ', '')
+    raise 'Token Invalid' unless decode_token?(token)
+
     meeting_id = params['meeting_id']
     logger.info("Making analytics callback for #{meeting_id}")
     callback_data = CallbackData.find_by_meeting_id(meeting_id)
