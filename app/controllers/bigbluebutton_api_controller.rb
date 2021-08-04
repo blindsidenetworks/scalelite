@@ -3,7 +3,8 @@
 class BigBlueButtonApiController < ApplicationController
   include ApiHelper
 
-  before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled]
+  before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled,
+                                           :analytics_callback,]
 
   def index
     # Return the scalelite build number if passed as an env variable
@@ -360,14 +361,17 @@ class BigBlueButtonApiController < ApplicationController
 
     logger.debug("Adding metadata: #{add_metadata}")
     logger.debug("Removing metadata: #{remove_metadata}")
-
     record_ids = params[:recordID].split(',')
+    recording_updated = false
     Metadatum.transaction do
       Metadatum.upsert_by_record_id(record_ids, add_metadata)
       Metadatum.delete_by_record_id(record_ids, remove_metadata)
+      if params[:protect].present?
+        recording_updated = Recording.find_by(record_id: record_ids.first).update!(protected: params[:protect])
+      end
     end
 
-    @updated = !(add_metadata.empty? && remove_metadata.empty?)
+    @updated = !(add_metadata.empty? && remove_metadata.empty?) || recording_updated
     render(:update_recordings)
   end
 
@@ -405,6 +409,9 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def analytics_callback
+    token = request.headers['HTTP_AUTHORIZATION'].gsub!('Bearer ', '')
+    raise 'Token Invalid' unless decode_token?(token)
+
     meeting_id = params['meeting_id']
     logger.info("Making analytics callback for #{meeting_id}")
     callback_data = CallbackData.find_by_meeting_id(meeting_id)
