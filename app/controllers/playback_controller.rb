@@ -34,7 +34,7 @@ class PlaybackController < ApplicationController
   def deliver_resource(permit)
     raise RecordingNotFoundError unless permit
 
-    resource_path = request.fullpath
+    resource_path = request.original_fullpath
     static_resource_path = "/static-resource#{resource_path}"
     response.headers['X-Accel-Redirect'] = static_resource_path
     head(:ok)
