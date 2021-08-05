@@ -6,13 +6,11 @@ module BigBlueButtonApiHelper
 
   def self.recording_url(playback_format, url_prefix)
     recording = playback_format.recording
-    url = "#{url_prefix}#{playback_format.url}"
-    return url unless recording.protected
+    unless recording.protected
+      return url_prefix + playback_play_path(record_id: recording.record_id, playback_format: playback_format.format)
+    end
 
     token = playback_format.create_protector_token
-    uri = URI.parse(url)
-    params = Hash[URI.decode_www_form(uri.query || '')].merge(token: token)
-    uri.query = URI.encode_www_form(params)
-    uri.to_s
+    url_prefix + playback_play_path(record_id: recording.record_id, playback_format: playback_format.format, token: token)
   end
 end
