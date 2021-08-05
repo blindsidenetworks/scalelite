@@ -24,6 +24,8 @@ class PlaybackFormat < ApplicationRecord
         redis.expire(key, Rails.configuration.x.recording_token_ttl)
       end
     end
+
+    token
   end
 
   # Lookup and invalidate a one-time-use protection token, and return the playback format it is for
