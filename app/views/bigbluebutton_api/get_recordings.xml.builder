@@ -33,7 +33,11 @@ xml.response do
             xml.format do
               xml.type format.format
               if recording.protected
-                xml.url @url_prefix + playback_play_path(record_id: recording.record_id, playback_format: format.format, token: format.create_protector_token)
+                xml.url @url_prefix + playback_play_path(
+                  record_id: recording.record_id,
+                  layback_format: format.format,
+                  token: format.create_protector_token
+                )
               else
                 xml.url @url_prefix + playback_format.url
               end

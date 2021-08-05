@@ -43,7 +43,7 @@ class PlaybackController < ApplicationController
 
   def create_cookie
     resource_path = "/#{@playback_format.format}/#{@recording.record_id}"
-    expires = Time.to_i + Rails.configuration.x.recording_cookie_ttl
+    expires = Time.now.to_i + Rails.configuration.x.recording_cookie_ttl
     payload = {
       'sub' => resource_path,
       'exp' => expires,
