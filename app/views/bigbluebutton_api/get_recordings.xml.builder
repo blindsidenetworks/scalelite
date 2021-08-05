@@ -39,7 +39,7 @@ xml.response do
                   token: format.create_protector_token
                 )
               else
-                xml.url @url_prefix + playback_format.url
+                xml.url @url_prefix + format.url
               end
               xml.length format.length
               xml.processingTime format.processing_time unless format.processing_time.nil?
