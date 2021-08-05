@@ -32,7 +32,11 @@ xml.response do
           recording.playback_formats.each do |format|
             xml.format do
               xml.type format.format
-              xml.url BigBlueButtonApiHelper.recording_url(format, @url_prefix)
+              if recording.protected
+                xml.url @url_prefix + playback_play_path(record_id: recording.record_id, playback_format: format.format, token: format.create_protector_token)
+              else
+                xml.url @url_prefix + playback_format.url
+              end
               xml.length format.length
               xml.processingTime format.processing_time unless format.processing_time.nil?
               unless format.thumbnails.empty?
