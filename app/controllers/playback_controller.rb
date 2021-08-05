@@ -6,7 +6,12 @@ class PlaybackController < ApplicationController
   class RecordingNotFoundError < StandardError
   end
 
-  rescue_from ActiveRecord::RecordNotFound, RecordingNotFoundError, with: :recording_not_found
+  rescue_from(
+    ActiveRecord::RecordNotFound,
+    RecordingNotFoundError,
+    PlaybackFormat::ProtectorTokenError,
+    with: :recording_not_found
+  )
 
   def play
     @playback_format = PlaybackFormat
