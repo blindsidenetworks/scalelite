@@ -35,7 +35,7 @@ xml.response do
               if recording.protected
                 xml.url @url_prefix + playback_play_path(
                   record_id: recording.record_id,
-                  layback_format: format.format,
+                  playback_format: format.format,
                   token: format.create_protector_token
                 )
               else
