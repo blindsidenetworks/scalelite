@@ -31,17 +31,16 @@ Rails.application.routes.draw do
 
   get('health_check', to: 'health_check#index')
 
-  get('playback/:playback_format/:player_version/:record_id', to: 'playback#play',
-                                                              format: false, as: :playback,
-                                                              constraints: { player_version: %r{[^\/]+} })
-  get('playback/:playback_format/:player_version(/*resource)', to: 'playback#resource', format: false,
-                                                               as: :playback_player,
-                                                               constraints: { player_version: %r{[^\/]+} })
-
-  Rails.configuration.x.recording_playback_formats.each do |playback_format|
-    get("recording/:#{playback_format}/:record_id", to: 'playback#play', format: false)
-    get("#{playback_format}/:record_id", to: 'playback#play', format: false)
-    get("#{playback_format}(/*playback_resource)", to: 'playback#resource', format: false)
+  unless Rails.configuration.x.recording_disabled
+    get('recording/:record_id/:playback_format', to: 'playback#play', format: false, as: :playback_play)
+    Rails.configuration.x.recording_playback_formats.each do |playback_format|
+      get(
+        "#{playback_format}/:record_id(/*resource)",
+        to: 'playback#resource',
+        format: false,
+        defaults: { playback_format: playback_format }
+      )
+    end
   end
 
   match '*any', via: :all, to: 'errors#unsupported_request'

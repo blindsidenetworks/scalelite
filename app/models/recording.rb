@@ -115,30 +115,4 @@ class Recording < ApplicationRecord
       retry
     end
   end
-
-  def generate_token
-    exp = Rails.configuration.x.protected_recordings_timeout.hours.from_now.to_i
-    payload = { exp: exp }
-    token = encoded_token(payload)
-    tokens.create(token: token)
-    token
-  end
-
-  def validate_token(token)
-    recording_tokens = tokens.where(token: token).destroy_all.pluck(:token)
-    decoded_token(token)
-    recording_tokens.include?(token)
-  end
-
-  private
-
-  def encoded_token(payload)
-    secret = Rails.configuration.x.loadbalancer_secrets[0]
-    JWT.encode(payload, secret, 'HS256')
-  end
-
-  def decoded_token(token)
-    secret = Rails.configuration.x.loadbalancer_secrets[0]
-    JWT.decode(token, secret, 'HS256')[0]
-  end
 end

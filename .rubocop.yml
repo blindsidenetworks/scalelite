@@ -20,6 +20,8 @@ Layout/HashAlignment:
   EnforcedColonStyle: [ key, table ]
 Layout/LineLength:
   Max: 128
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
 Metrics:
   Enabled: false
 Naming/AccessorMethodName:

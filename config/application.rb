@@ -33,11 +33,6 @@ module Scalelite
     # -- all .rb files in that directory are automatically loaded after loading
     # the framework and any gems in your application.
 
-    # Only loads a smaller set of middleware suitable for API only apps.
-    # Middleware like session, flash, cookies can be added back manually.
-    # Skip views, helpers and assets when generating a new resource.
-    config.api_only = true
-
     # Read the file config/redis_store.yml as per-environment configuration with erb
     config.x.redis_store = config_for(:redis_store)
 
@@ -118,8 +113,9 @@ module Scalelite
 
     # Recordings will proctected, if set to 'true'. Defaults to false.
     config.x.protected_recordings_enabled = ENV.fetch('PROTECTED_RECORDINGS_ENABLED', 'false').casecmp?('true')
-
-    # Protected recordings url expiry timeout in hours. Defaults to 6.
-    config.x.protected_recordings_timeout = ENV.fetch('PROTECTED_RECORDINGS_TIMEOUT', '6').to_i
+    # Protected recordings token timeout in minutes. Defaults to 60 (1 hour)
+    config.x.recording_token_ttl = ENV.fetch('PROTECTED_RECORDINGS_TOKEN_TIMEOUT', '60').to_i.minutes
+    # Protected recordings resource access cookie timeout in minutes. Defaults to 360 (6 hours)
+    config.x.recording_cookie_ttl = ENV.fetch('PROTECTED_RECORDINGS_TIMEOUT', '360').to_i.minutes
   end
 end
