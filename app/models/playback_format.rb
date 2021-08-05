@@ -13,8 +13,8 @@ class PlaybackFormat < ApplicationRecord
   def create_protector_token
     token = SecureRandom.hex(32)
     payload = {
-      'record_id' => playback_format.recording.record_id,
-      'format' => playback_format.format,
+      'record_id' => recording.record_id,
+      'format' => self.format,
     }.to_json
 
     key = "#{PROTECTOR_TOKEN_KEY_PREFIX}#{token}"
