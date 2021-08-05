@@ -12,6 +12,7 @@ class ApplicationController < ActionController::Metal
   include ActionController::ConditionalGet
   include ActionController::ImplicitRender
   include ActionController::StrongParameters
+  include ActionController::Cookies
 
   include ActionController::ForceSSL
   include ActionController::DataStreaming
