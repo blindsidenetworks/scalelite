@@ -43,8 +43,6 @@ class ApplicationController < ActionController::Metal
     render(xml: build_error(error.message_key, error.message))
   end
 
-  rescue_from RecordingNotFoundError, with: :render_recording_not_found
-
   private
 
   # Generic XML builder for errors
@@ -56,9 +54,5 @@ class ApplicationController < ActionController::Metal
         xml.message(message)
       end
     end
-  end
-
-  def render_recording_not_found
-    render(file: Rails.root.join('/public/recording_not_found.html'), status: :not_found)
   end
 end

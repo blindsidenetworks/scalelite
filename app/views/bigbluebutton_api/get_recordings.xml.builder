@@ -32,7 +32,7 @@ xml.response do
           recording.playback_formats.each do |format|
             xml.format do
               xml.type format.format
-              xml.url BigBlueButtonApiHelper.recording_url(recording, @url_prefix, format.url)
+              xml.url BigBlueButtonApiHelper.recording_url(format, @url_prefix)
               xml.length format.length
               xml.processingTime format.processing_time unless format.processing_time.nil?
               unless format.thumbnails.empty?
