@@ -96,6 +96,6 @@ class PlaybackController < ApplicationController
   end
 
   def recording_not_found
-    render(file: Rails.root.join('/public/recording_not_found.html'), status: :not_found)
+    render(file: Rails.root.join('public/recording_not_found.html'), status: :not_found)
   end
 end
