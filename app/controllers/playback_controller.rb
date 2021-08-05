@@ -10,11 +10,11 @@ class PlaybackController < ApplicationController
 
   def play
     @playback_format = PlaybackFormat
-      .includes(:recording)
-      .find_by!(format: params[:playback_format], recording: { record_id: params[:record_id] })
+      .joins(:recording)
+      .find_by!(format: params[:playback_format], recordings: { record_id: params[:record_id] })
     @recording = @playback_format.recording
 
-    if recording.protected
+    if @recording.protected
       # Consume the one-time-use token (return an error if missing/invalid)
       payload = PlaybackFormat.consume_protector_token(params[:token])
       if payload['record_id'] != @recording.record_id || payload['format'] != @playback_format.format
@@ -30,8 +30,8 @@ class PlaybackController < ApplicationController
 
   def resource
     @playback_format = PlaybackFormat
-      .includes(:recording)
-      .find_by!(format: params[:playback_format], recording: { record_id: params[:record_id] })
+      .joins(:recording)
+      .find_by!(format: params[:playback_format], recordings: { record_id: params[:record_id] })
     @recording = @playback_format.recording
 
     verify_cookie if @recording.protected
