@@ -23,14 +23,6 @@ ActiveRecord::Schema.define(version: 2021_07_25_200414) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  create_table "callback_datas", force: :cascade do |t|
-    t.string "meeting_id"
-    t.integer "recording_id"
-    t.text "callback_attributes"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
-  end
-
   create_table "metadata", force: :cascade do |t|
     t.bigint "recording_id"
     t.string "key"
@@ -57,7 +49,6 @@ ActiveRecord::Schema.define(version: 2021_07_25_200414) do
     t.datetime "starttime"
     t.datetime "endtime"
     t.datetime "deleted_at"
-    t.boolean "protected"
     t.boolean "publish_updated", default: false
     t.index ["meeting_id"], name: "index_recordings_on_meeting_id"
     t.index ["record_id"], name: "index_recordings_on_record_id", unique: true
@@ -71,14 +62,6 @@ ActiveRecord::Schema.define(version: 2021_07_25_200414) do
     t.string "url"
     t.integer "sequence"
     t.index ["playback_format_id"], name: "index_thumbnails_on_playback_format_id"
-  end
-
-  create_table "tokens", force: :cascade do |t|
-    t.string "token"
-    t.bigint "recording_id"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
-    t.index ["recording_id"], name: "index_tokens_on_recording_id"
   end
 
 end
