@@ -2,7 +2,7 @@
 
 class Server < ApplicationRedisRecord
   define_attribute_methods :id, :url, :secret, :enabled, :load, :online, :load_multiplier, :healthy_counter,
-                           :unhealthy_counter, :state
+                           :unhealthy_counter, :state, :meetings, :users, :largest_meeting, :videos
 
   # Unique ID for this server
   application_redis_attr :id
@@ -33,6 +33,18 @@ class Server < ApplicationRedisRecord
 
   # Indicator of current server state
   application_redis_attr :state
+
+  # Indicator of total meetings active in this server
+  application_redis_attr :meetings
+
+  # Indicator of total users active in this server
+  application_redis_attr :users
+
+  # Indicator of largest meeting size in this server
+  application_redis_attr :largest_meeting
+
+  # Indicator of total video streams in this server
+  application_redis_attr :videos
 
   def online=(value)
     value = !!value
@@ -82,6 +94,10 @@ class Server < ApplicationRedisRecord
           redis.hset(server_key, 'online', online ? 'true' : 'false') if online_changed?
           redis.hset(server_key, 'load_multiplier', load_multiplier) if load_multiplier_changed?
           redis.hset(server_key, 'state', state) if state_changed?
+          redis.hset(server_key, 'meetings', meetings) if meetings_changed?
+          redis.hset(server_key, 'users', users) if users_changed?
+          redis.hset(server_key, 'largest_meeting', largest_meeting) if largest_meeting_changed?
+          redis.hset(server_key, 'videos', videos) if videos_changed?
           redis.sadd('servers', id) if id_changed?
           state.present? ? save_with_state(redis) : save_without_state(redis)
         end
