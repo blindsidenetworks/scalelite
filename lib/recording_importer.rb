@@ -15,7 +15,7 @@ class RecordingImporter
 
     recording = nil
     retry_attempts = 0
-    unpublish_status = Rails.configuration.x.recording_import_unpublished
+    recording_import_unpublished = Rails.configuration.x.recording_import_unpublished
 
     Dir.mktmpdir(nil, Rails.configuration.x.recording_work_dir) do |tmpdir|
       FileUtils.cd(tmpdir) do
@@ -30,11 +30,22 @@ class RecordingImporter
 
           publish_format_dir = "#{Rails.configuration.x.recording_publish_dir}/#{playback_format.format}"
           unpublish_format_dir = "#{Rails.configuration.x.recording_unpublish_dir}/#{playback_format.format}"
-          format_dir = publish_format_dir
-          if unpublish_status || !recording.published
-            format_dir = unpublish_format_dir
-            recording.update!(published: false)
-          end
+          published_status = if recording.publish_updated
+                               recording.published
+                             elsif recording_import_unpublished
+                               false
+                             elsif !recording.published
+                               false
+                             else
+                               true
+                             end
+          format_dir = if published_status
+                         recording.update!(published: true)
+                         publish_format_dir
+                       else
+                         recording.update!(published: false)
+                         unpublish_format_dir
+                       end
           FileUtils.rm_rf("#{publish_format_dir}/#{recording.record_id}")
           FileUtils.rm_rf("#{unpublish_format_dir}/#{recording.record_id}")
 
