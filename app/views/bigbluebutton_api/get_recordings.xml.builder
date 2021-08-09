@@ -31,7 +31,7 @@ xml.response do
           recording.playback_formats.each do |format|
             xml.format do
               xml.type format.format
-              xml.url "#{@url_prefix}#{format.url}/"
+              xml.url "#{@url_prefix}#{format.url}"
               xml.length format.length
               xml.processingTime format.processing_time unless format.processing_time.nil?
               unless format.thumbnails.empty?

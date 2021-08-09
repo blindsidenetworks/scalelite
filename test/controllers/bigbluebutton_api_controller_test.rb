@@ -976,7 +976,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
           end
 
           assert_select format_el, 'type', pf.format
-          assert_select format_el, 'url', "#{url_prefix}#{pf.url}/"
+          assert_select format_el, 'url', "#{url_prefix}#{pf.url}"
           assert_select format_el, 'length', pf.length.to_s
           assert_select format_el, 'processingTime', pf.processing_time.to_s
 
