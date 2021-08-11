@@ -359,14 +359,17 @@ class BigBlueButtonApiController < ApplicationController
 
     logger.debug("Adding metadata: #{add_metadata}")
     logger.debug("Removing metadata: #{remove_metadata}")
-
     record_ids = params[:recordID].split(',')
+    recording_updated = false
     Metadatum.transaction do
       Metadatum.upsert_by_record_id(record_ids, add_metadata)
       Metadatum.delete_by_record_id(record_ids, remove_metadata)
+      if params[:protect].present?
+        recording_updated = Recording.find_by(record_id: record_ids.first).update!(protected: params[:protect])
+      end
     end
 
-    @updated = !(add_metadata.empty? && remove_metadata.empty?)
+    @updated = !(add_metadata.empty? && remove_metadata.empty?) || recording_updated
     render(:update_recordings)
   end
 
@@ -429,9 +432,8 @@ class BigBlueButtonApiController < ApplicationController
   # Filter out unneeded params when passing through to join and create calls
   # Has to be to_unsafe_hash since to_h only accepts permitted attributes
   def pass_through_params(excluded_params)
-    params.except(*(excluded_params +
-    [:format, :controller, :action, :checksum]))
-          .to_unsafe_hash
+    params.except(*(excluded_params + [:format, :controller, :action, :checksum]))
+      .to_unsafe_hash
   end
 
   # Success response if there are no meetings on any servers
