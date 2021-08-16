@@ -147,7 +147,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `RECORDING_DISABLED`: Disable the recording feature and all its associated api's, by setting this value as `true`.
 * `RECORDING_IMPORT_UNPUBLISHED`: Imported recordings can be marked as unpublished by default, by setting this value as `true`. Defaults to `false`.
 * `GET_MEETINGS_API_DISABLED`: Disable GET_MEETINGS API by setting this value as `true`.
-* `POLLER_THREADS`: The number of threads to run in the poller process. The default is 5.
+* `POLLER_THREADS`: The number of threads to run in the poller process. The default is 5. The poller threads should be increased carefully, since higher poller threads can lead to Denial Of Service problems at DNS.
 * `CONNECT_TIMEOUT`: The timeout for establishing a network connection to the BigBlueButton server in the load balancer and poller in seconds. Default is 5 seconds. Floating point numbers can be used for timeouts less than 1 second.
 * `POLLER_WAIT_TIMEOUT`: The timeout value set for the poller to finish polling a server. Defaults to 10.
 * `RESPONSE_TIMEOUT`: The timeout to wait for a response after sending a request to the BigBlueButton server in the load balancer and poller in seconds. Default is 10 seconds. Floating point numbers can be used for timeouts less than 1 second.
