@@ -1,4 +1,4 @@
-FROM amazonlinux:2.0.20210219.0 AS amazonlinux
+FROM alpine:3.13 AS alpine
 
 FROM ubuntu:18.04 AS bbb-playback
 ENV DEBIAN_FRONTEND=noninteractive
@@ -20,48 +20,53 @@ RUN apt-get update \
     && apt-get download bbb-playback bbb-playback-presentation \
     && dpkg -i --force-depends *.deb
 
-FROM amazonlinux AS amazonlinux-base
-ENV TINI_VERSION v0.19.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /sbin/tini
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini.asc /tini.asc
-RUN gpg --batch --keyserver keyserver.ubuntu.com --recv-keys 595E85A6B1B4779EA4DAAEC70B588DFF0527A9B7
-RUN gpg --batch --verify /tini.asc /sbin/tini
-RUN chmod +x /sbin/tini
-RUN yum -y install redhat-rpm-config
-
-FROM amazonlinux-base AS nginx
-RUN yes | amazon-linux-extras install nginx1
-RUN yum -y install gettext
-RUN ln -sf /dev/stdout /var/log/nginx/access.log
-RUN ln -sf /dev/stderr /var/log/nginx/error.log
+FROM alpine AS nginx
+RUN apk add --no-cache nginx tini gettext \
+    && ln -sf /dev/stdout /var/log/nginx/access.log \
+    && ln -sf /dev/stderr /var/log/nginx/error.log
+RUN rm /etc/nginx/conf.d/default.conf
 COPY --from=bbb-playback /etc/bigbluebutton/nginx /etc/bigbluebutton/nginx/
 COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback/
 COPY nginx/start /etc/nginx/start
 COPY nginx/dhparam.pem /etc/nginx/dhparam.pem
-COPY nginx/conf.d /etc/nginx/conf.d/
+COPY nginx/conf.d /etc/nginx/http.d/
+# This will be needed with alpine 3.14 since conf.d is being phased out.
+# RUN ln -s /etc/nginx/http.d/ /etc/nginx/conf.d
 EXPOSE 80
 EXPOSE 443
 ENV NGINX_HOSTNAME=localhost
 CMD [ "/etc/nginx/start", "-g", "daemon off;" ]
 
-FROM amazonlinux-base AS base
-# Install Node.js (needed for yarn)
-RUN yum -y install gcc-c++ make
-RUN curl -sL https://rpm.nodesource.com/setup_14.x | bash -
-RUN yum -y install nodejs
-# Install Ruby & Rails
-RUN curl -sL -o /etc/yum.repos.d/yarn.repo https://dl.yarnpkg.com/rpm/yarn.repo
-RUN amazon-linux-extras enable ruby2.6 \
-  && yum -y install git tar gzip yarn shared-mime-info libxslt zlib-devel sqlite-devel mariadb-devel postgresql-devel ruby-devel rubygems-devel rubygem-bundler rubygem-io-console rubygem-irb rubygem-json rubygem-minitest rubygem-net-http-persistent rubygem-net-telnet rubygem-power_assert rubygem-rake rubygem-test-unit rubygem-thor rubygem-xmlrpc rubygem-bigdecimal \
-  && gem install rails
-RUN yum -y install python3 python3-pip shadow-utils
-RUN groupadd scalelite --gid 1000 && \
-    useradd -u 1000 -d /srv/scalelite -g scalelite scalelite
-RUN groupadd scalelite-spool --gid 2000 && \
-    usermod -a -G scalelite-spool scalelite
+FROM alpine AS base
+RUN apk add --no-cache \
+    libpq
+RUN apk add --no-cache \
+    libpq \
+    libxml2 \
+    libxslt \
+    ruby \
+    ruby-irb \
+    ruby-bigdecimal \
+    ruby-bundler \
+    ruby-json \
+    tini \
+    tzdata \
+    shared-mime-info
+RUN addgroup scalelite --gid 1000 && \
+    adduser -u 1000 -h /srv/scalelite -G scalelite -D scalelite
+RUN addgroup scalelite-spool --gid 2000 && \
+    addgroup scalelite scalelite-spool
 WORKDIR /srv/scalelite
 
 FROM base as builder
+RUN apk add --no-cache \
+    build-base \
+    libxml2-dev \
+    libxslt-dev \
+    pkgconf \
+    postgresql-dev \
+    ruby-dev \
+    && ( echo 'install: --no-document' ; echo 'update: --no-document' ) >>/etc/gemrc
 USER scalelite:scalelite
 COPY --chown=scalelite:scalelite Gemfile* ./
 RUN bundle config build.nokogiri --use-system-libraries \
