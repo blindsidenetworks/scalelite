@@ -117,9 +117,9 @@ module Scalelite
     config.x.get_recordings_api_filtered = ENV.fetch('GET_RECORDINGS_API_FILTERED', 'false').casecmp?('true')
 
     # Poller threads value, defaults to 5. Needs to be adjusted as per the number of servers to be polled
-    config.x.poller_threads = ENV.fetch('POLLER_THREADS', 5)
+    config.x.poller_threads = ENV.fetch('POLLER_THREADS', 5).to_i
 
     # Poller wait timeout value, timeout value set for the poller to finish polling a server. Defaults to 10.
-    config.x.poller_wait_timeout = ENV.fetch('POLLER_WAIT_TIMEOUT', 10)
+    config.x.poller_wait_timeout = ENV.fetch('POLLER_WAIT_TIMEOUT', 10).to_i
   end
 end
