@@ -338,6 +338,55 @@ servers:
 The command will print out each added server's `url` and `id` once it has been successfully added.
 Note that all servers are added in the disabled state; see "Enable a server" above to enable them.
 
+### Configure all servers from a single YAML configuration file
+
+```sh
+./bin/rake servers:sync[file,mode]
+```
+
+Add, remove or modify servers according to a YAML configuration file.
+
+The `file` parameter should point to a valid configuration file (described below)
+or match `-` to read configuration from standard input instead. The `mode` parameter
+controls how unwanted servers are removed. By default, servers that still have
+meetings are cordoned and not removed. You have to repeat the task once
+these servers are empty to actually remove them. To force removal of unwanted
+servers, pass `panic` as the second parameter.
+
+The configuration file should contain a complete list of all servers and follow this structure:
+
+```yaml
+servers:
+    <server-id>:                 # must be unique, should be a hostname
+        secret: <string>         # required
+        url: <string>            # default: "https://<server-id>/bigbluebutton/api"
+        enabled: <bool>          # default: true
+        load_multiplier: <float> # default: 1.0, must be greater than 0
+
+    # Example for a simple server with default values
+    bbb1.example.com:
+        secret: "1bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+
+    # Full example for a legacy server (generated id)
+    02bff3a7-c95f-49d3-b1e5-c53eddd4dd68:
+        secret: "2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+        url: "https://bbb2.example.com/bigbluebutton/api"
+        enabled: false
+        load_multiplier: 5.0
+```
+
+The task will try to reach the desired state by adding, removing or modifying
+servers as needed. To be more exact, the task will:
+
+1. Read the configuration file and perform some basic sanity checks.
+2. Add missing servers.
+3. Update configuration of existing servers (`secret`, `url` and `load_multiplier`).
+4. Cordon servers that are enabled but should be disabled.
+5. Enable servers that are disabled or cordoned but should be enabled.
+6. Try to remove servers that are no present in the YAML configuration.
+    * By default, only empty servers are removed. Non-empty servers are cordoned. Repeat the task once these servers are empty to actually remove them.
+    * In `panic` mode, non-empty servers are forcefully evicted and then removed. This works similar to `servers:panic[id]`.
+
 ### Check the status of the entire deployment
 
 ```sh

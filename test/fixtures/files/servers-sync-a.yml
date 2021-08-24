@@ -1,0 +1,10 @@
+servers:
+    bbb1:
+        secret: "bbb1"
+    bbb2:
+        secret: "bbb2"
+        url: "https://bbb2.example.com/bigbluebutton/api"
+        enabled: false
+        load_multiplier: 5.0
+    bbb3:
+        secret: "bbb3"
