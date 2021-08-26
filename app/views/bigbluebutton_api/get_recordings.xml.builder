@@ -43,7 +43,7 @@ xml.response do
               end
               xml.length format.length
               xml.processingTime format.processing_time unless format.processing_time.nil?
-              unless format.thumbnails.empty?
+              unless recording.protected || format.thumbnails.empty?
                 xml.preview do
                   xml.images do
                     format.thumbnails.each do |thumbnail|
