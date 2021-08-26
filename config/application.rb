@@ -113,9 +113,21 @@ module Scalelite
 
     # Recordings will proctected, if set to 'true'. Defaults to false.
     config.x.protected_recordings_enabled = ENV.fetch('PROTECTED_RECORDINGS_ENABLED', 'false').casecmp?('true')
+
     # Protected recordings token timeout in minutes. Defaults to 60 (1 hour)
     config.x.recording_token_ttl = ENV.fetch('PROTECTED_RECORDINGS_TOKEN_TIMEOUT', '60').to_i.minutes
+
     # Protected recordings resource access cookie timeout in minutes. Defaults to 360 (6 hours)
     config.x.recording_cookie_ttl = ENV.fetch('PROTECTED_RECORDINGS_TIMEOUT', '360').to_i.minutes
+
+    # Prevents get_recordings api from returning all recordings when recordID is not specified in the request, if set to 'true'.
+    # Defaults to false.
+    config.x.get_recordings_api_filtered = ENV.fetch('GET_RECORDINGS_API_FILTERED', 'false').casecmp?('true')
+
+    # Poller threads value, defaults to 5. Needs to be adjusted as per the number of servers to be polled
+    config.x.poller_threads = ENV.fetch('POLLER_THREADS', 5).to_i
+
+    # Poller wait timeout value, timeout value set for the poller to finish polling a server. Defaults to 10.
+    config.x.poller_wait_timeout = ENV.fetch('POLLER_WAIT_TIMEOUT', 10).to_i
   end
 end

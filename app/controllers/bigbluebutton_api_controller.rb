@@ -266,6 +266,7 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def get_recordings
+    params.require(:recordID) if Rails.configuration.x.get_recordings_api_filtered
     query = Recording.includes(playback_formats: [:thumbnails], metadata: []).references(:metadata)
     query = query.where(state: params[:state].split(',')) if params[:state].present?
     meta_params = params.select { |key, _value| key.to_s.match(/^meta_/) }.permit!.to_h.to_a
@@ -328,8 +329,7 @@ class BigBlueButtonApiController < ApplicationController
           FileUtils.mkdir_p(format_dir)
           FileUtils.mv(recording_path, format_dir)
         end
-
-        rec.update(published: publish)
+        rec.update(published: publish, publish_updated: true)
       rescue StandardError => e
         logger.warn("Error #{e} setting published=#{publish} recording #{rec.record_id}")
         raise InternalError, 'Unable to publish/unpublish recording.'
