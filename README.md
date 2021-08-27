@@ -163,6 +163,12 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `PROTECTED_RECORDINGS_TOKEN_TIMEOUT`: Protected recording link token timeout in minutes. This is the amount of time that the one-time-use link returned in `getRecordings` calls will be valid for. Defaults to 60 minutes (1 hour).
 * `PROTECTED_RECORDINGS_TIMEOUT`: Protected recordings resource access cookie timeout in minutes. This is the amount of time that a user will be granted access to view a recording for after clicking on the one-time-use link. Defaults to 360 minutes (6 hours).
 * `GET_RECORDINGS_API_FILTERED`: Prevent get_recordings api from returning all recordings when recordID is not specified in the request, by setting value to 'true'. Defaults to false.
+* `PREPARED_STATEMENT`: Enable/Disable Active Record prepared statements feature, can be disabled by setting the value as `false`. Defaults to `true`.
+* `DB_CONNECTION_RETRY_COUNT`: The number of times db connection retries will be attempted, in case of a db connection failure. Defaults to `3`.
+* `RECORDING_PLAYBACK_FORMATS`: Recording playback formats supported by Scalelite, defaults to `presentation:video:podcast:notes:capture`.
+* `PROTECTED_RECORDINGS_ENABLED`: Applies to the recording import process. If set to "true", then newly imported recordings will have protected links enabled. Default is "false".
+* `PROTECTED_RECORDINGS_TOKEN_TIMEOUT`: Protected recording link token timeout in minutes. This is the amount of time that the one-time-use link returned in `getRecordings` calls will be valid for. Defaults to 60 minutes (1 hour).
+* `PROTECTED_RECORDINGS_TIMEOUT`: Protected recordings resource access cookie timeout in minutes. This is the amount of time that a user will be granted access to view a recording for after clicking on the one-time-use link. Defaults to 360 minutes (6 hours).
 
 ### Redis Connection (`config/redis_store.yml`)
 

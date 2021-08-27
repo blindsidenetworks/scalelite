@@ -65,12 +65,4 @@ ActiveRecord::Schema.define(version: 2021_07_25_200414) do
     t.index ["playback_format_id"], name: "index_thumbnails_on_playback_format_id"
   end
 
-  create_table "tokens", force: :cascade do |t|
-    t.string "token"
-    t.bigint "recording_id"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
-    t.index ["recording_id"], name: "index_tokens_on_recording_id"
-  end
-
 end

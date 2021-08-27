@@ -129,5 +129,16 @@ module Scalelite
 
     # Poller wait timeout value, timeout value set for the poller to finish polling a server. Defaults to 10.
     config.x.poller_wait_timeout = ENV.fetch('POLLER_WAIT_TIMEOUT', 10).to_i
+
+    # Recording playback formats handled by Scalelite
+    config.x.recording_playback_formats = ENV.fetch('RECORDING_PLAYBACK_FORMATS',
+                                                    'presentation:video:screenshare:podcast:notes:capture').split(':')
+
+    # Recordings will proctected, if set to 'true'. Defaults to false.
+    config.x.protected_recordings_enabled = ENV.fetch('PROTECTED_RECORDINGS_ENABLED', 'false').casecmp?('true')
+    # Protected recordings token timeout in minutes. Defaults to 60 (1 hour)
+    config.x.recording_token_ttl = ENV.fetch('PROTECTED_RECORDINGS_TOKEN_TIMEOUT', '60').to_i.minutes
+    # Protected recordings resource access cookie timeout in minutes. Defaults to 360 (6 hours)
+    config.x.recording_cookie_ttl = ENV.fetch('PROTECTED_RECORDINGS_TIMEOUT', '360').to_i.minutes
   end
 end
