@@ -40,7 +40,8 @@ class RecordingImporter
                                true
                              end
           format_dir = published_status ? publish_format_dir : unpublish_format_dir
-          recording.update!(published: published_status)
+          protected = Rails.configuration.x.protected_recordings_enabled
+          recording.update!(published: published_status, protected: protected)
           FileUtils.rm_rf("#{publish_format_dir}/#{recording.record_id}")
           FileUtils.rm_rf("#{unpublish_format_dir}/#{recording.record_id}")
 
