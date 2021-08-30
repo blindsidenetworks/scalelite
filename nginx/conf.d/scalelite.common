@@ -1,3 +1,7 @@
+location /health_check {
+  proxy_pass http://scalelite-api:3000;
+}
+
 location / {
   proxy_pass http://scalelite-api:3000;
 
@@ -15,5 +19,35 @@ location / {
   proxy_http_version 1.1;
 }
 
-# BigBlueButton recording playback
-include /etc/bigbluebutton/nginx/*.nginx;
+location /static-resource/playback/presentation/2.3 {
+  root /var/bigbluebutton;
+  try_files $uri $uri/ playback/presentation/2.3/index.html;
+}
+
+location /static-resource/playback/presentation/playback.html {
+  return 301 /playback/presentation/0.81/playback.html?$query_string;
+  # If you have recordings from 0.9.0 beta versions and are sure
+  # that you will never want to play recordings made with
+  # BigBlueButton 0.81, comment the line above and uncomment the
+  # following line:
+  #return 301 /playback/presentation/0.9.0/playback.html?$query_string;
+}
+
+location /static-resource/playback/presentation/2.0/playback.html {
+  return 301 /playback/presentation/2.3/$arg_meetingId?$query_string;
+}
+
+location /static-resource/playback/presentation {
+  alias    /var/bigbluebutton/presentation;
+  index  index.html index.htm;
+}
+
+location /static-resource/presentation {
+  alias    /var/bigbluebutton/published/presentation;
+  index  index.html index.htm;
+}
+
+location /playback {
+  root /var/bigbluebutton;
+  try_files $uri /playback/presentation/2.3/index.html;
+}

@@ -10,6 +10,7 @@ xml.response do
         xml.internalMeetingID recording.record_id
         xml.name recording.name
         xml.published recording.published ? 'true' : 'false'
+        xml.protected recording.protected
         xml.state recording.state unless recording.state.nil?
         xml.startTime((recording.starttime.to_r * 1000).to_i)
         xml.endTime((recording.endtime.to_r * 1000).to_i)
@@ -31,10 +32,18 @@ xml.response do
           recording.playback_formats.each do |format|
             xml.format do
               xml.type format.format
-              xml.url "#{@url_prefix}#{format.url}"
+              if recording.protected
+                xml.url @url_prefix + playback_play_path(
+                  record_id: recording.record_id,
+                  playback_format: format.format,
+                  token: format.create_protector_token
+                )
+              else
+                xml.url @url_prefix + format.url
+              end
               xml.length format.length
               xml.processingTime format.processing_time unless format.processing_time.nil?
-              unless format.thumbnails.empty?
+              unless recording.protected || format.thumbnails.empty?
                 xml.preview do
                   xml.images do
                     format.thumbnails.each do |thumbnail|

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class HealthCheckController < ApplicationController
-  def all
+  def index
     @cache_expire = 10.seconds
 
     begin
