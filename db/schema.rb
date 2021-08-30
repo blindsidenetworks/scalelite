@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_04_25_184558) do
+ActiveRecord::Schema.define(version: 2021_07_25_200414) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -49,6 +49,7 @@ ActiveRecord::Schema.define(version: 2021_04_25_184558) do
     t.datetime "starttime"
     t.datetime "endtime"
     t.datetime "deleted_at"
+    t.boolean "publish_updated", default: false
     t.index ["meeting_id"], name: "index_recordings_on_meeting_id"
     t.index ["record_id"], name: "index_recordings_on_record_id", unique: true
   end

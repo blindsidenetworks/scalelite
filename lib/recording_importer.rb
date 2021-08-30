@@ -14,7 +14,8 @@ class RecordingImporter
     logger.info("Importing recording from file: #{filename}")
 
     recording = nil
-    unpublish_status = Rails.configuration.x.recording_import_unpublished
+    retry_attempts = 0
+    recording_import_unpublished = Rails.configuration.x.recording_import_unpublished
 
     Dir.mktmpdir(nil, Rails.configuration.x.recording_work_dir) do |tmpdir|
       FileUtils.cd(tmpdir) do
@@ -29,11 +30,17 @@ class RecordingImporter
 
           publish_format_dir = "#{Rails.configuration.x.recording_publish_dir}/#{playback_format.format}"
           unpublish_format_dir = "#{Rails.configuration.x.recording_unpublish_dir}/#{playback_format.format}"
-          format_dir = publish_format_dir
-          if unpublish_status || !recording.published
-            format_dir = unpublish_format_dir
-            recording.update!(published: false)
-          end
+          published_status = if recording.publish_updated
+                               recording.published
+                             elsif recording_import_unpublished
+                               false
+                             elsif !recording.published
+                               false
+                             else
+                               true
+                             end
+          format_dir = published_status ? publish_format_dir : unpublish_format_dir
+          recording.update!(published: published_status)
           FileUtils.rm_rf("#{publish_format_dir}/#{recording.record_id}")
           FileUtils.rm_rf("#{unpublish_format_dir}/#{recording.record_id}")
 
@@ -47,5 +54,9 @@ class RecordingImporter
 
     FileUtils.rm(filename)
     PostImporterScripts.run(recording.id)
+  rescue ActiveRecord::StatementInvalid
+    ActiveRecord::Base.establish_connection
+    retry_attempts += 1
+    retry if retry_attempts <= Rails.configuration.x.db_connection_retry_count
   end
 end

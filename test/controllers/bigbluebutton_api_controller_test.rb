@@ -932,6 +932,16 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>recordings>recording', 3
   end
 
+  test 'getRecordings with get_recordings_api_filtered does not return any recordings and returns error response' do
+    create_list(:recording, 3)
+    params = encode_bbb_params('getRecordings', '')
+    Rails.configuration.x.stub(:get_recordings_api_filtered, true) { get bigbluebutton_api_get_recordings_url, params: params }
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'internalError'
+    assert_select 'response>message', 'param is missing or the value is empty: recordID'
+  end
+
   test 'getRecordings fetches recording by meeting id' do
     r = create(:recording, :published, participants: 3)
     podcast = create(:playback_format, recording: r, format: 'podcast')
@@ -984,6 +994,18 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test 'getRecordings with get_recordings_api_filtered does not return any recordings and returns error response when
+        only meetingID is provided' do
+    r = create(:recording, :published, participants: 3)
+
+    params = encode_bbb_params('getRecordings', { meetingID: r.meeting_id }.to_query)
+    Rails.configuration.x.stub(:get_recordings_api_filtered, true) { get bigbluebutton_api_get_recordings_url, params: params }
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'internalError'
+    assert_select 'response>message', 'param is missing or the value is empty: recordID'
+  end
+
   test 'getRecordings allows multiple comma-separated meeting IDs' do
     create_list(:recording, 5)
     r1 = create(:recording)
@@ -997,6 +1019,22 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>recordings>recording', 2
+  end
+
+  test 'getRecordings with get_recordings_api_filtered does not return any recordings and returns error response with
+        multiple comma-separated meeting IDs and no recordIds' do
+    create_list(:recording, 5)
+    r1 = create(:recording)
+    r2 = create(:recording)
+
+    params = encode_bbb_params('getRecordings', {
+      meetingID: [r1.meeting_id, r2.meeting_id].join(','),
+    }.to_query)
+    Rails.configuration.x.stub(:get_recordings_api_filtered, true) { get bigbluebutton_api_get_recordings_url, params: params }
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'internalError'
+    assert_select 'response>message', 'param is missing or the value is empty: recordID'
   end
 
   test 'getRecordings does case-sensitive match on recording id' do
@@ -1036,6 +1074,21 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>recordings>recording', 2
   end
 
+  test 'getRecordings with get_recordings_api_filtered allows multiple comma-separated recording IDs' do
+    create_list(:recording, 5)
+    r1 = create(:recording)
+    r2 = create(:recording)
+
+    params = encode_bbb_params('getRecordings', {
+      recordID: [r1.record_id, r2.record_id].join(','),
+    }.to_query)
+    Rails.configuration.x.stub(:get_recordings_api_filtered, true) { get bigbluebutton_api_get_recordings_url, params: params }
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 2
+  end
+
   test 'getRecordings filter based on recording states' do
     create_list(:recording, 5)
     r1 = create(:recording, state: 'published')
@@ -1047,6 +1100,23 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       state: %w[published unpublished].join(','),
     }.to_query)
     get bigbluebutton_api_get_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 2
+  end
+
+  test 'getRecordings with get_recordings_api_filtered filters based on recording states' do
+    create_list(:recording, 5)
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'unpublished')
+    r3 = create(:recording)
+
+    params = encode_bbb_params('getRecordings', {
+      recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
+      state: %w[published unpublished].join(','),
+    }.to_query)
+    Rails.configuration.x.stub(:get_recordings_api_filtered, true) { get bigbluebutton_api_get_recordings_url, params: params }
 
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
@@ -1069,6 +1139,28 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       'meta_bbb-origin-tag': ['GL'].join(','),
     }.to_query)
     get bigbluebutton_api_get_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 2
+  end
+
+  test 'getRecordings with get_recordings_api_filtered filters based on recording states and meta_params' do
+    create_list(:recording, 5)
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'unpublished')
+    r3 = create(:recording)
+    create(:metadatum, recording: r1, key: 'bbb-context-name', value: 'test1')
+    create(:metadatum, recording: r3, key: 'bbb-origin-tag', value: 'GL')
+    create(:metadatum, recording: r2, key: 'bbb-origin-tag', value: 'GL')
+
+    params = encode_bbb_params('getRecordings', {
+      recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
+      state: %w[published unpublished].join(','),
+      'meta_bbb-context-name': %w[test1 test2].join(','),
+      'meta_bbb-origin-tag': ['GL'].join(','),
+    }.to_query)
+    Rails.configuration.x.stub(:get_recordings_api_filtered, true) { get bigbluebutton_api_get_recordings_url, params: params }
 
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'

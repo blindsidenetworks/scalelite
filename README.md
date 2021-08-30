@@ -148,15 +148,18 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `RECORDING_DISABLED`: Disable the recording feature and all its associated api's, by setting this value as `true`.
 * `RECORDING_IMPORT_UNPUBLISHED`: Imported recordings can be marked as unpublished by default, by setting this value as `true`. Defaults to `false`.
 * `GET_MEETINGS_API_DISABLED`: Disable GET_MEETINGS API by setting this value as `true`.
-* `POLLER_THREADS`: The number of threads to run in the poller process. The default is 5.
+* `POLLER_THREADS`: The number of threads to run in the poller process. The default is 5. The poller threads should be increased carefully, since higher poller threads can lead to Denial Of Service problems at DNS.
 * `CONNECT_TIMEOUT`: The timeout for establishing a network connection to the BigBlueButton server in the load balancer and poller in seconds. Default is 5 seconds. Floating point numbers can be used for timeouts less than 1 second.
+* `POLLER_WAIT_TIMEOUT`: The timeout value set for the poller to finish polling a server. Defaults to 10.
 * `RESPONSE_TIMEOUT`: The timeout to wait for a response after sending a request to the BigBlueButton server in the load balancer and poller in seconds. Default is 10 seconds. Floating point numbers can be used for timeouts less than 1 second.
 * `LOAD_MIN_USER_COUNT`: Minimum user count of a meeting, used for calculating server load. Defaults to 15.
 * `LOAD_JOIN_BUFFER_TIME`: The time(in minutes) until the `LOAD_MIN_USER_COUNT` will be used for calculating server load. Defaults to 15.
 * `SERVER_ID_IS_HOSTNAME`: If set to "true", then instead of generating random UUIDs as the server ID when adding a server Scalelite will use the hostname of the server as the id. Server hostnames will be checked for uniqueness. Defaults to "false".
-* `CREATE_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by create API call. Should be in the format 'CREATE_EXCLUDE_PARAMS="param1,param2,param3"'.
-* `JOIN_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by join API call. Should be in the format 'JOIN_EXCLUDE_PARAMS="param1,param2,param3"'.
+* `CREATE_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by create API call. Should be in the format 'CREATE_EXCLUDE_PARAMS=param1,param2,param3'.
+* `JOIN_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by join API call. Should be in the format 'JOIN_EXCLUDE_PARAMS=param1,param2,param3'.
 * `PREPARED_STATEMENT`: Enable/Disable Active Record prepared statements feature, can be disabled by setting the value as `false`. Defaults to `true`.
+* `DB_CONNECTION_RETRY_COUNT`: The number of times db connection retries will be attempted, in case of a db connection failure. Defaults to `3`
+* `GET_RECORDINGS_API_FILTERED`: Prevent get_recordings api from returning all recordings when recordID is not specified in the request, by setting value to 'true'. Defaults to false.
 
 ### Redis Connection (`config/redis_store.yml`)
 
@@ -232,6 +235,8 @@ The `loadMultiplier` can be used to give individual servers a higher or lower pr
 
 This command will print out the ID of the newly created server, and `OK` if it was successful.
 Note that servers are added in the disabled state; see "Enable a server" below to enable it.
+
+Make sure that there is no space between the parameters [url,secret,loadMultipler] and the comma as it causes a "rake aborted!" error.
 
 ### Remove a server
 
@@ -346,7 +351,7 @@ This will print a table displaying a list of all servers and some basic statisti
 
 ## Getting Help
 
-For commercial help with setup and deployment of Scalelite, contact us at [Blindside Networks](https://blindsidenetworks.com/scaling-bigbluebutton/).
+For commercial help with setup and deployment of Scalelite, contact us at [Blindside Networks](https://blindsidenetworks.com/contact).
 
 ## Trademarks
 

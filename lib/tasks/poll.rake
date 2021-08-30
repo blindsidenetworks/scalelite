@@ -31,7 +31,7 @@ namespace :poll do
     include ApiHelper
 
     Rails.logger.debug('Polling servers')
-    pool = Concurrent::FixedThreadPool.new(ENV.fetch('POLLER_THREADS', 5).to_i - 1, name: 'sync-server-data')
+    pool = Concurrent::FixedThreadPool.new(Rails.configuration.x.poller_threads.to_i - 1, name: 'sync-server-data')
     tasks = Server.all.map do |server|
       Concurrent::Promises.future_on(pool) do
         Rails.logger.debug("Polling Server id=#{server.id}")
@@ -39,12 +39,23 @@ namespace :poll do
         meetings = resp.xpath('/response/meetings/meeting')
 
         total_attendees = 0
+        server_users = 0
+        video_streams = 0
+        users_in_largest_meeting = 0
+
         load_min_user_count = Rails.configuration.x.load_min_user_count
         x_minutes_ago = Rails.configuration.x.load_join_buffer_time.ago
 
         meetings.each do |meeting|
           created_time = Time.zone.at(meeting.xpath('.//createTime').text.to_i / 1000)
           actual_attendees = meeting.xpath('.//participantCount').text.to_i + meeting.xpath('.//moderatorCount').text.to_i
+          count = meeting.at_xpath('participantCount')
+          users = count.present? ? count.text.to_i : 0
+          server_users += users
+          users_in_largest_meeting = users if users > users_in_largest_meeting
+          streams = meeting.at_xpath('videoCount')
+          video_streams += streams.present? ? streams.text.to_i : 0
+
           next if meeting.xpath('.//isBreakout').text.eql?('true')
 
           total_attendees += if created_time > x_minutes_ago
@@ -70,6 +81,10 @@ namespace :poll do
         end
 
         server.state = 'disabled' if server.cordoned? && server.load.to_f.zero?
+        server.meetings = meetings.size
+        server.users = server_users
+        server.largest_meeting = users_in_largest_meeting
+        server.videos = video_streams
 
       rescue StandardError => e
         Rails.logger.warn("Failed to get server id=#{server.id} status: #{e}")
@@ -99,7 +114,11 @@ namespace :poll do
         end
       end
     end
-    Concurrent::Promises.zip_futures_on(pool, *tasks).rescue {}
+    begin
+      Concurrent::Promises.zip_futures_on(pool, *tasks).wait!(Rails.configuration.x.poller_wait_timeout)
+    rescue StandardError => e
+      Rails.logger.warn("Error #{e}")
+    end
     pool.shutdown
     pool.wait_for_termination(5) || pool.kill
   end
@@ -109,7 +128,7 @@ namespace :poll do
     include ApiHelper
 
     Rails.logger.debug('Polling meetings')
-    pool = Concurrent::FixedThreadPool.new(ENV.fetch('POLLER_THREADS', 5).to_i - 1, name: 'sync-meeting-data')
+    pool = Concurrent::FixedThreadPool.new(Rails.configuration.x.poller_threads.to_i - 1, name: 'sync-meeting-data')
     tasks = Meeting.all.map do |meeting|
       Concurrent::Promises.future_on(pool) do
         server = meeting.server
@@ -131,7 +150,11 @@ namespace :poll do
         Rails.logger.warn("Failed to check meeting id=#{meeting.id} status: #{e}")
       end
     end
-    Concurrent::Promises.zip_futures_on(pool, *tasks).rescue {}
+    begin
+      Concurrent::Promises.zip_futures_on(pool, *tasks).wait!(Rails.configuration.x.poller_wait_timeout)
+    rescue StandardError => e
+      Rails.logger.warn("Error #{e}")
+    end
 
     pool.shutdown
     pool.wait_for_termination(5) || pool.kill
