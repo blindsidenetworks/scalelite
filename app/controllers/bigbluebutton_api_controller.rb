@@ -176,7 +176,7 @@ class BigBlueButtonApiController < ApplicationController
     params = EventHandler.new(params_hash, meeting.id).handle
     # Get list of params that should not be modified by create API call
     excluded_params = Rails.configuration.x.create_exclude_params
-
+    logger.warn("PARAMS==============#{excluded_params}")
     # Pass along all params except the built in rails ones and excluded_params
     uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params(excluded_params))
 

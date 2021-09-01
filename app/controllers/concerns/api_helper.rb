@@ -2,9 +2,6 @@
 
 require 'net/http'
 
-# The following is necessary to fix a DNS resolution timeout bug see https://github.com/ruby/ruby/pull/597#issuecomment-40507119
-require 'resolv-replace'
-
 module ApiHelper
   extend ActiveSupport::Concern
   include BBBErrors
