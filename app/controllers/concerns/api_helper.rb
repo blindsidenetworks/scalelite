@@ -59,12 +59,16 @@ module ApiHelper
     JWT.encode(payload, secret, 'HS512', typ: 'JWT')
   end
 
-  def decode_token?(token)
+  def decoded_token(token)
     Rails.configuration.x.loadbalancer_secrets.any? do |secret|
       JWT.decode(token, secret, true, algorithm: 'HS512')
     rescue JWT::DecodeError
       false
     end
+  end
+
+  def valid_token?(token)
+    decoded_token(token)
   end
 
   def post_req(uri, body)
