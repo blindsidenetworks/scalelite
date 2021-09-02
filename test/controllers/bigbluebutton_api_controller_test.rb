@@ -932,14 +932,15 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>recordings>recording', 3
   end
 
-  test 'getRecordings with get_recordings_api_filtered does not return any recordings and returns error response' do
+  test 'getRecordings with get_recordings_api_filtered does not return any recordings and returns error response
+        if no meetingId/recordId is provided' do
     create_list(:recording, 3)
     params = encode_bbb_params('getRecordings', '')
     Rails.configuration.x.stub(:get_recordings_api_filtered, true) { get bigbluebutton_api_get_recordings_url, params: params }
     assert_response :success
     assert_select 'response>returncode', 'FAILED'
-    assert_select 'response>messageKey', 'internalError'
-    assert_select 'response>message', 'param is missing or the value is empty: recordID'
+    assert_select 'response>messageKey', 'missingParameters'
+    assert_select 'response>message', 'param meetingID or recordID must be included.'
   end
 
   test 'getRecordings fetches recording by meeting id' do
@@ -994,16 +995,56 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test 'getRecordings with get_recordings_api_filtered does not return any recordings and returns error response when
-        only meetingID is provided' do
+  test 'getRecordings with get_recordings_api_filtered fetches recording by meeting id' do
     r = create(:recording, :published, participants: 3)
+    podcast = create(:playback_format, recording: r, format: 'podcast')
+    presentation = create(:playback_format, recording: r, format: 'presentation')
 
     params = encode_bbb_params('getRecordings', { meetingID: r.meeting_id }.to_query)
     Rails.configuration.x.stub(:get_recordings_api_filtered, true) { get bigbluebutton_api_get_recordings_url, params: params }
+    url_prefix = "#{@request.protocol}#{@request.host}"
     assert_response :success
-    assert_select 'response>returncode', 'FAILED'
-    assert_select 'response>messageKey', 'internalError'
-    assert_select 'response>message', 'param is missing or the value is empty: recordID'
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 1
+    assert_select 'response>recordings>recording' do |rec_el|
+      assert_select rec_el, 'recordID', r.record_id
+      assert_select rec_el, 'meetingID', r.meeting_id
+      assert_select rec_el, 'internalMeetingID', r.record_id
+      assert_select rec_el, 'name', r.name
+      assert_select rec_el, 'published', 'true'
+      assert_select rec_el, 'state', 'published'
+      assert_select rec_el, 'startTime', (r.starttime.to_r * 1000).to_i.to_s
+      assert_select rec_el, 'endTime', (r.endtime.to_r * 1000).to_i.to_s
+      assert_select rec_el, 'participants', '3'
+
+      assert_select rec_el, 'playback>format', r.playback_formats.count
+      assert_select rec_el, 'playback>format' do |format_els|
+        format_els.each do |format_el|
+          format_type = css_select(format_el, 'type')
+          pf = nil
+          case format_type.first.content
+          when 'podcast' then pf = podcast
+          when 'presentation' then pf = presentation
+          else flunk("Unexpected playback format: #{format_type.first.content}")
+          end
+
+          assert_select format_el, 'type', pf.format
+          assert_select format_el, 'url', "#{url_prefix}#{pf.url}"
+          assert_select format_el, 'length', pf.length.to_s
+          assert_select format_el, 'processingTime', pf.processing_time.to_s
+
+          imgs = css_select(format_el, 'preview>images>image')
+          assert_equal imgs.length, pf.thumbnails.count
+          imgs.each_with_index do |img, i|
+            t = thumbnails("fred_room_#{pf.format}_thumb#{i + 1}")
+            assert_equal img['alt'], t.alt
+            assert_equal img['height'], t.height.to_s
+            assert_equal img['width'], t.width.to_s
+            assert_equal img.content, "#{url_prefix}#{t.url}"
+          end
+        end
+      end
+    end
   end
 
   test 'getRecordings allows multiple comma-separated meeting IDs' do
@@ -1021,8 +1062,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>recordings>recording', 2
   end
 
-  test 'getRecordings with get_recordings_api_filtered does not return any recordings and returns error response with
-        multiple comma-separated meeting IDs and no recordIds' do
+  test 'getRecordings with get_recordings_api_filtered allows multiple comma-separated meeting IDs' do
     create_list(:recording, 5)
     r1 = create(:recording)
     r2 = create(:recording)
@@ -1032,9 +1072,8 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     }.to_query)
     Rails.configuration.x.stub(:get_recordings_api_filtered, true) { get bigbluebutton_api_get_recordings_url, params: params }
     assert_response :success
-    assert_select 'response>returncode', 'FAILED'
-    assert_select 'response>messageKey', 'internalError'
-    assert_select 'response>message', 'param is missing or the value is empty: recordID'
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 2
   end
 
   test 'getRecordings does case-sensitive match on recording id' do
