@@ -268,7 +268,7 @@ class BigBlueButtonApiController < ApplicationController
   def get_recordings
     if Rails.configuration.x.get_recordings_api_filtered
       if params[:recordID].blank? && params[:meetingID].blank?
-        raise BBBError.new(('missing meetingID and recordID','param meetingID or recordID must be included'))
+        raise BBBError.new('missing meetingID and recordID','param meetingID or recordID must be included')
       end
     end
     query = Recording.includes(playback_formats: [:thumbnails], metadata: []).references(:metadata)
