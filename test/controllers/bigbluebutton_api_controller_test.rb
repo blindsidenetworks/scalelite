@@ -939,7 +939,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     Rails.configuration.x.stub(:get_recordings_api_filtered, true) { get bigbluebutton_api_get_recordings_url, params: params }
     assert_response :success
     assert_select 'response>returncode', 'FAILED'
-    assert_select 'response>messageKey', 'missing meetingID and recordID'
+    assert_select 'response>messageKey', 'missingParameters'
     assert_select 'response>message', 'param meetingID or recordID must be included.'
   end
 
