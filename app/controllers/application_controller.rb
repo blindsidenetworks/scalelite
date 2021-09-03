@@ -21,6 +21,7 @@ class ApplicationController < ActionController::Metal
   include ActionController::Rescue
   include ActionController::Instrumentation
   include ActionController::ParamsWrapper
+  include ActionController::RequestForgeryProtection
 
   ActiveSupport.run_load_hooks(:action_controller_api, self)
   ActiveSupport.run_load_hooks(:action_controller, self)
