@@ -268,7 +268,11 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def get_recordings
-    params.require(:recordID) if Rails.configuration.x.get_recordings_api_filtered
+    if Rails.configuration.x.get_recordings_api_filtered
+      if params[:recordID].blank? && params[:meetingID].blank?
+        raise BBBError.new('recordID/meetingID is missing', 'param meetingID or recordID must be included.')
+      end
+    end
     query = Recording.includes(playback_formats: [:thumbnails], metadata: []).references(:metadata)
     query = query.where(state: params[:state].split(',')) if params[:state].present?
     meta_params = params.select { |key, _value| key.to_s.match(/^meta_/) }.permit!.to_h.to_a
