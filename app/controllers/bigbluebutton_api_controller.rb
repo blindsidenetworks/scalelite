@@ -3,7 +3,10 @@
 class BigBlueButtonApiController < ApplicationController
   include ApiHelper
 
-  before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled]
+  skip_before_action :verify_authenticity_token
+
+  before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled,
+                                           :analytics_callback,]
 
   def index
     # Return the scalelite build number if passed as an env variable
@@ -175,7 +178,6 @@ class BigBlueButtonApiController < ApplicationController
     params = EventHandler.new(params_hash, meeting.id).handle
     # Get list of params that should not be modified by create API call
     excluded_params = Rails.configuration.x.create_exclude_params
-
     # Pass along all params except the built in rails ones and excluded_params
     uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params(excluded_params))
 
@@ -411,6 +413,9 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def analytics_callback
+    token = request.headers['HTTP_AUTHORIZATION'].gsub!('Bearer ', '')
+    raise 'Token Invalid' unless valid_token?(token)
+
     meeting_id = params['meeting_id']
     logger.info("Making analytics callback for #{meeting_id}")
     callback_data = CallbackData.find_by_meeting_id(meeting_id)
