@@ -3,7 +3,7 @@
 class BigBlueButtonApiController < ApplicationController
   include ApiHelper
 
-  protect_from_forgery except: :analytics_callback
+  skip_before_action :verify_authenticity_token
 
   before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled,
                                            :analytics_callback,]
