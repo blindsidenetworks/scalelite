@@ -20,6 +20,10 @@ class Recording < ApplicationRecord
     where(query_string, *rid_prefixes)
   end
 
+  def protected
+    self[:protected] || false
+  end
+
   # Create a new recording (and recursively playback format, meta, thumbnails) from a BigBlueButton metadata.xml
   def self.create_from_metadata_xml(metadata, overrides = {})
     metadata_xml = Nokogiri::XML(metadata)
