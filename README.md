@@ -323,6 +323,8 @@ You can run the above task to have it poll the server right away without waiting
 ./bin/rake servers:addAll[file]
 ```
 
+**Deprecated:** See `servers:sync` for a more flexible alternative.
+
 Adds all the servers defined in a YAML file passed as an argument. The file passed in should have the following format:
 
 ```yaml
@@ -341,19 +343,27 @@ Note that all servers are added in the disabled state; see "Enable a server" abo
 ### Configure all servers from a single YAML configuration file
 
 ```sh
-./bin/rake servers:sync[file,mode]
+./bin/rake servers:sync[path,mode,dryrun]
 ```
 
 Add, remove or modify servers according to a YAML configuration file.
 
-The `file` parameter should point to a valid configuration file (described below)
-or match `-` to read configuration from standard input instead. The `mode` parameter
-controls how unwanted servers are removed. By default, servers that still have
-meetings are cordoned and not removed. You have to repeat the task once
-these servers are empty to actually remove them. To force removal of unwanted
-servers, pass `panic` as the second parameter.
+The `path` parameter should point to a valid YAML configuration file as described
+below. Pass `-` as the path to read configuration from standard input instead.
+You can use the `servers:yaml` task to bootstrap a valid configuration file from
+an existing scalelite cluster.
 
-The configuration file should contain a complete list of all servers and follow this structure:
+The `mode` parameter controls how unwanted servers are removed. `mode=keep` will
+not remove any servers. `mode=cordon` (the default) will remove empty servers
+and cordon non-empty servers. You may have to repeat the task once these servers
+are empty to actually remove them. `mode=force` will try to end all meetings on
+unwanted servers and then remove them. This works similar to `servers:panic[id]`.
+
+If `dryrun` is true, the task will run normally but not persist any changes or
+end any meetings. This can be used to simulate a sync and see what would happen.
+
+The configuration file should contain a complete list of all servers and follow
+this structure:
 
 ```yaml
 servers:
@@ -375,17 +385,32 @@ servers:
         load_multiplier: 5.0
 ```
 
-The task will try to reach the desired state by adding, removing or modifying
-servers as needed. To be more exact, the task will:
+The task will try to reach the desired cluster state by adding, removing or
+modifying servers as needed. To be more exact, the task will:
 
 1. Read the configuration file and perform some basic sanity checks.
-2. Add missing servers.
-3. Update configuration of existing servers (`secret`, `url` and `load_multiplier`).
+2. Add missing servers, based on server IDs.
+3. Update configuration for existing servers (`secret`, `url` and `load_multiplier`).
 4. Cordon servers that are enabled but should be disabled.
 5. Enable servers that are disabled or cordoned but should be enabled.
 6. Try to remove servers that are no present in the YAML configuration.
-    * By default, only empty servers are removed. Non-empty servers are cordoned. Repeat the task once these servers are empty to actually remove them.
-    * In `panic` mode, non-empty servers are forcefully evicted and then removed. This works similar to `servers:panic[id]`.
+    * In `keep` mode, no servers are removed.
+    * In `cordon` mode (default), only empty servers are removed. Non-empty servers are cordoned.
+    * In `force` mode, servers are forcefully evicted and then removed.
+
+
+### Export current server list as YAML
+
+```sh
+./bin/rake servers:yaml[verbose]
+```
+
+Prints a YAML file compatible with `servers:sync`. This task can be used to
+bootstrap a cluster configuration file from an existing cluster, or get the
+current cluster state in a mashine-readable format. If `verbose` is true, then
+additional fields (`state`, `load` and `online`) are included. These are ignored
+by `servers:sync`.
+
 
 ### Check the status of the entire deployment
 

@@ -156,128 +156,17 @@ namespace :servers do
   end
 
   desc 'Sync cluster state with servers defined in a YAML file'
-  task :sync, [:path, :mode] => :environment do |_t, args|
-    include ApiHelper
+  task :sync, [:path, :mode, :dryrun] => :environment do |_t, args|
+    raise "Missing 'path' parameter" if args.path.blank?
 
-    args.with_defaults(mode: 'cordon')
-
-    config = if args.path == '-'
-               YAML.safe_load(STDIN.read)
-             elsif args.path.present?
-               YAML.safe_load(File.read(args.path))
-             else
-               raise "Missing 'path' parameter"
-             end
-
-    raise 'No \'servers\' hash in config file.' unless config['servers'].is_a?(Hash)
-
-    config['servers'].each do |id, opts|
-      raise "Server id=#{id} contains invalid characters" unless /^[a-zA-Z0-9_.-]+$/.match?(id)
-      raise "No secret for server id=#{id}" if opts['secret'].blank?
-
-      opts['url'] = "https://#{id}/bigbluebutton/api" if opts['url'].nil?
-      begin
-        uri = URI.parse(opts['url'])
-        raise URI::InvalidURIError unless uri.is_a?(URI::HTTP) && !uri.host.nil?
-      rescue URI::InvalidURIError
-        raise "Invalid url=#{opts['url']} for server id=#{id}"
-      end
-      opts['enabled'] = opts['enabled'].nil? || !!opts['enabled']
-      opts['load_multiplier'] = 1.0 if opts['load_multiplier'].nil? || opts['load_multiplier'].to_d <= 0
-
-      unknown = opts.keys - %w[url secret enabled load_multiplier]
-      raise "Bad parameters for server id=#{id} (#{unknown})" unless unknown.empty?
-    end
-
-    # Create or update servers according to YAML
-    config['servers'].each do |id, opts|
-      begin
-        server = Server.find(id)
-      rescue ApplicationRedisRecord::RecordNotFound
-        puts("Creating new server id=#{id}")
-        server = Server.create!(
-          id: id,
-          url: opts['url'],
-          secret: opts['secret'],
-          load_multiplier: opts['load_multiplier']
-        )
-      end
-
-      unless server.url == opts['url']
-        puts("Updating server id=#{server.id} url=#{opts['url']}")
-        server.url = opts['url']
-      end
-      unless server.secret == opts['secret']
-        puts("Updating server id=#{server.id} secret=*****")
-        server.secret = opts['secret']
-      end
-      unless server.load_multiplier.to_d == opts['load_multiplier']
-        puts("Updating server id=#{server.id} load_multiplier=#{opts['load_multiplier']}")
-        server.load_multiplier = opts['load_multiplier']
-      end
-
-      if opts['enabled'] && !server.enabled?
-        puts("Enabling server id=#{server.id}")
-        server.state = 'enabled'
-      elsif !opts['enabled'] && server.enabled?
-        puts("Disabling server id=#{server.id}")
-        server.state = 'cordoned'
-      end
-
-      server.save! if server.changed?
-    end
-
-    # Remove servers not present in YAML
-    Server.all.each do |server|
-      next if config['servers'].key?(server.id)
-
-      meetings = Meeting.all.select { |m| m.server_id == server.id }
-
-      if meetings.empty?
-        puts("Removing server id=#{server.id}")
-        server.destroy!
-        next
-      end
-
-      puts("WARNING: Cannot remove server id=#{meeting.id} (not empty)")
-      if server.enabled?
-        puts("Disabling server id=#{server.id}")
-        server.state = 'cordoned'
-        server.save!
-      end
-
-      next unless args.mode == 'panic'
-
-      # Panic (force) mode -> Forcefully end all meetings
-      meetings.each do |meeting|
-        puts("Ending meeting id=#{meeting.id} (forced)")
-        begin
-          get_post_req(
-            encode_bbb_uri(
-              'end',
-              server.url,
-              server.secret,
-              meetingID: meeting.id,
-              password: meeting.try(:moderator_pw)
-            )
-          )
-        rescue StandardError => e
-          # Not fatal (may have ended already)
-          puts("WARNING: Failed to end meeting id=#{meeting.id}: #{e}")
-        end
-        meeting.destroy!
-      end
-
-      # Check that no new meetings were created while we were busy
-      raise "Server id=#{server.id} still not empty!" \
-        if Meeting.all.any? { |m| m.server_id == server.id }
-
-      puts("Removing server id=#{server.id} (forced)")
-      server.destroy!
-    end
-
+    ServerSync.sync_file(args.path, args.mode, args.dryrun)
   rescue StandardError => e
     puts("ERROR: #{e}")
     exit(1)
+  end
+
+  desc 'Return a yaml compatible with servers:sync'
+  task :yaml, [:verbose] => :environment do |_t|
+    puts({ servers: ServerSync.dump(!!args.verbose) }.to_yaml)
   end
 end
