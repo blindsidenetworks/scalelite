@@ -253,6 +253,18 @@ Make sure that there is no space between the parameters [url,secret,loadMultiple
 Warning: Do not remove a server which has running meetings! This will leave the database in an inconsistent state.
 You should either wait for all meetings to end, or run the "Panic" function first.
 
+### Update a server
+
+```sh
+./bin/rake servers:update[id,secret,loadMultiplier]
+```
+
+Updates the secret and load_multiplier for a BigBlueButton server.
+
+The `loadMultiplier` can be used to give individual servers a higher or lower priority over other servers. A higher loadMultiplier should be placed on the weaker servers.
+
+After changing the server needs to be polled at least once to see the new load.
+
 ### Disable a server
 
 ```sh
@@ -319,6 +331,19 @@ After changing the server needs to be polled at least once to see the new load.
 
 When you add a server to the pool, it may take upwards of 60 seconds (default value for `INTERVAL` for the background server polling process) before Scalelite marks the server as `online`.
 You can run the above task to have it poll the server right away without waiting.
+
+### List all meetingIds running in given servers
+
+To list meetings in a specific servers, the following command can be used
+
+```sh
+./bin/rake servers:meeting_list["serverID1:serverID2:serverID3"]
+```
+To list all meetings running across all BigBlueButton servers, use:
+
+```sh
+./bin/rake servers:meeting_list
+```
 
 ### Add multiple servers through a config file
 
@@ -427,6 +452,67 @@ This will print a table displaying a list of all servers and some basic statisti
      HOSTNAME        STATE   STATUS  MEETINGS  USERS  LARGEST MEETING  VIDEOS
  bbb1.example.com  enabled   online        12     25                7      15
  bbb2.example.com  enabled   online         4     14                4       5
+```
+
+### Manage Meetings
+
+#### List all/specific meetings running in BigBlueButton servers
+
+To list specific meetings, use:
+
+```sh
+./bin/rake meetings:list["meetingId1:meetingId2:meetingId3"]
+```
+
+To list all meetings running across all BigBlueButton servers, use:
+
+```sh
+./bin/rake meetings:list
+```
+
+#### End all/specific meetings running in BigBlueButton servers
+
+To End specific meetings, use:
+
+```sh
+./bin/rake meetings:end["meetingId1:meetingId2:meetingId3"]
+```
+
+To End all meetings running across all BigBlueButton servers, use:
+
+```sh
+./bin/rake meetings:end
+```
+
+#### Get meeting details of a meeting running in BigBlueButton server
+
+```sh
+./bin/rake meetings:info[meetingId]
+```
+
+This command will return the following meeting details of a meeting:
+
+```
+Meeting ID: 1a813084f7af08b8d19239315c170b3decedfc03-2-1
+	Meeting Name: new class
+	Internal MeetingID: 4445471c7ae2987ddb11db3fa2d89f8c8f86c328-1633448534301
+	Created Date: Tue Oct 05 15:42:14 UTC 2021
+	Recording Enabled: true
+	Server id: bbb.example.com
+	Serevr url: https://bbb.example.com/bigbluebutton/api/
+	MetaData:
+		bbb-context-name: test124
+		analytics-callback-url: https://bbb1.example.com/bigbluebutton/api/analytics_callback
+		bbb-recording-tags: 
+		bbb-origin-server-common-name: 
+		bbb-context-label: test
+		bbb-origin: test
+		bbb-context: test
+		bbb-context-id: 2
+		bbb-recording-name: new class
+		bbb-origin-server-name: xx.xx.xxx.xx
+		bbb-recording-description: 
+		bbb-origin-tag: moodle-mod_bigbluebuttonbn
 ```
 
 ## Getting Help
