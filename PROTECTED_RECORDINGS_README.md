@@ -1,12 +1,12 @@
 # Protected_Recordings
 
-Protected Recordings is a feature introduced in the Scalelite version 1.2, which gives the users of scalelite the ability to protect their recordings from being used by external users. When this feature is enabled, all the playback links for the recordings will have a one-time use token associated with it and Scalelite will verify that a) the tocken has never been consumed, or b) the user accessing the recording is the one who consumed the token originally. Otherwise Scalelite espondswith a 404 error.
+Protected Recordings is a feature introduced in the Scalelite version 1.2, which gives the users of scalelite the ability to protect their recordings from being used by external users. When this feature is enabled, all the playback links for the recordings will have a one-time use token associated with it and Scalelite will verify that a) the token has never been consumed, or b) the user accessing the recording is the one who consumed the token originally. Otherwise Scalelite responds with a 404 error.
 
 This forces the users to go through the integration (such as Moodle), not letting them share the recording links.
 
 ## Setup Protected_Recordings feature
 
-In order to use the protected_recordings the following variables need to  added to the `/etc/default/scalelite` file:
+In order to use the protected_recordings the following variables need to be added to the `/etc/default/scalelite` file:
 
 `SCALELITE_TAG`: Change the version in `SCALELITE_TAG=v1.2`.
 `PROTECTED_RECORDINGS_ENABLED`: Applies to the recording import process. If set to "true", then newly imported recordings will have protected links enabled. Default is "false".
