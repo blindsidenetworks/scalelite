@@ -274,7 +274,12 @@ class BigBlueButtonApiController < ApplicationController
       end
     end
     query = Recording.includes(playback_formats: [:thumbnails], metadata: []).references(:metadata)
-    query = query.where(state: params[:state].split(',')) if params[:state].present?
+    query = if params[:state].present?
+              states = params[:state].split(',')
+              states.include?('any') ? query : query.where(state: states)
+            else
+              query.state_is_published_unpublished
+            end
     meta_params = params.select { |key, _value| key.to_s.match(/^meta_/) }.permit!.to_h.to_a
     if meta_params.present?
       meta_query = '(metadata.key = ? and metadata.value in (?))'
@@ -391,7 +396,7 @@ class BigBlueButtonApiController < ApplicationController
         logger.debug("Deleting recording: #{rec.record_id}")
         # TODO: check the unpublished dir when it is implemented
         FileUtils.rm_r(Dir.glob(File.join(Rails.configuration.x.recording_publish_dir, '/*/', rec.record_id)))
-        rec.destroy!
+        rec.mark_delete!
       rescue StandardError => e
         logger.warn("Error #{e} deleting recording #{rec.record_id}")
         raise InternalError, 'Unable to delete recording.'
