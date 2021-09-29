@@ -135,6 +135,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `RAILS_ENV`: Either `development`, `test`, or `production`. The Docker image defaults to `production`. Rails defaults to `development`.
 * `BUILD_NUMBER`: An additional build version to report in the BigBlueButton top-level API endpoint. The Docker image has this preset to a value determined at image build time.
 * `RAILS_LOG_TO_STDOUT`: Log to STDOUT instead of a file. Recommended for deployments with a service manager (e.g. systemd) or in Docker. The Docker image sets this by default.
+* `RAILS_LOG_LEVEL`: Set log level of production environment (debug, info, warn, error, fatal, unknown). Default is `debug`.
 * `REDIS_POOL`: Configure the Redis connection pool size. Defaults to `RAILS_MAX_THREADS`.
 * `MAX_MEETING_DURATION`: The maximum length of any meeting created on any server. If the `duration` is passed as part of the create call, it will only be overwritten if it is greater than `MAX_MEETING_DURATION`.
 * `RECORDING_SPOOL_DIR`: Directory where transferred recording files are placed. Defaults to `/var/bigbluebutton/spool`
@@ -323,6 +324,8 @@ You can run the above task to have it poll the server right away without waiting
 ./bin/rake servers:addAll[file]
 ```
 
+**Deprecated:** See `servers:sync` for a more flexible alternative.
+
 Adds all the servers defined in a YAML file passed as an argument. The file passed in should have the following format:
 
 ```yaml
@@ -337,6 +340,78 @@ servers:
 
 The command will print out each added server's `url` and `id` once it has been successfully added.
 Note that all servers are added in the disabled state; see "Enable a server" above to enable them.
+
+### Configure all servers from a single YAML configuration file
+
+```sh
+./bin/rake servers:sync[path,mode,dryrun]
+```
+
+Add, remove or modify servers according to a YAML configuration file.
+
+The `path` parameter should point to a valid YAML configuration file as described
+below. Pass `-` as the path to read configuration from standard input instead.
+You can use the `servers:yaml` task to bootstrap a valid configuration file from
+an existing scalelite cluster.
+
+The `mode` parameter controls how unwanted servers are removed. `mode=keep` will
+not remove any servers. `mode=cordon` (the default) will remove empty servers
+and cordon non-empty servers. You may have to repeat the task once these servers
+are empty to actually remove them. `mode=force` will try to end all meetings on
+unwanted servers and then remove them. This works similar to `servers:panic[id]`.
+
+If `dryrun` is true, the task will run normally but not persist any changes or
+end any meetings. This can be used to simulate a sync and see what would happen.
+
+The configuration file should contain a complete list of all servers and follow
+this structure:
+
+```yaml
+servers:
+    <server-id>:                 # must be unique, should be a hostname
+        secret: <string>         # required
+        url: <string>            # default: "https://<server-id>/bigbluebutton/api"
+        enabled: <bool>          # default: true
+        load_multiplier: <float> # default: 1.0, must be greater than 0
+
+    # Example for a simple server with default values
+    bbb1.example.com:
+        secret: "1bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+
+    # Full example for a legacy server (generated id)
+    02bff3a7-c95f-49d3-b1e5-c53eddd4dd68:
+        secret: "2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+        url: "https://bbb2.example.com/bigbluebutton/api"
+        enabled: false
+        load_multiplier: 5.0
+```
+
+The task will try to reach the desired cluster state by adding, removing or
+modifying servers as needed. To be more exact, the task will:
+
+1. Read the configuration file and perform some basic sanity checks.
+2. Add missing servers, based on server IDs.
+3. Update configuration for existing servers (`secret`, `url` and `load_multiplier`).
+4. Cordon servers that are enabled but should be disabled.
+5. Enable servers that are disabled or cordoned but should be enabled.
+6. Try to remove servers that are no present in the YAML configuration.
+    * In `keep` mode, no servers are removed.
+    * In `cordon` mode (default), only empty servers are removed. Non-empty servers are cordoned.
+    * In `force` mode, servers are forcefully evicted and then removed.
+
+
+### Export current server list as YAML
+
+```sh
+./bin/rake servers:yaml[verbose]
+```
+
+Prints a YAML file compatible with `servers:sync`. This task can be used to
+bootstrap a cluster configuration file from an existing cluster, or get the
+current cluster state in a mashine-readable format. If `verbose` is true, then
+additional fields (`state`, `load` and `online`) are included. These are ignored
+by `servers:sync`.
+
 
 ### Check the status of the entire deployment
 
