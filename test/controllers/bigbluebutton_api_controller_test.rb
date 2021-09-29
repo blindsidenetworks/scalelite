@@ -1684,7 +1684,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>messageKey', 'notFound'
   end
 
-  test 'deleteRecordings deletes the recording from the database if passed recordID for a get request' do
+  test 'deleteRecordings deletes the recording from the database if passed recordID' do
     r = create(:recording, record_id: 'test123')
 
     params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
@@ -1693,7 +1693,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>deleted', 'true'
 
-    assert_not Recording.exists?(record_id: r.record_id)
+    assert r.reload.state.eql?('deleted')
   end
 
   test 'deleteRecordings deletes the recording from the database if passed recordID for a post request' do
@@ -1706,8 +1706,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>deleted', 'true'
-
-    assert_not Recording.exists?(record_id: r.record_id)
+    assert r.reload.state.eql?('deleted')
   end
 
   test 'deleteRecordings handles multiple recording IDs passed' do
@@ -1722,9 +1721,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>deleted', 'true'
 
-    assert_not Recording.exists?(record_id: r.record_id)
-    assert_not Recording.exists?(record_id: r1.record_id)
-    assert_not Recording.exists?(record_id: r2.record_id)
+    assert r.reload.state.eql?('deleted')
+    assert r1.reload.state.eql?('deleted')
+    assert r2.reload.state.eql?('deleted')
   end
 
   # RecordingDisabled
