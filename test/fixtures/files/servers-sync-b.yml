@@ -1,0 +1,14 @@
+servers:
+    # Change bbb1
+    bbb1:
+        secret: "bbb1-changed"
+        url: "https://bbb1-changed/bigbluebutton/api"
+        enabled: false
+        load_multiplier: 23.0
+    # Keep bbb2
+    bbb2:
+        secret: "bbb2"
+        url: "https://bbb2.example.com/bigbluebutton/api"
+        enabled: false
+        load_multiplier: 5.0
+    # Remove bbb3

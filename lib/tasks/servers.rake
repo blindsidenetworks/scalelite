@@ -154,4 +154,19 @@ namespace :servers do
   rescue StandardError => e
     puts(e)
   end
+
+  desc 'Sync cluster state with servers defined in a YAML file'
+  task :sync, [:path, :mode, :dryrun] => :environment do |_t, args|
+    raise "Missing 'path' parameter" if args.path.blank?
+
+    ServerSync.sync_file(args.path, args.mode, args.dryrun)
+  rescue StandardError => e
+    puts("ERROR: #{e}")
+    exit(1)
+  end
+
+  desc 'Return a yaml compatible with servers:sync'
+  task :yaml, [:verbose] => :environment do |_t|
+    puts({ servers: ServerSync.dump(!!args.verbose) }.to_yaml)
+  end
 end
