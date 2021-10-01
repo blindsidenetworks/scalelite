@@ -1,4 +1,4 @@
-FROM amazonlinux:2.0.20210219.0 AS amazonlinux
+FROM amazonlinux:2.0.20210813.1 AS amazonlinux
 
 FROM ubuntu:18.04 AS bbb-playback
 ENV DEBIAN_FRONTEND=noninteractive
@@ -47,7 +47,7 @@ CMD [ "/etc/nginx/start", "-g", "daemon off;" ]
 FROM amazonlinux-base AS base
 # Install Node.js (needed for yarn)
 RUN yum -y install gcc-c++ make
-RUN curl -sL https://rpm.nodesource.com/setup_14.x | bash -
+RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash -
 RUN yum -y install nodejs
 # Install Ruby & Rails
 RUN curl -sL -o /etc/yum.repos.d/yarn.repo https://dl.yarnpkg.com/rpm/yarn.repo
