@@ -1,4 +1,4 @@
-FROM amazonlinux:2.0.20210813.1 AS amazonlinux
+FROM amazonlinux:2.0.20211001.0 AS amazonlinux
 
 FROM ubuntu:18.04 AS bbb-playback
 ENV DEBIAN_FRONTEND=noninteractive
