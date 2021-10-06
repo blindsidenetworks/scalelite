@@ -11,10 +11,9 @@ assignees: amalrails
 A clear and concise description of what the bug is.
 
 **To Reproduce**
-Describe the bug
+Describe the bug:
 A clear and concise description of what the bug is.
 
-To Reproduce
 Describe the deployment:
 
 1. Is is based on the default systemd deployment, the alternate docker-compose one, a custom version of it?

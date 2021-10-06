@@ -306,7 +306,8 @@ class BigBlueButtonApiController < ApplicationController
 
     publish = params[:publish].casecmp('true').zero?
 
-    query = Recording.where(record_id: params[:recordID].split(','), state: 'published').load
+    query = Recording.where(record_id: params[:recordID].split(',')).load
+    query = query.state_is_published_unpublished
     raise BBBError.new('notFound', 'We could not find recordings') if query.none?
 
     query.where.not(published: publish).each do |rec|
@@ -340,7 +341,8 @@ class BigBlueButtonApiController < ApplicationController
           FileUtils.mkdir_p(format_dir)
           FileUtils.mv(recording_path, format_dir)
         end
-        rec.update(published: publish, publish_updated: true)
+        state = publish ? 'published' : 'unpublished'
+        rec.update!(published: publish, publish_updated: true, state: state)
       rescue StandardError => e
         logger.warn("Error #{e} setting published=#{publish} recording #{rec.record_id}")
         raise InternalError, 'Unable to publish/unpublish recording.'
