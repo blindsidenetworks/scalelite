@@ -60,7 +60,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     server = Server.create!(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1')
     Meeting.create!(id: 'test-meeting-1', server: server)
 
-    url = 'https://test-1.example.com/bigbluebutton/api/getMeetingInfo?meetingID=test-meeting-1&checksum=a4eee985e3f1f9524a6e2a32d1e35d3703e4cef9'
+    url = 'https://test-1.example.com/bigbluebutton/api/getMeetingInfo?meetingID=test-meeting-1&checksum=7901d9cf0f7e63a7e5eacabfd75fabfb223259d6c045ac5b4d86fb774c371945'
 
     stub_request(:get, url)
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID></response>')
@@ -79,7 +79,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     server = Server.create!(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1')
     Meeting.create!(id: 'test-meeting-1', server: server)
 
-    url = 'https://test-1.example.com/bigbluebutton/api/getMeetingInfo?meetingID=test-meeting-1&checksum=a4eee985e3f1f9524a6e2a32d1e35d3703e4cef9'
+    url = 'https://test-1.example.com/bigbluebutton/api/getMeetingInfo?meetingID=test-meeting-1&checksum=7901d9cf0f7e63a7e5eacabfd75fabfb223259d6c045ac5b4d86fb774c371945'
 
     stub_request(:get, url)
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID></response>')
@@ -98,7 +98,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     server = Server.create!(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1')
     Meeting.create!(id: 'test-meeting-1', server: server)
 
-    url = 'https://test-1.example.com/bigbluebutton/api/getMeetingInfo?meetingID=test-meeting-1&checksum=a4eee985e3f1f9524a6e2a32d1e35d3703e4cef9'
+    url = 'https://test-1.example.com/bigbluebutton/api/getMeetingInfo?meetingID=test-meeting-1&checksum=7901d9cf0f7e63a7e5eacabfd75fabfb223259d6c045ac5b4d86fb774c371945'
 
     stub_request(:get, url)
       .to_timeout
