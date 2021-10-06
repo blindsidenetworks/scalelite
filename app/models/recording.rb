@@ -9,8 +9,6 @@ class Recording < ApplicationRecord
   validates :meeting_id, presence: true
   validates :state, inclusion: { in: %w[processing processed published unpublished deleted] }, allow_nil: true
 
-  scope :state_is_published_unpublished, -> { where(state: %w[published unpublished]) }
-
   INTERNAL_METADATA = Set['isBreakout', 'meetingId', 'meetingName'].freeze
 
   def self.with_recording_id_prefixes(recording_ids)
@@ -118,14 +116,6 @@ class Recording < ApplicationRecord
       end
     rescue ActiveRecord::RecordNotUnique
       retry
-    end
-  end
-
-  def mark_delete!
-    Recording.transaction do
-      metadata.destroy_all
-      playback_formats.destroy_all
-      update!(state: 'deleted')
     end
   end
 end
