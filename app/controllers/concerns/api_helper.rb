@@ -15,7 +15,8 @@ module ApiHelper
   # Verify checksum
   def verify_checksum
     raise ChecksumError unless params[:checksum].present? &&
-                               (params[:checksum].length == CHECKSUM_LENGTH_SHA1 || params[:checksum].length == CHECKSUM_LENGTH_SHA256)
+                               (params[:checksum].length == CHECKSUM_LENGTH_SHA1 ||
+                                params[:checksum].length == CHECKSUM_LENGTH_SHA256)
 
     # Camel case (ex) get_meetings to getMeetings to match BBB server
     check_string = action_name.camelcase(:lower)
