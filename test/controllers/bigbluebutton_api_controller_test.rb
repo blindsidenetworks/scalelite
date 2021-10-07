@@ -1070,7 +1070,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings with only checksum returns all recordings for a get request' do
-    create_list(:recording, 3)
+    create_list(:recording, 3, state: 'published')
     params = encode_bbb_params('getRecordings', '')
     get bigbluebutton_api_get_recordings_url, params: params
     assert_response :success
@@ -1080,7 +1080,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   test 'getRecordings with get_recordings_api_filtered does not return any recordings and returns error response
         if no meetingId/recordId is provided' do
-    create_list(:recording, 3)
+    create_list(:recording, 3, state: 'published')
     params = encode_bbb_params('getRecordings', '')
     Rails.configuration.x.stub(:get_recordings_api_filtered, true) { get bigbluebutton_api_get_recordings_url, params: params }
     assert_response :success
@@ -1090,7 +1090,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings with only checksum returns all recordings for a post request' do
-    create_list(:recording, 3)
+    create_list(:recording, 3, state: 'published')
     params = encode_bbb_params('getRecordings', '')
     post bigbluebutton_api_get_recordings_url, params: params
     assert_response :success
@@ -1099,7 +1099,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings fetches recording by meeting id' do
-    r = create(:recording, :published, participants: 3)
+    r = create(:recording, :published, participants: 3, state: 'published')
     podcast = create(:playback_format, recording: r, format: 'podcast')
     presentation = create(:playback_format, recording: r, format: 'presentation')
 
@@ -1151,7 +1151,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings with get_recordings_api_filtered fetches recording by meeting id' do
-    r = create(:recording, :published, participants: 3)
+    r = create(:recording, :published, participants: 3, state: 'published')
     podcast = create(:playback_format, recording: r, format: 'podcast')
     presentation = create(:playback_format, recording: r, format: 'presentation')
 
@@ -1203,9 +1203,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings allows multiple comma-separated meeting IDs' do
-    create_list(:recording, 5)
-    r1 = create(:recording)
-    r2 = create(:recording)
+    create_list(:recording, 5, state: 'published')
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'published')
 
     params = encode_bbb_params('getRecordings', {
       meetingID: [r1.meeting_id, r2.meeting_id].join(','),
@@ -1218,9 +1218,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings with get_recordings_api_filtered allows multiple comma-separated meeting IDs' do
-    create_list(:recording, 5)
-    r1 = create(:recording)
-    r2 = create(:recording)
+    create_list(:recording, 5, state: 'published')
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'published')
 
     params = encode_bbb_params('getRecordings', {
       meetingID: [r1.meeting_id, r2.meeting_id].join(','),
@@ -1232,7 +1232,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings does case-sensitive match on recording id' do
-    r = create(:recording)
+    r = create(:recording, state: 'published')
     params = encode_bbb_params('getRecordings', { recordID: r.record_id.upcase }.to_query)
     get bigbluebutton_api_get_recordings_url, params: params
     assert_response :success
@@ -1242,9 +1242,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings does prefix match on recording id' do
-    create_list(:recording, 5)
-    r = create(:recording, meeting_id: 'bulk-prefix-match')
-    create_list(:recording, 19, meeting_id: 'bulk-prefix-match')
+    create_list(:recording, 5, state: 'published')
+    r = create(:recording, meeting_id: 'bulk-prefix-match', state: 'published')
+    create_list(:recording, 19, meeting_id: 'bulk-prefix-match', state: 'published')
     params = encode_bbb_params('getRecordings', { recordID: r.record_id[0, 40] }.to_query)
     get bigbluebutton_api_get_recordings_url, params: params
     assert_response :success
@@ -1254,9 +1254,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings allows multiple comma-separated recording IDs' do
-    create_list(:recording, 5)
-    r1 = create(:recording)
-    r2 = create(:recording)
+    create_list(:recording, 5, state: 'published')
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'published')
 
     params = encode_bbb_params('getRecordings', {
       recordID: [r1.record_id, r2.record_id].join(','),
@@ -1269,9 +1269,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings with get_recordings_api_filtered allows multiple comma-separated recording IDs' do
-    create_list(:recording, 5)
-    r1 = create(:recording)
-    r2 = create(:recording)
+    create_list(:recording, 5, state: 'published')
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'published')
 
     params = encode_bbb_params('getRecordings', {
       recordID: [r1.record_id, r2.record_id].join(','),
@@ -1285,9 +1285,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   test 'getRecordings filter based on recording states' do
     create_list(:recording, 5)
-    r1 = create(:recording, state: 'published')
+    r1 = create(:recording, state: 'processing')
     r2 = create(:recording, state: 'unpublished')
-    r3 = create(:recording)
+    r3 = create(:recording, state: 'deleted')
 
     params = encode_bbb_params('getRecordings', {
       recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
@@ -1297,14 +1297,14 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
-    assert_select 'response>recordings>recording', 2
+    assert_select 'response>recordings>recording', 1
   end
 
   test 'getRecordings with get_recordings_api_filtered filters based on recording states' do
-    create_list(:recording, 5)
+    create_list(:recording, 5, state: 'deleted')
     r1 = create(:recording, state: 'published')
     r2 = create(:recording, state: 'unpublished')
-    r3 = create(:recording)
+    r3 = create(:recording, state: 'deleted')
 
     params = encode_bbb_params('getRecordings', {
       recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
@@ -1318,17 +1318,17 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings filter based on recording states and meta_params' do
-    create_list(:recording, 5)
+    create_list(:recording, 5, state: 'processing')
     r1 = create(:recording, state: 'published')
     r2 = create(:recording, state: 'unpublished')
-    r3 = create(:recording)
+    r3 = create(:recording, state: 'deleted')
     create(:metadatum, recording: r1, key: 'bbb-context-name', value: 'test1')
     create(:metadatum, recording: r3, key: 'bbb-origin-tag', value: 'GL')
     create(:metadatum, recording: r2, key: 'bbb-origin-tag', value: 'GL')
 
     params = encode_bbb_params('getRecordings', {
       recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
-      state: %w[published unpublished].join(','),
+      state: %w[published unpublished deleted].join(','),
       'meta_bbb-context-name': %w[test1 test2].join(','),
       'meta_bbb-origin-tag': ['GL'].join(','),
     }.to_query)
@@ -1336,7 +1336,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
-    assert_select 'response>recordings>recording', 2
+    assert_select 'response>recordings>recording', 3
   end
 
   test 'getRecordings with get_recordings_api_filtered filters based on recording states and meta_params' do
@@ -1649,7 +1649,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'deleteRecordings deletes the recording from the database if passed recordID for a get request' do
-    r = create(:recording)
+    r = create(:recording, record_id: 'test123')
 
     params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
     get bigbluebutton_api_delete_recordings_url, params: params
