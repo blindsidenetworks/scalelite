@@ -186,6 +186,8 @@ Upgrading Scalelite to the latest version can be done using one command:
 
 `systemctl restart scalelite.target`
 
+note: If the `SCALELITE_TAG` is set to v1, the latest release in v1 series will be taken. You can also choose the specific version by specifying the version number as`SCALELITE_TAG=v1.1.7`, which would be the recommended way. All the details regarding each versions can be found at `https://github.com/blindsidenetworks/scalelite/releases`. Some versions might require setting certain environment variables or migrations to be run.
+
 To confirm that you have the latest version, enter `http(s)://<scalelite-hostname>/bigbluebutton/api` in your browser and confirm that the value inside the `<build><\build>` tag is equal to the new version.
 
 ## Administration
