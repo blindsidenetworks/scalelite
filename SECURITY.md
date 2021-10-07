@@ -20,6 +20,6 @@ As such, we highly recommend that all administrators deploy 1.2 going forward.
 
 ## Reporting a Vulnerability
 
-If you believe you have found a security vunerability in BigBlueButton please let us know directly by e-mailing security@bigbluebutton.org with as much detail as possible.
+If you believe you have found a security vunerability in BigBlueButton please let us know directly by e-mailing security@blindsidenetworks.com with as much detail as possible.
 
-Regards,... BigBlueButton Team
+Regards,... Blindside Networks Team
