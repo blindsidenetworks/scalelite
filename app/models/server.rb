@@ -54,7 +54,7 @@ class Server < ApplicationRedisRecord
 
   def save!
     with_connection do |redis|
-      raise RecordNotSaved.new('Cannot update id field', self) if id_changed?
+      raise RecordNotSaved.new('Cannot update id field', self) if id_changed? && !@new_record
 
       # Default values
       if id.nil?

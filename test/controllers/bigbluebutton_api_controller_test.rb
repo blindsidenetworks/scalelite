@@ -6,11 +6,27 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   # /
 
-  test 'index responds with only success and version' do
+  test 'index responds with only success and version for a get request' do
     Rails.configuration.x.build_number = nil
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_url
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal '2.0', response_xml.at_xpath('/response/version').text
+    assert_not response_xml.at_xpath('/response/build').present?
+
+    assert_response :success
+  end
+
+  test 'index responds with only success and version for a post request' do
+    Rails.configuration.x.build_number = nil
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      post bigbluebutton_api_url
     end
 
     response_xml = Nokogiri::XML(@response.body)
@@ -40,7 +56,26 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   # getMeetingInfo
 
-  test 'getMeetingInfo responds with the correct meeting info' do
+  test 'getMeetingInfo responds with the correct meeting info for a post request' do
+    server = Server.create!(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1')
+    Meeting.create!(id: 'test-meeting-1', server: server)
+
+    url = 'https://test-1.example.com/bigbluebutton/api/getMeetingInfo?meetingID=test-meeting-1&checksum=a4eee985e3f1f9524a6e2a32d1e35d3703e4cef9'
+
+    stub_request(:get, url)
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID></response>')
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      post bigbluebutton_api_get_meeting_info_url, params: { meetingID: 'test-meeting-1' }
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').content
+    assert_equal 'test-meeting-1', response_xml.at_xpath('/response/meetingID').content
+  end
+
+  test 'getMeetingInfo responds with the correct meeting info for a get request' do
     server = Server.create!(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1')
     Meeting.create!(id: 'test-meeting-1', server: server)
 
@@ -109,7 +144,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   # isMeetingRunning
 
-  test 'isMeetingRunning responds with the correct meeting status' do
+  test 'isMeetingRunning responds with the correct meeting status for a get request' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 0)
     meeting1 = Meeting.find_or_create_with_server('Demo Meeting', server1, 'mp')
 
@@ -118,6 +153,23 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_is_meeting_running_url, params: { meetingID: meeting1.id }
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').content
+    assert response_xml.at_xpath('/response/running').content
+  end
+
+  test 'isMeetingRunning responds with the correct meeting status for a post request' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 0)
+    meeting1 = Meeting.find_or_create_with_server('Demo Meeting', server1, 'mp')
+
+    stub_request(:get, encode_bbb_uri('isMeetingRunning', server1.url, server1.secret, 'meetingID' => meeting1.id))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><running>true</running></response>')
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      post bigbluebutton_api_is_meeting_running_url, params: { meetingID: meeting1.id }
     end
 
     response_xml = Nokogiri::XML(@response.body)
@@ -171,7 +223,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   # getMeetings
 
-  test 'getMeetings responds with the correct meetings' do
+  test 'getMeetings responds with the correct meetings  for a get request' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true,
                             enabled: true)
     server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true,
@@ -186,6 +238,30 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_get_meetings_url
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert response_xml.xpath('//meeting[text()="test-meeting-1"]').present?
+    assert response_xml.xpath('//meeting[text()="test-meeting-2"]').present?
+  end
+
+  test 'getMeetings responds with the correct meetings for a post request' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 1, online: true,
+                            enabled: true)
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret', load: 1, online: true,
+                            enabled: true)
+
+    stub_request(:get, encode_bbb_uri('getMeetings', server1.url, server1.secret))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
+                       '<meeting>test-meeting-1<meeting></meetings></response>')
+    stub_request(:get, encode_bbb_uri('getMeetings', server2.url, server2.secret))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
+                       '<meeting>test-meeting-2<meeting></meetings></response>')
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      post bigbluebutton_api_get_meetings_url
     end
 
     response_xml = Nokogiri::XML(@response.body)
@@ -324,7 +400,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
   end
 
-  test 'create creates the room successfully' do
+  test 'create creates the room successfully for a get request' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
 
@@ -338,6 +414,34 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_create_url, params: params
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    # Reload
+    server1 = Server.find(server1.id)
+    meeting = Meeting.find(params[:meetingID])
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal params[:meetingID], meeting.id
+    assert_equal server1.id, meeting.server.id
+    assert_equal 1, server1.load
+  end
+
+  test 'create creates the room successfully for a post request' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+
+    params = {
+      meetingID: 'test-meeting-1', moderatorPW: 'mp',
+    }
+
+    stub_request(:post, encode_bbb_uri('create', server1.url, server1.secret, params))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
+      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      post bigbluebutton_api_create_url, params: params
     end
 
     response_xml = Nokogiri::XML(@response.body)
@@ -745,7 +849,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
   end
 
-  test 'end responds with sentEndMeetingRequest if meeting exists and password is correct' do
+  test 'end responds with sentEndMeetingRequest if meeting exists and password is correct for a get request' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
     Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
@@ -762,6 +866,34 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_end_url, params: params
+    end
+    response_xml = Nokogiri::XML(@response.body)
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal 'sentEndMeetingRequest', response_xml.at_xpath('/response/messageKey').text
+
+    assert_raises(ApplicationRedisRecord::RecordNotFound) do
+      Meeting.find('test-meeting-1')
+    end
+  end
+
+  test 'end responds with sentEndMeetingRequest if meeting exists and password is correct for a post request' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0)
+    Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
+
+    params = {
+      meetingID: 'test-meeting-1',
+      password: 'test-password',
+    }
+
+    stub_request(:get, encode_bbb_uri('end', server1.url, server1.secret, params))
+      .to_return(body: '<response><returncode>SUCCESS</returncode><messageKey>sentEndMeetingRequest</messageKey>' \
+        '<message>A request to end the meeting was sent. Please wait a few seconds, and then use the getMeetingInfo' \
+        ' or isMeetingRunning API calls to verify that it was ended.</message></response>')
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      post bigbluebutton_api_end_url, params: params
     end
     response_xml = Nokogiri::XML(@response.body)
 
@@ -828,7 +960,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
   end
 
-  test 'join redirects user to the corrent join url' do
+  test 'join redirects user to the corrent join url for a get request' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0, online: true)
     meeting = Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
@@ -837,6 +969,20 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_join_url, params: params
+    end
+
+    assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, params).to_s
+  end
+
+  test 'join redirects user to the corrent join url for a post request' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, load: 0, online: true)
+    meeting = Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
+
+    params = { meetingID: meeting.id, password: 'test-password', fullName: 'test-name' }
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      post bigbluebutton_api_join_url, params: params
     end
 
     assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, params).to_s
@@ -923,8 +1069,8 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>messageKey', 'checksumError'
   end
 
-  test 'getRecordings with only checksum returns all recordings' do
-    create_list(:recording, 3)
+  test 'getRecordings with only checksum returns all recordings for a get request' do
+    create_list(:recording, 3, state: 'published')
     params = encode_bbb_params('getRecordings', '')
     get bigbluebutton_api_get_recordings_url, params: params
     assert_response :success
@@ -934,7 +1080,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   test 'getRecordings with get_recordings_api_filtered does not return any recordings and returns error response
         if no meetingId/recordId is provided' do
-    create_list(:recording, 3)
+    create_list(:recording, 3, state: 'published')
     params = encode_bbb_params('getRecordings', '')
     Rails.configuration.x.stub(:get_recordings_api_filtered, true) { get bigbluebutton_api_get_recordings_url, params: params }
     assert_response :success
@@ -943,8 +1089,17 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>message', 'param meetingID or recordID must be included.'
   end
 
+  test 'getRecordings with only checksum returns all recordings for a post request' do
+    create_list(:recording, 3, state: 'published')
+    params = encode_bbb_params('getRecordings', '')
+    post bigbluebutton_api_get_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 3
+  end
+
   test 'getRecordings fetches recording by meeting id' do
-    r = create(:recording, :published, participants: 3)
+    r = create(:recording, :published, participants: 3, state: 'published')
     podcast = create(:playback_format, recording: r, format: 'podcast')
     presentation = create(:playback_format, recording: r, format: 'presentation')
 
@@ -996,7 +1151,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings with get_recordings_api_filtered fetches recording by meeting id' do
-    r = create(:recording, :published, participants: 3)
+    r = create(:recording, :published, participants: 3, state: 'published')
     podcast = create(:playback_format, recording: r, format: 'podcast')
     presentation = create(:playback_format, recording: r, format: 'presentation')
 
@@ -1048,9 +1203,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings allows multiple comma-separated meeting IDs' do
-    create_list(:recording, 5)
-    r1 = create(:recording)
-    r2 = create(:recording)
+    create_list(:recording, 5, state: 'published')
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'published')
 
     params = encode_bbb_params('getRecordings', {
       meetingID: [r1.meeting_id, r2.meeting_id].join(','),
@@ -1063,9 +1218,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings with get_recordings_api_filtered allows multiple comma-separated meeting IDs' do
-    create_list(:recording, 5)
-    r1 = create(:recording)
-    r2 = create(:recording)
+    create_list(:recording, 5, state: 'published')
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'published')
 
     params = encode_bbb_params('getRecordings', {
       meetingID: [r1.meeting_id, r2.meeting_id].join(','),
@@ -1077,7 +1232,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings does case-sensitive match on recording id' do
-    r = create(:recording)
+    r = create(:recording, state: 'published')
     params = encode_bbb_params('getRecordings', { recordID: r.record_id.upcase }.to_query)
     get bigbluebutton_api_get_recordings_url, params: params
     assert_response :success
@@ -1087,9 +1242,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings does prefix match on recording id' do
-    create_list(:recording, 5)
-    r = create(:recording, meeting_id: 'bulk-prefix-match')
-    create_list(:recording, 19, meeting_id: 'bulk-prefix-match')
+    create_list(:recording, 5, state: 'published')
+    r = create(:recording, meeting_id: 'bulk-prefix-match', state: 'published')
+    create_list(:recording, 19, meeting_id: 'bulk-prefix-match', state: 'published')
     params = encode_bbb_params('getRecordings', { recordID: r.record_id[0, 40] }.to_query)
     get bigbluebutton_api_get_recordings_url, params: params
     assert_response :success
@@ -1099,9 +1254,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings allows multiple comma-separated recording IDs' do
-    create_list(:recording, 5)
-    r1 = create(:recording)
-    r2 = create(:recording)
+    create_list(:recording, 5, state: 'published')
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'published')
 
     params = encode_bbb_params('getRecordings', {
       recordID: [r1.record_id, r2.record_id].join(','),
@@ -1114,9 +1269,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings with get_recordings_api_filtered allows multiple comma-separated recording IDs' do
-    create_list(:recording, 5)
-    r1 = create(:recording)
-    r2 = create(:recording)
+    create_list(:recording, 5, state: 'published')
+    r1 = create(:recording, state: 'published')
+    r2 = create(:recording, state: 'published')
 
     params = encode_bbb_params('getRecordings', {
       recordID: [r1.record_id, r2.record_id].join(','),
@@ -1130,9 +1285,9 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   test 'getRecordings filter based on recording states' do
     create_list(:recording, 5)
-    r1 = create(:recording, state: 'published')
+    r1 = create(:recording, state: 'processing')
     r2 = create(:recording, state: 'unpublished')
-    r3 = create(:recording)
+    r3 = create(:recording, state: 'deleted')
 
     params = encode_bbb_params('getRecordings', {
       recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
@@ -1142,14 +1297,14 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
-    assert_select 'response>recordings>recording', 2
+    assert_select 'response>recordings>recording', 1
   end
 
   test 'getRecordings with get_recordings_api_filtered filters based on recording states' do
-    create_list(:recording, 5)
+    create_list(:recording, 5, state: 'deleted')
     r1 = create(:recording, state: 'published')
     r2 = create(:recording, state: 'unpublished')
-    r3 = create(:recording)
+    r3 = create(:recording, state: 'deleted')
 
     params = encode_bbb_params('getRecordings', {
       recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
@@ -1163,17 +1318,17 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'getRecordings filter based on recording states and meta_params' do
-    create_list(:recording, 5)
+    create_list(:recording, 5, state: 'processing')
     r1 = create(:recording, state: 'published')
     r2 = create(:recording, state: 'unpublished')
-    r3 = create(:recording)
+    r3 = create(:recording, state: 'deleted')
     create(:metadatum, recording: r1, key: 'bbb-context-name', value: 'test1')
     create(:metadatum, recording: r3, key: 'bbb-origin-tag', value: 'GL')
     create(:metadatum, recording: r2, key: 'bbb-origin-tag', value: 'GL')
 
     params = encode_bbb_params('getRecordings', {
       recordID: [r1.record_id, r2.record_id, r3.record_id].join(','),
-      state: %w[published unpublished].join(','),
+      state: %w[published unpublished deleted].join(','),
       'meta_bbb-context-name': %w[test1 test2].join(','),
       'meta_bbb-origin-tag': ['GL'].join(','),
     }.to_query)
@@ -1181,7 +1336,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
-    assert_select 'response>recordings>recording', 2
+    assert_select 'response>recordings>recording', 3
   end
 
   test 'getRecordings with get_recordings_api_filtered filters based on recording states and meta_params' do
@@ -1277,12 +1432,29 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal r.published, false
   end
 
-  test 'publishRecordings updates published property to true' do
+  test 'publishRecordings updates published property to true for a get request' do
     r = create(:recording, :unpublished)
     assert_equal r.published, false
 
     params = encode_bbb_params('publishRecordings', { recordID: r.record_id, publish: 'true' }.to_query)
     get bigbluebutton_api_publish_recordings_url, params: params
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>published', 'true'
+
+    r.reload
+    assert_equal r.published, true
+  end
+
+  test 'publishRecordings updates published property to true for a post request' do
+    r = create(:recording, :unpublished)
+    assert_equal r.published, false
+
+    params = encode_bbb_params('publishRecordings', { recordID: r.record_id, publish: 'true' }.to_query)
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      post bigbluebutton_api_publish_recordings_url, params: params
+    end
 
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
@@ -1350,7 +1522,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test 'updateRecordings updates an existing meta parameter' do
+  test 'updateRecordings updates an existing meta parameter for a get request' do
     r = create(:recording_with_metadata, meta_params: { 'gl-listed' => 'true' })
 
     meta_params = { 'gl-listed' => 'false' }
@@ -1360,6 +1532,28 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     assert_no_difference 'Metadatum.count' do
       get bigbluebutton_api_update_recordings_url, params: params
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>updated', 'true'
+
+    m = r.metadata.find_by(key: 'gl-listed')
+    assert_equal m.value, meta_params['gl-listed']
+  end
+
+  test 'updateRecordings updates an existing meta parameter for a post request' do
+    r = create(:recording_with_metadata, meta_params: { 'gl-listed' => 'true' })
+
+    meta_params = { 'gl-listed' => 'true' }
+    params = encode_bbb_params('updateRecordings', {
+      recordID: r.record_id,
+    }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+    assert_no_difference 'Metadatum.count' do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        post bigbluebutton_api_update_recordings_url, params: params
+      end
     end
 
     assert_response :success
@@ -1454,11 +1648,25 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>messageKey', 'notFound'
   end
 
-  test 'deleteRecordings deletes the recording from the database if passed recordID' do
-    r = create(:recording)
+  test 'deleteRecordings deletes the recording from the database if passed recordID for a get request' do
+    r = create(:recording, record_id: 'test123')
 
     params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
     get bigbluebutton_api_delete_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>deleted', 'true'
+
+    assert_not Recording.exists?(record_id: r.record_id)
+  end
+
+  test 'deleteRecordings deletes the recording from the database if passed recordID for a post request' do
+    r = create(:recording)
+
+    params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      post bigbluebutton_api_delete_recordings_url, params: params
+    end
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>deleted', 'true'
@@ -1485,7 +1693,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
   # RecordingDisabled
 
-  test 'getRecordings returns noRecordings if RECORDING_DISABLED flag is set to true' do
+  test 'getRecordings returns noRecordings if RECORDING_DISABLED flag is set to true for a get request' do
     create_list(:recording, 3)
     params = encode_bbb_params('getRecordings', '')
     Rails.configuration.x.recording_disabled = true
@@ -1499,7 +1707,21 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     reload_routes!
   end
 
-  test 'publishRecordings returns notFound if RECORDING_DISABLED flag is set to true' do
+  test 'getRecordings returns noRecordings if RECORDING_DISABLED flag is set to true for a post request' do
+    create_list(:recording, 3)
+    params = encode_bbb_params('getRecordings', '')
+    Rails.configuration.x.recording_disabled = true
+    reload_routes!
+    post bigbluebutton_api_get_recordings_url, params: params
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>messageKey', 'noRecordings'
+    assert_select 'response>message', 'There are not recordings for the meetings'
+    Rails.configuration.x.recording_disabled = false
+    reload_routes!
+  end
+
+  test 'publishRecordings returns notFound if RECORDING_DISABLED flag is set to true for a get request' do
     params = encode_bbb_params('publishRecordings', { publish: 'true' }.to_query)
     Rails.configuration.x.recording_disabled = true
     reload_routes!
@@ -1512,7 +1734,20 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     reload_routes!
   end
 
-  test 'updateRecordings returns notFound if RECORDING_DISABLED flag is set to true' do
+  test 'publishRecordings returns notFound if RECORDING_DISABLED flag is set to true for a post request' do
+    params = encode_bbb_params('publishRecordings', { publish: 'true' }.to_query)
+    Rails.configuration.x.recording_disabled = true
+    reload_routes!
+    post 'http://www.example.com/bigbluebutton/api/publishRecordings', params: params
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'notFound'
+    assert_select 'response>message', 'We could not find recordings'
+    Rails.configuration.x.recording_disabled = false
+    reload_routes!
+  end
+
+  test 'updateRecordings returns notFound if RECORDING_DISABLED flag is set to true for a get request' do
     params = encode_bbb_params('updateRecordings', '')
     Rails.configuration.x.recording_disabled = true
     reload_routes!
@@ -1525,7 +1760,20 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     reload_routes!
   end
 
-  test 'deleteRecordings returns notFound if RECORDING_DISABLED flag is set to TRUE' do
+  test 'updateRecordings returns notFound if RECORDING_DISABLED flag is set to true for a post request' do
+    params = encode_bbb_params('updateRecordings', '')
+    Rails.configuration.x.recording_disabled = true
+    reload_routes!
+    post 'http://www.example.com/bigbluebutton/api/updateRecordings', params: params
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'notFound'
+    assert_select 'response>message', 'We could not find recordings'
+    Rails.configuration.x.recording_disabled = false
+    reload_routes!
+  end
+
+  test 'deleteRecordings returns notFound if RECORDING_DISABLED flag is set to TRUE for a get request' do
     r = create(:recording)
     params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
     Rails.configuration.x.recording_disabled = true
@@ -1539,12 +1787,38 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     reload_routes!
   end
 
+  test 'deleteRecordings returns notFound if RECORDING_DISABLED flag is set to TRUE for a post request' do
+    r = create(:recording)
+    params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
+    Rails.configuration.x.recording_disabled = true
+    reload_routes!
+    post 'http://www.example.com/bigbluebutton/api/deleteRecordings', params: params
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'notFound'
+    assert_select 'response>message', 'We could not find recordings'
+    Rails.configuration.x.recording_disabled = false
+    reload_routes!
+  end
+
   # get_meetings_api_disabled
 
-  test 'getMeetings returns no meetings if GET_MEETINGS_API_DISABLED flag is set to true' do
+  test 'getMeetings returns no meetings if GET_MEETINGS_API_DISABLED flag is set to true for a get request' do
     mock_env('GET_MEETINGS_API_DISABLED' => 'TRUE') do
       reload_routes!
       get bigbluebutton_api_get_meetings_url
+    end
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>messageKey', 'noMeetings'
+    assert_select 'response>message', 'no meetings were found on this server'
+    assert_select 'response>meetings', ''
+  end
+
+  test 'getMeetings returns no meetings if GET_MEETINGS_API_DISABLED flag is set to true for a post request' do
+    mock_env('GET_MEETINGS_API_DISABLED' => 'TRUE') do
+      reload_routes!
+      post bigbluebutton_api_get_meetings_url
     end
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'

@@ -9,6 +9,8 @@ class Recording < ApplicationRecord
   validates :meeting_id, presence: true
   validates :state, inclusion: { in: %w[processing processed published unpublished deleted] }, allow_nil: true
 
+  scope :state_is_published_unpublished, -> { where(state: %w[published unpublished]) }
+
   INTERNAL_METADATA = Set['isBreakout', 'meetingId', 'meetingName'].freeze
 
   def self.with_recording_id_prefixes(recording_ids)
@@ -18,6 +20,10 @@ class Recording < ApplicationRecord
     query_string = Array.new(recording_ids.length, "record_id LIKE ? ESCAPE '|'").join(' OR ')
 
     where(query_string, *rid_prefixes)
+  end
+
+  def protected
+    self[:protected] || false
   end
 
   # Create a new recording (and recursively playback format, meta, thumbnails) from a BigBlueButton metadata.xml

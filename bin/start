@@ -1,3 +1,13 @@
 #!/bin/sh
 
+db_create="$(bundle exec rake db:create 2>&1)"
+
+if [ -z "${db_create##*already exists*}" ]; then
+  echo ">>> Database migration"
+  bundle exec rake db:migrate
+else
+  echo ">>> Database initialization"
+  bundle exec rake db:schema:load
+fi
+
 exec tini -- bundle exec puma -C config/puma.rb "$@"
