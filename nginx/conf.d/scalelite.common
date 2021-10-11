@@ -1,8 +1,7 @@
 # BigBlueButton recording playback
-location /static-resource {
-  alias /var/bigbluebutton/published;
+location /presentation {
+  root /var/bigbluebutton/published;
   index index.html index.htm;
-  internal;
 }
 
 location /playback/presentation/playback.html {
