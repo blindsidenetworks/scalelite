@@ -39,6 +39,17 @@ namespace :servers do
     puts("id: #{server.id}")
   end
 
+  desc 'Update a BigBlueButton server'
+  task :update, [:id, :secret, :load_multiplier] => :environment do |_t, args|
+    server = Server.find(args.id)
+    server.secret = args.secret
+    server.load_multiplier = args.load_multiplier
+    server.save!
+    puts('OK')
+  rescue ApplicationRedisRecord::RecordNotFound
+    puts("ERROR: No server found with id: #{args.id}")
+  end
+
   desc 'Remove a BigBlueButton server'
   task :remove, [:id] => :environment do |_t, args|
     server = Server.find(args.id)
@@ -168,5 +179,25 @@ namespace :servers do
   desc 'Return a yaml compatible with servers:sync'
   task :yaml, [:verbose] => :environment do |_t|
     puts({ servers: ServerSync.dump(!!args.verbose) }.to_yaml)
+  end
+
+  desc('List all meetings running in specific BigBlueButton servers')
+  task :meeting_list, [:server_ids] => :environment do |_t, args|
+    args.with_defaults(server_ids: '')
+    server_ids = args.server_ids.split(':')
+    servers = if server_ids.present?
+                server_ids.map { |id| Server.find(id) }
+              else
+                Server.all
+              end
+    meetings = Meeting.all
+    servers.each do |server|
+      puts("\nServer ID: #{server.id}")
+      puts("Server Url: #{server.url}")
+      server_meetings = meetings.select { |meeting| server.id.eql?(meeting.server_id) }
+      meetings -= server_meetings
+      puts("MeetingIDs: \n\t#{server_meetings.map(&:id).join("\n\t")}")
+      puts("\tNo meetings to display") if server_meetings.empty?
+    end
   end
 end
