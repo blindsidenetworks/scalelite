@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 class Server < ApplicationRedisRecord
-  define_attribute_methods :id, :url, :secret, :enabled, :load, :online, :load_multiplier, :healthy_counter, :unhealthy_counter
+  define_attribute_methods :id, :url, :secret, :enabled, :load, :online, :load_multiplier, :healthy_counter,
+                           :unhealthy_counter, :state, :meetings, :users, :largest_meeting, :videos
 
   # Unique ID for this server
   application_redis_attr :id
@@ -30,6 +31,21 @@ class Server < ApplicationRedisRecord
   # Special load multiplier for this server to enable server-weight
   application_redis_attr :load_multiplier
 
+  # Indicator of current server state
+  application_redis_attr :state
+
+  # Indicator of total meetings active in this server
+  application_redis_attr :meetings
+
+  # Indicator of total users active in this server
+  application_redis_attr :users
+
+  # Indicator of largest meeting size in this server
+  application_redis_attr :largest_meeting
+
+  # Indicator of total video streams in this server
+  application_redis_attr :videos
+
   def online=(value)
     value = !!value
     online_will_change! unless @online == value
@@ -38,45 +54,121 @@ class Server < ApplicationRedisRecord
 
   def save!
     with_connection do |redis|
-      raise RecordNotSaved.new('Cannot update id field', self) if id_changed?
+      raise RecordNotSaved.new('Cannot update id field', self) if id_changed? && !@new_record
 
       # Default values
+      if id.nil?
+        self.id = \
+          if Rails.configuration.x.server_id_is_hostname
+            URI.parse(url).host.downcase(:ascii)
+          else
+            SecureRandom.uuid
+          end
+      end
+
       self.id = SecureRandom.uuid if id.nil?
       self.online = false if online.nil?
 
-      # Ignore load changes (would re-add to server_load set) unless enabled
-      unless enabled
+      # Ignore load changes (would re-add to server_load set) if disabled
+      if disabled?
         self.load = nil
         clear_attribute_changes([:load])
       end
 
-      server_key = key
-      redis.multi do
-        redis.hset(server_key, 'url', url) if url_changed?
-        redis.hset(server_key, 'secret', secret) if secret_changed?
-        redis.hset(server_key, 'online', online ? 'true' : 'false') if online_changed?
-        redis.hset(server_key, 'load_multiplier', load_multiplier) if load_multiplier_changed?
-        redis.sadd('servers', id) if id_changed?
-        if enabled_changed?
-          if enabled
-            redis.sadd('server_enabled', id)
-          else
-            redis.srem('server_enabled', id)
-            redis.zrem('server_load', id)
-          end
+      if state_changed?
+        self.load ||= if cordoned?
+                        redis.zscore('server_load', id)
+                      elsif enabled?
+                        redis.zscore('cordoned_server_load', id)
+                      end
+      end
+      redis.watch('servers') do
+        exists = redis.sismember('servers', id)
+        raise RecordNotSaved.new("Server already exists with id '#{id}'", self) if id_changed? && exists
+        raise RecordNotSaved.new("Server with id '#{id}' is deleted", self) if !id_changed? && !exists
+
+        server_key = key
+        result = redis.multi do
+          redis.hset(server_key, 'url', url) if url_changed?
+          redis.hset(server_key, 'secret', secret) if secret_changed?
+          redis.hset(server_key, 'online', online ? 'true' : 'false') if online_changed?
+          redis.hset(server_key, 'load_multiplier', load_multiplier) if load_multiplier_changed?
+          redis.hset(server_key, 'state', state) if state_changed?
+          redis.hset(server_key, 'meetings', meetings) if meetings_changed?
+          redis.hset(server_key, 'users', users) if users_changed?
+          redis.hset(server_key, 'largest_meeting', largest_meeting) if largest_meeting_changed?
+          redis.hset(server_key, 'videos', videos) if videos_changed?
+          redis.sadd('servers', id) if id_changed?
+          state.present? ? save_with_state(redis) : save_without_state(redis)
         end
-        if load_changed?
-          if load.present?
-            redis.zadd('server_load', load, id)
-          else
-            redis.zrem('server_load', id)
-          end
-        end
+
+        raise ConcurrentModificationError.new('Servers list concurrently modified', self) if result.nil?
       end
     end
 
     # Superclass bookkeeping
     super
+  end
+
+  def save_with_state(redis)
+    public_send("handle_#{state}_state", redis)
+  end
+
+  def handle_enabled_state(redis)
+    if state_changed?
+      redis.sadd('server_enabled', id)
+      redis.zadd('server_load', self.load, id) if self.load.present?
+      redis.zrem('cordoned_server_load', id)
+    end
+    return unless load_changed?
+
+    if self.load.present?
+      redis.zadd('server_load', self.load, id)
+    else
+      redis.zrem('server_load', id)
+    end
+  end
+
+  def handle_cordoned_state(redis)
+    if state_changed?
+      redis.zadd('cordoned_server_load', self.load, id) if self.load.present?
+      redis.zrem('server_load', id)
+      redis.srem('server_enabled', id)
+    end
+    return unless load_changed?
+
+    if self.load.present?
+      redis.zadd('cordoned_server_load', self.load, id)
+    else
+      redis.zrem('cordoned_server_load', id)
+    end
+  end
+
+  def handle_disabled_state(redis)
+    return unless state_changed?
+
+    redis.srem('server_enabled', id)
+    redis.zrem('server_load', id)
+    redis.zrem('cordoned_server_load', id)
+  end
+
+  def save_without_state(redis)
+    if enabled_changed?
+      if enabled
+        redis.sadd('server_enabled', id)
+      else
+        redis.srem('server_enabled', id)
+        redis.zrem('server_load', id)
+      end
+    end
+
+    return unless load_changed?
+
+    if load.present?
+      redis.zadd('server_load', load, id)
+    else
+      redis.zrem('server_load', id)
+    end
   end
 
   def destroy!
@@ -89,6 +181,7 @@ class Server < ApplicationRedisRecord
         redis.srem('servers', id)
         redis.zrem('server_load', id)
         redis.srem('server_enabled', id)
+        redis.zrem('cordoned_server_load', id)
       end
     end
 
@@ -143,6 +236,22 @@ class Server < ApplicationRedisRecord
     end
   end
 
+  def offline?
+    !online
+  end
+
+  def disabled?
+    state.eql?('disabled') || state.nil? && !enabled
+  end
+
+  def cordoned?
+    state.eql?('cordoned')
+  end
+
+  def enabled?
+    state.eql?('enabled') || state.nil? && enabled
+  end
+
   # Find a server by ID
   def self.find(id)
     with_connection do |redis|
@@ -154,8 +263,13 @@ class Server < ApplicationRedisRecord
       raise RecordNotFound.new("Couldn't find Server with id=#{id}", name, id) if hash.blank?
 
       hash['id'] = id
-      hash['enabled'] = enabled
-      hash['load'] = load if enabled
+      if hash['state'].present?
+        load = redis.zscore('cordoned_server_load', id) if hash['state'].eql?('cordoned')
+        hash['load'] = load unless hash['state'].eql?('disabled')
+      else
+        hash['enabled'] = enabled
+        hash['load'] = load if enabled
+      end
       hash['online'] = (hash['online'] == 'true')
       new.init_with_attributes(hash)
     end
@@ -175,7 +289,11 @@ class Server < ApplicationRedisRecord
       raise RecordNotFound.new("Couldn't find available Server", name, id) if hash.blank?
 
       hash['id'] = id
-      hash['enabled'] = true # all servers in server_load set are enabled
+      if hash['state'].present?
+        hash['state'] = 'enabled' # all servers in server_load set are enabled
+      else
+        hash['enabled'] = true
+      end
       hash['load'] = load
       hash['online'] = (hash['online'] == 'true')
       new.init_with_attributes(hash)
@@ -198,8 +316,13 @@ class Server < ApplicationRedisRecord
         next if hash.blank?
 
         hash['id'] = id
-        hash['enabled'] = enabled
-        hash['load'] = load if enabled
+        if hash['state'].present?
+          load = redis.zscore('cordoned_server_load', id) if hash['state'].eql?('cordoned')
+          hash['load'] = load unless hash['state'].eql?('disabled')
+        else
+          hash['enabled'] = enabled
+          hash['load'] = load if enabled
+        end
         hash['online'] = (hash['online'] == 'true')
         servers << new.init_with_attributes(hash)
       end
@@ -216,7 +339,11 @@ class Server < ApplicationRedisRecord
         next if hash.blank?
 
         hash['id'] = id
-        hash['enabled'] = true # all servers in server_load set are enabled
+        if hash['state'].present?
+          hash['state'] = 'enabled' # all servers in server_load set are enabled
+        else
+          hash['enabled'] = true
+        end
         hash['load'] = load
         hash['online'] = (hash['online'] == 'true')
         servers << new.init_with_attributes(hash)
@@ -236,7 +363,11 @@ class Server < ApplicationRedisRecord
         end
 
         hash['id'] = id
-        hash['enabled'] = true
+        if hash['state'].present?
+          hash['state'] = 'enabled' # all servers in server_load set are enabled
+        else
+          hash['enabled'] = true
+        end
         hash['load'] = load
         hash['online'] = (hash['online'] == 'true')
         servers << new.init_with_attributes(hash)

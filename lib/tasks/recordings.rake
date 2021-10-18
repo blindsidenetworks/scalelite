@@ -6,6 +6,7 @@ namespace :recordings do
     args.with_defaults(latency: 60.seconds, force_polling: false)
 
     dir = Rails.configuration.x.recording_spool_dir
+    FileUtils.mkdir_p(dir)
     opts = {
       latency: args.latency.to_f,
       force_polling: ActiveModel::Type::Boolean.new.cast(args.force_polling),

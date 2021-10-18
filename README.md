@@ -19,15 +19,15 @@ Many BigBlueButton servers will create many recordings.  Scalelite can serve a l
 ## Before you begin
 
 The Scalelite installation process requires advanced technical knowledge.  You should, at a minimum, be very familar with
-  
+
    * Setup and administration of a BigBlueButton server
    * Setup and administration of a Linux server and using common tools, such as `systemd`, to manage processes on the server
    * How the [BigBlueButton API](http://docs.bigbluebutton.org/dev/api.html) works with a front-end
-   * How [docker](https://www.docker.com/) containers work 
+   * How [docker](https://www.docker.com/) containers work
    * How UDP and TCP/IP work together
    * How to administrate a Linux Firewall
    * How to setup a TURN server
-   
+
 If you are a beginner, you will have a difficult time getting any part of this deployment correct.  If you require help, see [Getting Help](#getting-help)
 
 ## Architecture of Scalelite
@@ -38,7 +38,7 @@ There are several components required to get Scalelite up and running:
 2. Scalelite LoadBalancer Server
 3. NFS Shared Volume
 4. PostgreSQL Database
-5. Redis Cache 
+5. Redis Cache
 
 An example Scalelite deployment will look like this:
 
@@ -51,7 +51,7 @@ For the Scalelite Server, the minimum recommended server requirements are:
 - 8 GB Memory
 
 For **each** BigBlueButton server, the minimum requirements can be found [here](http://docs.bigbluebutton.org/2.2/install.html#minimum-server-requirements).
-  
+
 For the external Postgres Database, the minimum recommended server requirements are:
 - 2 CPU Cores
 - 2 GB Memory
@@ -78,7 +78,7 @@ See [Setting up a shared volume for recordings](sharedvolume-README.md)
 
 Setting up a PostgreSQL Database depends heavily on the infrastructure you use to setup Scalelite. We recommend you refer to your infrastructure provider's documentation.
 
-Ensure the `DATABASE_URL` that you set in `/etc/default/scalelite` (in the [next step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your PostgreSQL Database. 
+Ensure the `DATABASE_URL` that you set in `/etc/default/scalelite` (in the [next step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your PostgreSQL Database.
 
 For more configuration options, see [configuration](#Configuration).
 
@@ -86,7 +86,7 @@ For more configuration options, see [configuration](#Configuration).
 
 Setting up a Redis Cache depends heavily on the infrastructure you use to setup Scalelite. We recommend you refer to your infrastructure provider's documentation.
 
-Ensure the `REDIS_URL` that you set in `/etc/default/scalelite` (in the [next step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your Redis Cache. 
+Ensure the `REDIS_URL` that you set in `/etc/default/scalelite` (in the [next step](docker-README.md#common-configuration-for-docker-host-system)) matches the connection url of your Redis Cache.
 
 For more configuration options, see [configuration](#Configuration).
 
@@ -98,7 +98,7 @@ See [Deploying Scalelite Docker Containers](docker-README.md)
 
 To switch your Front-End application to use Scalelite instead of a single BigBlueButton server, there are 2 changes that need to be made
 
-- `BigBlueButton server url` should be set to the url of your Scalelite deployment `http(s)://<scalelite-hostname>/bigbluebutton/`
+- `BigBlueButton server url` should be set to the url of your Scalelite deployment `http(s)://<scalelite-hostname>/bigbluebutton/api/`
 - `BigBlueButton shared secret` should be set to the `LOADBALANCER_SECRET` value that you set in `/etc/default/scalelite`
 
 ## Configuration
@@ -110,15 +110,17 @@ To switch your Front-End application to use Scalelite instead of a single BigBlu
 * `URL_HOST`: The hostname that the application API endpoint is accessible from. Used to protect against DNS rebinding attacks. Should be left blank if deploying Scalelite behind a Network Loadbalancer.
 * `SECRET_KEY_BASE`: A secret used internally by Rails. Should be unique per deployment. Generate with `bundle exec rake secret` or `openssl rand -hex 64`.
 * `LOADBALANCER_SECRET`: The shared secret that applications will use when calling BigBlueButton APIs on the load balancer. Generate with `openssl rand -hex 32`
+* `LOADBALANCER_SECRETS`: Additional shared secrets, separated by `:`. Any of these secrets will work. In an environment where multiple applications need to integrate with a single scalelite server, it may be sensible to give each application its own secret. This way, revoking individual secrets later will not disturb other applications. For working of events like `analytics-callback`, the bbb-server's secrets should be added here. 
 * `DATABASE_URL`: URL for connecting to the PostgreSQL database, see the [Rails documentation](https://guides.rubyonrails.org/configuring.html#configuring-a-database). The URL should be in the form of `postgresql://username:password@connection_url`. Note that instead of using this environment variable, you can configure the database server in `config/database.yml`.
-* `REDIS_URL`: URL for connecting to the Redis server, see the [Redis gem documentation](https://rubydoc.info/github/redis/redis-rb/master/Redis#initialize-instance_method). The URL should be in the form of `redis://username:password@connection_url`. Note that instead of using this environment variable, you can configure the redis server in `config/redis_store.yml` (see below). 
+* `REDIS_URL`: URL for connecting to the Redis server, see the [Redis gem documentation](https://rubydoc.info/github/redis/redis-rb/master/Redis#initialize-instance_method). The URL should be in the form of `redis://username:password@connection_url`. Note that instead of using this environment variable, you can configure the redis server in `config/redis_store.yml` (see below).
 
 #### Docker-Specific
 
 These variables are used by the service startup scripts in the Docker images, but are not used if you are deploying the application in a different way.
 
 * `NGINX_SSL`: Set this variable to "true" to enable the "nginx" image to listen on SSL. If you enable this, then you must bind mount the files `/etc/nginx/ssl/live/$URL_HOST/fullchain.pem` and `/etc/nginx/ssl/live/$URL_HOST/privkey.pem` (containing the certificate plus intermediates and the private key respectively) into the Docker image. Alternately, you can mount the entire `/etc/letsencrypt` directory from certbot to `/etc/nginx/ssl` instead.
-* `BEHIND_PROXY`: Set to true if scalelite is behind a proxy or load balancer.
+* `NGINX_BEHIND_PROXY`: Set to true if scalelite is behind a proxy or load balancer.
+* `NGINX_RECORDINGS_ONLY`: Set to true if scalelite-nginx will be used for proxying recordings only.
 * `POLL_INTERVAL`: Used by the "poller" image to set the interval at which BigBlueButton servers are polled, in seconds. Defaults to 60.
 * `RECORDING_IMPORT_POLL`: Whether or not to poll the recording spool directory for new recordings. Defaults to "true". If the recording poll directory is on a local filesystem where inotify works, you can set this to "false" to reduce CPU overhead.
 * `RECORDING_IMPORT_POLL_INTERVAL`: How often to check the recording spool directory for new recordings, in seconds (when running in poll mode). Defaults to 60.
@@ -133,6 +135,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `RAILS_ENV`: Either `development`, `test`, or `production`. The Docker image defaults to `production`. Rails defaults to `development`.
 * `BUILD_NUMBER`: An additional build version to report in the BigBlueButton top-level API endpoint. The Docker image has this preset to a value determined at image build time.
 * `RAILS_LOG_TO_STDOUT`: Log to STDOUT instead of a file. Recommended for deployments with a service manager (e.g. systemd) or in Docker. The Docker image sets this by default.
+* `RAILS_LOG_LEVEL`: Set log level of production environment (debug, info, warn, error, fatal, unknown). Default is `debug`.
 * `REDIS_POOL`: Configure the Redis connection pool size. Defaults to `RAILS_MAX_THREADS`.
 * `MAX_MEETING_DURATION`: The maximum length of any meeting created on any server. If the `duration` is passed as part of the create call, it will only be overwritten if it is greater than `MAX_MEETING_DURATION`.
 * `RECORDING_SPOOL_DIR`: Directory where transferred recording files are placed. Defaults to `/var/bigbluebutton/spool`
@@ -141,6 +144,26 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `RECORDING_UNPUBLISH_DIR`: Directory where unpublished recording files are placed to make them unavailable to the web server. Defaults to `/var/bigbluebutton/unpublished`
 * `SERVER_HEALTHY_THRESHOLD`: The number of times an offline server needs to responds successfully for it to be considered online. Defaults to **1**. If you increase this number, you should decrease `POLL_INTERVAL`
 * `SERVER_UNHEALTHY_THRESHOLD`: The number of times an online server needs to responds unsuccessfully for it to be considered offline. Defaults to **2**. If you increase this number, you should decrease `POLL_INTERVAL`
+* `DB_DISABLED`: Disable the database by setting this value as `true`.
+* `RECORDING_DISABLED`: Disable the recording feature and all its associated api's, by setting this value as `true`.
+* `RECORDING_IMPORT_UNPUBLISHED`: Imported recordings can be marked as unpublished by default, by setting this value as `true`. Defaults to `false`.
+* `GET_MEETINGS_API_DISABLED`: Disable GET_MEETINGS API by setting this value as `true`.
+* `POLLER_THREADS`: The number of threads to run in the poller process. The default is 5. The poller threads should be increased carefully, since higher poller threads can lead to Denial Of Service problems at DNS.
+* `CONNECT_TIMEOUT`: The timeout for establishing a network connection to the BigBlueButton server in the load balancer and poller in seconds. Default is 5 seconds. Floating point numbers can be used for timeouts less than 1 second.
+* `POLLER_WAIT_TIMEOUT`: The timeout value set for the poller to finish polling a server. Defaults to 10.
+* `RESPONSE_TIMEOUT`: The timeout to wait for a response after sending a request to the BigBlueButton server in the load balancer and poller in seconds. Default is 10 seconds. Floating point numbers can be used for timeouts less than 1 second.
+* `LOAD_MIN_USER_COUNT`: Minimum user count of a meeting, used for calculating server load. Defaults to 15.
+* `LOAD_JOIN_BUFFER_TIME`: The time(in minutes) until the `LOAD_MIN_USER_COUNT` will be used for calculating server load. Defaults to 15.
+* `SERVER_ID_IS_HOSTNAME`: If set to "true", then instead of generating random UUIDs as the server ID when adding a server Scalelite will use the hostname of the server as the id. Server hostnames will be checked for uniqueness. Defaults to "false".
+* `CREATE_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by create API call. Should be in the format 'CREATE_EXCLUDE_PARAMS=param1,param2,param3'.
+* `JOIN_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by join API call. Should be in the format 'JOIN_EXCLUDE_PARAMS=param1,param2,param3'.
+* `GET_RECORDINGS_API_FILTERED`: Prevent get_recordings api from returning all recordings when recordID is not specified in the request, by setting value to 'true'. Defaults to false.
+* `PREPARED_STATEMENT`: Enable/Disable Active Record prepared statements feature, can be disabled by setting the value as `false`. Defaults to `true`.
+* `DB_CONNECTION_RETRY_COUNT`: The number of times db connection retries will be attempted, in case of a db connection failure. Defaults to `3`.
+* `RECORDING_PLAYBACK_FORMATS`: Recording playback formats supported by Scalelite, defaults to `presentation:video:podcast:notes:capture`.
+* `PROTECTED_RECORDINGS_ENABLED`: Applies to the recording import process. If set to "true", then newly imported recordings will have protected links enabled. Default is "false".
+* `PROTECTED_RECORDINGS_TOKEN_TIMEOUT`: Protected recording link token timeout in minutes. This is the amount of time that the one-time-use link returned in `getRecordings` calls will be valid for. Defaults to 60 minutes (1 hour).
+* `PROTECTED_RECORDINGS_TIMEOUT`: Protected recordings resource access cookie timeout in minutes. This is the amount of time that a user will be granted access to view a recording for after clicking on the one-time-use link. Defaults to 360 minutes (6 hours).
 
 ### Redis Connection (`config/redis_store.yml`)
 
@@ -159,9 +182,11 @@ Additionally, these options can be set:
 
 ## Upgrading
 
-Upgrading Scalelite to the latest version can be done using one command: 
+Upgrading Scalelite to the latest version can be done using one command:
 
 `systemctl restart scalelite.target`
+
+note: If the `SCALELITE_TAG` is set to v1, the latest release in v1 series will be taken. You can also choose the specific version by specifying the version number as`SCALELITE_TAG=v1.1.7`, which would be the recommended way. All the details regarding each versions can be found at `https://github.com/blindsidenetworks/scalelite/releases`. Some versions might require setting certain environment variables or migrations to be run.
 
 To confirm that you have the latest version, enter `http(s)://<scalelite-hostname>/bigbluebutton/api` in your browser and confirm that the value inside the `<build><\build>` tag is equal to the new version.
 
@@ -217,6 +242,8 @@ The `loadMultiplier` can be used to give individual servers a higher or lower pr
 This command will print out the ID of the newly created server, and `OK` if it was successful.
 Note that servers are added in the disabled state; see "Enable a server" below to enable it.
 
+Make sure that there is no space between the parameters [url,secret,loadMultipler] and the comma as it causes a "rake aborted!" error.
+
 ### Remove a server
 
 ```sh
@@ -226,6 +253,18 @@ Note that servers are added in the disabled state; see "Enable a server" below t
 Warning: Do not remove a server which has running meetings! This will leave the database in an inconsistent state.
 You should either wait for all meetings to end, or run the "Panic" function first.
 
+### Update a server
+
+```sh
+./bin/rake servers:update[id,secret,loadMultiplier]
+```
+
+Updates the secret and load_multiplier for a BigBlueButton server.
+
+The `loadMultiplier` can be used to give individual servers a higher or lower priority over other servers. A higher loadMultiplier should be placed on the weaker servers.
+
+After changing the server needs to be polled at least once to see the new load.
+
 ### Disable a server
 
 ```sh
@@ -234,9 +273,9 @@ You should either wait for all meetings to end, or run the "Panic" function firs
 
 Mark the server as disabled.
 When a server is disabled, no new meetings will be started on the server.
-Any existing meetings will continue to run until they finish.
-The Poll process continues to run on disabled servers to update the "Online" status and detect ended meetings.
-This is useful to "drain" a server for updates without disrupting any ongoing meetings.
+You will not be able to join existing meetings.
+The Poll process does not update disabled servers.
+You should not disable a server if it has active load, you can either use the cordon option to drain the server or respond with `yes` to clear all meeting state.
 
 ### Enable a server
 
@@ -257,6 +296,20 @@ Note that the server won't be used for new meetings until after the next time th
 Disable a server and clear all meeting state.
 This method is used to recover from a crashed BigBlueButton server.
 After the meeting state is cleared, anyone who tries to join a meeting that was previously on this server will instead be directed to a new meeting on a different server.
+
+### Cordon a server
+
+```sh
+./bin/rake servers:cordon[id]
+```
+
+Mark the server as cordoned.
+When a server is cordoned, no new meetings will be started on the server.
+Any existing meetings will continue to run until they finish.
+The Poll process continues to run on cordoned servers to update the "Online" status and detect ended meetings.
+The get_meetings API would also return all the active meetings in the cordoned server.
+This is useful to "drain" a server for updates without disrupting any ongoing meetings.
+The server state will be updated to `disabled` by the poller once the load in server becomes zero or nil.
 
 ### Edit the load-multiplier of a server
 
@@ -279,6 +332,114 @@ After changing the server needs to be polled at least once to see the new load.
 When you add a server to the pool, it may take upwards of 60 seconds (default value for `INTERVAL` for the background server polling process) before Scalelite marks the server as `online`.
 You can run the above task to have it poll the server right away without waiting.
 
+### List all meetingIds running in given servers
+
+To list meetings in a specific servers, the following command can be used
+
+```sh
+./bin/rake servers:meeting_list["serverID1:serverID2:serverID3"]
+```
+To list all meetings running across all BigBlueButton servers, use:
+
+```sh
+./bin/rake servers:meeting_list
+```
+
+### Add multiple servers through a config file
+
+```sh
+./bin/rake servers:addAll[file]
+```
+
+**Deprecated:** See `servers:sync` for a more flexible alternative.
+
+Adds all the servers defined in a YAML file passed as an argument. The file passed in should have the following format:
+
+```yaml
+servers:
+  - url: "bbb1.example.com"
+    secret: "1bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+  - url: "bbb2.example.com"
+    secret: "2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+  - url: "bbb3.example.com"
+    secret: "3bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+```
+
+The command will print out each added server's `url` and `id` once it has been successfully added.
+Note that all servers are added in the disabled state; see "Enable a server" above to enable them.
+
+### Configure all servers from a single YAML configuration file
+
+```sh
+./bin/rake servers:sync[path,mode,dryrun]
+```
+
+Add, remove or modify servers according to a YAML configuration file.
+
+The `path` parameter should point to a valid YAML configuration file as described
+below. Pass `-` as the path to read configuration from standard input instead.
+You can use the `servers:yaml` task to bootstrap a valid configuration file from
+an existing scalelite cluster.
+
+The `mode` parameter controls how unwanted servers are removed. `mode=keep` will
+not remove any servers. `mode=cordon` (the default) will remove empty servers
+and cordon non-empty servers. You may have to repeat the task once these servers
+are empty to actually remove them. `mode=force` will try to end all meetings on
+unwanted servers and then remove them. This works similar to `servers:panic[id]`.
+
+If `dryrun` is true, the task will run normally but not persist any changes or
+end any meetings. This can be used to simulate a sync and see what would happen.
+
+The configuration file should contain a complete list of all servers and follow
+this structure:
+
+```yaml
+servers:
+    <server-id>:                 # must be unique, should be a hostname
+        secret: <string>         # required
+        url: <string>            # default: "https://<server-id>/bigbluebutton/api"
+        enabled: <bool>          # default: true
+        load_multiplier: <float> # default: 1.0, must be greater than 0
+
+    # Example for a simple server with default values
+    bbb1.example.com:
+        secret: "1bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+
+    # Full example for a legacy server (generated id)
+    02bff3a7-c95f-49d3-b1e5-c53eddd4dd68:
+        secret: "2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+        url: "https://bbb2.example.com/bigbluebutton/api"
+        enabled: false
+        load_multiplier: 5.0
+```
+
+The task will try to reach the desired cluster state by adding, removing or
+modifying servers as needed. To be more exact, the task will:
+
+1. Read the configuration file and perform some basic sanity checks.
+2. Add missing servers, based on server IDs.
+3. Update configuration for existing servers (`secret`, `url` and `load_multiplier`).
+4. Cordon servers that are enabled but should be disabled.
+5. Enable servers that are disabled or cordoned but should be enabled.
+6. Try to remove servers that are no present in the YAML configuration.
+    * In `keep` mode, no servers are removed.
+    * In `cordon` mode (default), only empty servers are removed. Non-empty servers are cordoned.
+    * In `force` mode, servers are forcefully evicted and then removed.
+
+
+### Export current server list as YAML
+
+```sh
+./bin/rake servers:yaml[verbose]
+```
+
+Prints a YAML file compatible with `servers:sync`. This task can be used to
+bootstrap a cluster configuration file from an existing cluster, or get the
+current cluster state in a mashine-readable format. If `verbose` is true, then
+additional fields (`state`, `load` and `online`) are included. These are ignored
+by `servers:sync`.
+
+
 ### Check the status of the entire deployment
 
 ```sh
@@ -293,7 +454,71 @@ This will print a table displaying a list of all servers and some basic statisti
  bbb2.example.com  enabled   online         4     14                4       5
 ```
 
+### Manage Meetings
+
+#### List all/specific meetings running in BigBlueButton servers
+
+To list specific meetings, use:
+
+```sh
+./bin/rake meetings:list["meetingId1:meetingId2:meetingId3"]
+```
+
+To list all meetings running across all BigBlueButton servers, use:
+
+```sh
+./bin/rake meetings:list
+```
+
+#### End all/specific meetings running in BigBlueButton servers
+
+To End specific meetings, use:
+
+```sh
+./bin/rake meetings:end["meetingId1:meetingId2:meetingId3"]
+```
+
+To End all meetings running across all BigBlueButton servers, use:
+
+```sh
+./bin/rake meetings:end
+```
+
+#### Get meeting details of a meeting running in BigBlueButton server
+
+```sh
+./bin/rake meetings:info[meetingId]
+```
+
+This command will return the following meeting details of a meeting:
+
+```
+Meeting ID: 1a813084f7af08b8d19239315c170b3decedfc03-2-1
+	Meeting Name: new class
+	Internal MeetingID: 4445471c7ae2987ddb11db3fa2d89f8c8f86c328-1633448534301
+	Created Date: Tue Oct 05 15:42:14 UTC 2021
+	Recording Enabled: true
+	Server id: bbb.example.com
+	Serevr url: https://bbb.example.com/bigbluebutton/api/
+	MetaData:
+		bbb-context-name: test124
+		analytics-callback-url: https://bbb1.example.com/bigbluebutton/api/analytics_callback
+		bbb-recording-tags: 
+		bbb-origin-server-common-name: 
+		bbb-context-label: test
+		bbb-origin: test
+		bbb-context: test
+		bbb-context-id: 2
+		bbb-recording-name: new class
+		bbb-origin-server-name: xx.xx.xxx.xx
+		bbb-recording-description: 
+		bbb-origin-tag: moodle-mod_bigbluebuttonbn
+```
 
 ## Getting Help
 
-For commercial help with setup and deployment of Scalelite, contact us at [Blindside Networks](https://blindsidenetworks.com/scaling-bigbluebutton/).
+For commercial help with setup and deployment of Scalelite, contact us at [Blindside Networks](https://blindsidenetworks.com/contact).
+
+## Trademarks
+
+This project uses BigBlueButton and is not endorsed or certified by BigBlueButton Inc.  BigBlueButton and the BigBlueButton Logo are trademarks of [BigBlueButton Inc](https://bigbluebutton.org).

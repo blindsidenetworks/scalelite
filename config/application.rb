@@ -4,7 +4,7 @@ require_relative 'boot'
 
 require 'rails'
 # Pick the frameworks you want:
-require 'active_model/railtie'
+require 'active_model/railtie' unless 'true'.casecmp?(ENV['DB_DISABLED'])
 # require 'active_job/railtie'
 require 'active_record/railtie'
 # require 'active_storage/engine'
@@ -33,19 +33,16 @@ module Scalelite
     # -- all .rb files in that directory are automatically loaded after loading
     # the framework and any gems in your application.
 
-    # Only loads a smaller set of middleware suitable for API only apps.
-    # Middleware like session, flash, cookies can be added back manually.
-    # Skip views, helpers and assets when generating a new resource.
-    config.api_only = true
-
     # Read the file config/redis_store.yml as per-environment configuration with erb
     config.x.redis_store = config_for(:redis_store)
 
     # Build number returned in the /bigbluebutton/api response
     config.x.build_number = ENV['BUILD_NUMBER']
 
-    # Secret used to verify /bigbluebutton/api requests
-    config.x.loadbalancer_secret = ENV['LOADBALANCER_SECRET']
+    # Secrets used to verify /bigbluebutton/api requests
+    config.x.loadbalancer_secrets = []
+    config.x.loadbalancer_secrets.push(ENV['LOADBALANCER_SECRET']) if ENV['LOADBALANCER_SECRET']
+    config.x.loadbalancer_secrets.concat(ENV['LOADBALANCER_SECRETS'].split(':')) if ENV['LOADBALANCER_SECRETS']
 
     # Defaults to 0 since nil/"".to_i = 0
     config.x.max_meeting_duration = ENV['MAX_MEETING_DURATION'].to_i
@@ -57,6 +54,14 @@ module Scalelite
     # Number of times poller needs to fail to reach online server for it to panic the server
     # and set it to offline
     config.x.server_unhealthy_threshold = ENV.fetch('SERVER_UNHEALTHY_THRESHOLD', '2').to_i
+
+    # Request connection timeout. This is the timeout for the initial TCP/TLS connection, not including
+    # waiting for a response.
+    config.x.open_timeout = ENV.fetch('CONNECT_TIMEOUT', '5').to_f
+
+    # Request response timeout. This is the timeout for waiting for a response after the connection has
+    # been established and the request has been sent.
+    config.x.read_timeout = ENV.fetch('RESPONSE_TIMEOUT', '10').to_f
 
     # Directory to monitor for recordings transferred from BigBlueButton servers
     config.x.recording_spool_dir = File.absolute_path(
@@ -75,5 +80,52 @@ module Scalelite
     config.x.recording_unpublish_dir = File.absolute_path(
       ENV.fetch('RECORDING_UNPUBLISH_DIR') { '/var/bigbluebutton/unpublished' }
     )
+
+    # Minimum user count of a meeting, used for calculating server load. Defaults to 15.
+    config.x.load_min_user_count = ENV.fetch('LOAD_MIN_USER_COUNT', 15).to_i
+
+    # The time(in minutes) until the `load_min_user_count` will be used for calculating server load
+    config.x.load_join_buffer_time = ENV.fetch('LOAD_JOIN_BUFFER_TIME', 15).to_i.minutes
+
+    # Whether to generate ids for servers based on the hostname rather than random UUIDs. Default to false.
+    config.x.server_id_is_hostname = ENV.fetch('SERVER_ID_IS_HOSTNAME', 'false').casecmp?('true')
+
+    # Recording feature will be disabled, if set to 'true'. Defaults to false.
+    config.x.recording_disabled = ENV.fetch('RECORDING_DISABLED', 'false').casecmp?('true')
+    # List of BBB server attributes that should not be modified by create API call
+    config.x.create_exclude_params = ENV['CREATE_EXCLUDE_PARAMS']&.split(',') || []
+
+    # List of BBB server attributes that should not be modified by join API call
+    config.x.join_exclude_params = ENV['JOIN_EXCLUDE_PARAMS']&.split(',') || []
+
+    # Recordings imported will be unpublished by default, if set to 'true'. Defaults to false.
+    config.x.recording_import_unpublished = ENV.fetch('RECORDING_IMPORT_UNPUBLISHED', 'false').casecmp?('true')
+
+    # Scalelite Host name
+    config.x.url_host = ENV['URL_HOST']
+
+    # DB connection retry attempt counts
+    config.x.db_connection_retry_count = ENV.fetch('DB_CONNECTION_RETRY_COUNT', '3').to_i
+
+    # Prevents get_recordings api from returning all recordings when recordID is not specified in the request, if set to 'true'.
+    # Defaults to false.
+    config.x.get_recordings_api_filtered = ENV.fetch('GET_RECORDINGS_API_FILTERED', 'false').casecmp?('true')
+
+    # Poller threads value, defaults to 5. Needs to be adjusted as per the number of servers to be polled
+    config.x.poller_threads = ENV.fetch('POLLER_THREADS', 5).to_i
+
+    # Poller wait timeout value, timeout value set for the poller to finish polling a server. Defaults to 10.
+    config.x.poller_wait_timeout = ENV.fetch('POLLER_WAIT_TIMEOUT', 10).to_i
+
+    # Recording playback formats handled by Scalelite
+    config.x.recording_playback_formats = ENV.fetch('RECORDING_PLAYBACK_FORMATS',
+                                                    'presentation:video:screenshare:podcast:notes:capture').split(':')
+
+    # Recordings will proctected, if set to 'true'. Defaults to false.
+    config.x.protected_recordings_enabled = ENV.fetch('PROTECTED_RECORDINGS_ENABLED', 'false').casecmp?('true')
+    # Protected recordings token timeout in minutes. Defaults to 60 (1 hour)
+    config.x.recording_token_ttl = ENV.fetch('PROTECTED_RECORDINGS_TOKEN_TIMEOUT', '60').to_i.minutes
+    # Protected recordings resource access cookie timeout in minutes. Defaults to 360 (6 hours)
+    config.x.recording_cookie_ttl = ENV.fetch('PROTECTED_RECORDINGS_TIMEOUT', '360').to_i.minutes
   end
 end

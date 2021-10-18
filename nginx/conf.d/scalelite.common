@@ -1,19 +1,24 @@
-location / {
-  proxy_pass http://scalelite-api:3000;
-
-  proxy_read_timeout 60s;
-  proxy_redirect off;
-
-  proxy_set_header  Host $http_host;
-
-  proxy_set_header  X-Real-IP $remote_addr;
-  proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
-  proxy_set_header  X-Forwarded-Proto $scheme;
-
-  proxy_headers_hash_bucket_size 64;
-
-  proxy_http_version 1.1;
+# BigBlueButton recording playback
+location /static-resource {
+  alias /var/bigbluebutton/published;
+  index index.html index.htm;
+  internal;
 }
 
-# BigBlueButton recording playback
-include /etc/bigbluebutton/nginx/*.nginx;
+location /playback/presentation/playback.html {
+  return 301 /playback/presentation/0.81/playback.html?$query_string;
+  # If you have recordings from 0.9.0 beta versions and are sure
+  # that you will never want to play recordings made with
+  # BigBlueButton 0.81, comment the line above and uncomment the
+  # following line:
+  #return 301 /playback/presentation/0.9.0/playback.html?$query_string;
+}
+
+location /playback/presentation/2.0/playback.html {
+  return 301 /playback/presentation/2.3/$arg_meetingId?$query_string;
+}
+
+location /playback {
+  root /var/bigbluebutton;
+  try_files $uri /playback/presentation/2.3/index.html;
+}

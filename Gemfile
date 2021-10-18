@@ -6,9 +6,9 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '>= 2.6.5'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 6.0.3', '>= 6.0.3.4'
+gem 'rails', '~> 6.0.4', '>= 6.0.4.1'
 # Use Puma as the app server
-gem 'puma', '~> 4.3'
+gem 'puma', '~> 5.5'
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
 # gem 'jbuilder', '~> 2.7'
 # Use Active Model has_secure_password
@@ -16,12 +16,11 @@ gem 'puma', '~> 4.3'
 
 # Redis connection setup for live session (server and meeting) tracking
 gem 'connection_pool', '~> 2.2.2'
-gem 'hiredis', '~> 0.6.3'
-gem 'redis', '~> 4.1.3'
-gem 'redis-namespace', '~> 1.7.0'
+gem 'redis', '~> 4.2'
+gem 'redis-namespace', '~> 1.8'
 
 # Use postgresql as the database for Active Record
-gem 'pg'
+gem 'pg', '~> 1.2'
 
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '>= 1.4.2', require: false
@@ -34,6 +33,8 @@ gem 'tabulo', '~> 2.3.0'
 
 # Used by recording watch task. Version limit is for compat with rails auto-reloader.
 gem 'listen', '>= 3.0.5', '< 3.2'
+
+gem 'jwt', '2.2.3'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console

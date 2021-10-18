@@ -1,0 +1,7 @@
+servers:
+  - url: "bbb1.example.com"
+    secret: "1bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+  - url: "bbb2.example.com"
+    secret: "2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
+  - url: "bbb3.example.com"
+    secret: "3bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"

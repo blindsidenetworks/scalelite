@@ -5,7 +5,7 @@ server {
   listen [::]:80 default_server;
 
   location / {
-    proxy_pass http://$SCALELITE_API:3000;
+    proxy_pass http://scalelite-api:3000;
 
     proxy_read_timeout 60s;
     proxy_redirect off;
@@ -14,14 +14,13 @@ server {
 
     proxy_set_header  X-Real-IP $remote_addr;
     proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header  X-Forwarded-Proto $http_x_forwarded_proto;
 
-    proxy_headers_hash_max_size 512;
     proxy_headers_hash_bucket_size 128;
-    proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
 
     proxy_http_version 1.1;
   }
 
-  # BigBlueButton recording playback
-  include /etc/bigbluebutton/nginx/*.nginx;
+  include conf.d/scalelite/*;
+  include conf.d/scalelite.common;
 }

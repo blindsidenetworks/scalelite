@@ -1,11 +1,15 @@
 env:
-  RUBY_VERSION: 2.7.2
+  RUBY_VERSION: 2.7.x
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
 
 name: CI
 on:
   push:
-    branches: "*"
+    branches-ignore:
+      - master
+      - v1.0-stable
+      - v1.1-stable
+      - v1.2-stable
   pull_request:
     branches: "*"
 
@@ -51,21 +55,10 @@ jobs:
           bundle install --jobs 4 --retry 3
 
       - name: Run Rubocop
-        run: bundle exec rubocop --fail-level F
+        run: bundle exec rubocop
 
       - name: Run Rails Test
         env:
           DATABASE_URL: postgres://postgres:password@localhost:5432/scalelite_test
         run:  |
           bundler exec rails test:db
-
-      # - name: Trigger Build Workflow
-      #   env:
-      #     CR_PAT: ${{ secrets.CR_PAT }}
-      #   if: ${{env.CR_PAT}} && success()
-      #   uses: peter-evans/repository-dispatch@v1
-      #   with:
-      #     token: ${{env.CR_PAT}} || ''
-      #     repository: ${{ github.repository }}
-      #     event-type: trigger-build
-      #     client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'

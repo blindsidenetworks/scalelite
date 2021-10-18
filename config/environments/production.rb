@@ -35,7 +35,11 @@ Rails.application.configure do
 
   # Use the lowest log level to ensure availability of diagnostic information
   # when problems arise.
-  config.log_level = :debug
+  config.log_level = if ENV['RAILS_LOG_LEVEL'].present?
+                       ENV['RAILS_LOG_LEVEL'].to_sym
+                     else
+                       :debug
+                     end
 
   # Prepend all log lines with the following tags.
   config.log_tags = [:request_id]
@@ -61,7 +65,7 @@ Rails.application.configure do
   # require 'syslog/logger'
   # config.logger = ActiveSupport::TaggedLogging.new(Syslog::Logger.new 'app-name')
 
-  if ENV['RAILS_LOG_TO_STDOUT'].present?
+  if 'true'.casecmp?(ENV['RAILS_LOG_TO_STDOUT'])
     # Disable output buffering when STDOUT isn't a tty (e.g. Docker images, systemd services)
     STDOUT.sync = true
     logger = ActiveSupport::Logger.new(STDOUT)
@@ -70,7 +74,7 @@ Rails.application.configure do
   end
 
   # Do not dump schema after migrations.
-  config.active_record.dump_schema_after_migration = false
+  config.active_record.dump_schema_after_migration = false unless 'true'.casecmp?(ENV['DB_DISABLED'])
 
   # Inserts middleware to perform automatic connection switching.
   # The `database_selector` hash is used to pass options to the DatabaseSelector
