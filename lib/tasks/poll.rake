@@ -45,8 +45,9 @@ namespace :poll do
 
         load_min_user_count = Rails.configuration.x.load_min_user_count
         x_minutes_ago = Rails.configuration.x.load_join_buffer_time.ago
-
+        active_meeting_ids = []
         meetings.each do |meeting|
+          active_meeting_ids << meeting.xpath('.//meetingName').text
           created_time = Time.zone.at(meeting.xpath('.//createTime').text.to_i / 1000)
           actual_attendees = meeting.xpath('.//participantCount').text.to_i + meeting.xpath('.//moderatorCount').text.to_i
           count = meeting.at_xpath('participantCount')
@@ -85,7 +86,9 @@ namespace :poll do
         server.users = server_users
         server.largest_meeting = users_in_largest_meeting
         server.videos = video_streams
-
+        Meeting.all.each do |meeting|
+          meeting.destroy! if meeting.server_id.eql?(server.id) && active_meeting_ids.exclude?(meeting.id)
+        end
       rescue StandardError => e
         Rails.logger.warn("Failed to get server id=#{server.id} status: #{e}")
 
