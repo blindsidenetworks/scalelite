@@ -75,6 +75,41 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal 'test-meeting-1', response_xml.at_xpath('/response/meetingID').content
   end
 
+  test 'getMeetingInfo responds with the correct meeting info for a post request with checksum value computed using SHA1' do
+    server = Server.create!(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1')
+    Meeting.create!(id: 'SHA1_meeting', server: server)
+
+    url = 'https://test-1.example.com/bigbluebutton/api/getMeetingInfo?meetingID=SHA1_meeting&checksum=c8cd32fbbc006424c5784b8e9679b8ff0d21c577d361d9afdab37638b1d7a4e8'
+
+    stub_request(:get, url)
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>SHA1_meeting</meetingID></response>')
+
+    post bigbluebutton_api_get_meeting_info_url, params: { meetingID: 'SHA1_meeting',
+                                                           checksum: '169e28f735661719aa6ff8759cb763c50c904a61', }
+    response_xml = Nokogiri::XML(@response.body)
+
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').content
+    assert_equal 'SHA1_meeting', response_xml.at_xpath('/response/meetingID').content
+  end
+
+  test 'getMeetingInfo responds with the correct meeting info for a post request with checksum value computed using SHA256' do
+    server = Server.create!(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1')
+    Meeting.create!(id: 'SHA256_meeting', server: server)
+
+    url = 'https://test-1.example.com/bigbluebutton/api/getMeetingInfo?meetingID=SHA256_meeting&checksum=cd288062f4b623e1f975150e4c47a8cc212937174acafe8b1f340d5aef1877af'
+
+    stub_request(:get, url)
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>SHA256_meeting</meetingID></response>')
+    Rails.configuration.x.stub(:loadbalancer_secrets, ['test-1']) do
+      post bigbluebutton_api_get_meeting_info_url,
+           params: { meetingID: 'SHA256_meeting',
+                     checksum: '217da05b692320353e17a1b11c24e9e715caeee51ab5af35231ee5becc350d1e', }
+    end
+    response_xml = Nokogiri::XML(@response.body)
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').content
+    assert_equal 'SHA256_meeting', response_xml.at_xpath('/response/meetingID').content
+  end
+
   test 'getMeetingInfo responds with the correct meeting info for a get request' do
     server = Server.create!(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1')
     Meeting.create!(id: 'test-meeting-1', server: server)
