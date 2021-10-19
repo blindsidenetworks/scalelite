@@ -47,7 +47,7 @@ class Server < ApplicationRedisRecord
   application_redis_attr :videos
 
   def online=(value)
-    value = !!value
+    value = !value.nil?
     online_will_change! unless @online == value
     @online = value
   end

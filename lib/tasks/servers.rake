@@ -89,7 +89,7 @@ namespace :servers do
       puts("WARNING: You are trying to disable a server with active load. You should use the cordon option if
           you do not want to clear all the meetings")
       puts('If you still wish to continue please enter `yes`')
-      response = STDIN.gets.chomp.casecmp('yes').zero?
+      response = $stdin.gets.chomp.casecmp('yes').zero?
       if response
         meetings = Meeting.all.select { |m| m.server_id == server.id }
         meetings.each do |meeting|
@@ -159,8 +159,8 @@ namespace :servers do
     servers = YAML.load_file(args.path)['servers']
     servers.each do |server|
       created = Server.create!(url: server['url'], secret: server['secret'])
-      puts "server: #{created.url}"
-      puts "id: #{created.id}"
+      puts("server: #{created.url}")
+      puts("id: #{created.id}")
     end
   rescue StandardError => e
     puts(e)
@@ -178,7 +178,7 @@ namespace :servers do
 
   desc 'Return a yaml compatible with servers:sync'
   task :yaml, [:verbose] => :environment do |_t|
-    puts({ servers: ServerSync.dump(!!args.verbose) }.to_yaml)
+    puts({ servers: ServerSync.dump(!args.verbose.nil?) }.to_yaml)
   end
 
   desc('List all meetings running in specific BigBlueButton servers')

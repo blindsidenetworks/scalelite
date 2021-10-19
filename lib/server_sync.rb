@@ -19,7 +19,7 @@ class ServerSync
   # contain a +servers+ hash mapping IDs to server parameters. For details,
   # see +ServerSync.sync+
   def self.sync_file(path, mode = 'cordon', dryrun = false)
-    yaml = YAML.safe_load(path == '-' ? STDIN.read : File.read(path))
+    yaml = YAML.safe_load(path == '-' ? $stdin.read : File.read(path))
     raise(SyncError, 'Invalid YAML document') unless yaml.is_a?(Hash)
 
     servers = yaml['servers']
@@ -49,7 +49,7 @@ class ServerSync
     # Validate server list and add missing parameters
     servers.each do |id, params|
       params['url'] = "https://#{id}/bigbluebutton/api" if params['url'].nil?
-      params['enabled'] = params['enabled'].nil? || !!params['enabled']
+      params['enabled'] = params['enabled'].nil? || !params['enabled'].nil?
       params['load_multiplier'] = 1.0 if params['load_multiplier'].nil?
       bad_params = params.keys - SERVER_PARAMS - PARAMS_IGNORE
 

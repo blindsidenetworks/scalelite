@@ -6,7 +6,7 @@ class AddAllTaskTest < ActiveSupport::TestCase
 
   test 'adds all servers from yml file' do
     server_count = Server.all.size
-    STDOUT.stub(:puts, '.') do
+    $stdout.stub(:puts, '.') do
       Rake::Task['servers:addAll'].invoke('./test/fixtures/files/servers.yml')
       assert_equal Server.all.size, server_count + 3
     end

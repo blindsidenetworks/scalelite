@@ -65,20 +65,20 @@ module Scalelite
 
     # Directory to monitor for recordings transferred from BigBlueButton servers
     config.x.recording_spool_dir = File.absolute_path(
-      ENV.fetch('RECORDING_SPOOL_DIR') { '/var/bigbluebutton/spool' }
+      ENV.fetch('RECORDING_SPOOL_DIR', '/var/bigbluebutton/spool')
     )
     # Working directory for temporary files when extracting recordings
     config.x.recording_work_dir = File.absolute_path(
-      ENV.fetch('RECORDING_WORK_DIR') { '/var/bigbluebutton/recording/scalelite' }
+      ENV.fetch('RECORDING_WORK_DIR', '/var/bigbluebutton/recording/scalelite')
     )
     # Published recording directory
     config.x.recording_publish_dir = File.absolute_path(
-      ENV.fetch('RECORDING_PUBLISH_DIR') { '/var/bigbluebutton/published' }
+      ENV.fetch('RECORDING_PUBLISH_DIR', '/var/bigbluebutton/published')
     )
 
     # Unpublished recording directory
     config.x.recording_unpublish_dir = File.absolute_path(
-      ENV.fetch('RECORDING_UNPUBLISH_DIR') { '/var/bigbluebutton/unpublished' }
+      ENV.fetch('RECORDING_UNPUBLISH_DIR', '/var/bigbluebutton/unpublished')
     )
 
     # Minimum user count of a meeting, used for calculating server load. Defaults to 15.

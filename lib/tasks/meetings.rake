@@ -27,7 +27,7 @@ namespace :meetings do
     $stdout.sync = true
     puts('WARNING: You are trying to clear active meetings.')
     puts('If you still wish to continue please enter `yes`')
-    response = STDIN.gets.chomp.casecmp('yes').zero?
+    response = $stdin.gets.chomp.casecmp('yes').zero?
     if response
       args.with_defaults(meeting_ids: '')
       include ApiHelper

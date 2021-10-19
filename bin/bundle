@@ -11,10 +11,10 @@
 require "rubygems"
 
 m = Module.new do
-    module_function
+  module_function
 
   def invoked_as_script?
-    File.expand_path($0) == File.expand_path(__FILE__)
+    File.expand_path($PROGRAM_NAME) == File.expand_path(__FILE__)
   end
 
   def env_var_version
@@ -27,11 +27,9 @@ m = Module.new do
     bundler_version = nil
     update_index = nil
     ARGV.each_with_index do |a, i|
-      if update_index && update_index.succ == i && a =~ Gem::Version::ANCHORED_VERSION_PATTERN
-        bundler_version = a
-      end
+      bundler_version = a if update_index && update_index.succ == i && a =~ Gem::Version::ANCHORED_VERSION_PATTERN
       next unless a =~ /\A--bundler(?:[= ](#{Gem::Version::VERSION_PATTERN}))?\z/
-      bundler_version = $1 || ">= 0.a"
+      bundler_version = Regexp.last_match(1) || ">= 0.a"
       update_index = i
     end
     bundler_version
@@ -100,6 +98,4 @@ end
 
 m.load_bundler!
 
-if m.invoked_as_script?
-  load Gem.bin_path("bundler", "bundle")
-end
+load Gem.bin_path("bundler", "bundle") if m.invoked_as_script?
