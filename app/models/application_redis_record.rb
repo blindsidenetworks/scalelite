@@ -128,7 +128,6 @@ class ApplicationRedisRecord
 
       class_eval(
         # def #{sym}=(value)
-        #   #{sym}_will_change! unless @#{sym} == value
         #   @#{sym} = value
         # end
 
