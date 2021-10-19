@@ -131,7 +131,6 @@ class ApplicationRedisRecord
         #   #{sym}_will_change! unless @#{sym} == value
         #   @#{sym} = value
         # end
-
         <<-END_OF_RUBY, __FILE__, __LINE__ + 1
           def #{sym}=(value)
             #{sym}_will_change! unless @#{sym} == value
