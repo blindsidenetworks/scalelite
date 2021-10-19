@@ -39,6 +39,25 @@ namespace :servers do
     puts("id: #{server.id}")
   end
 
+  desc 'Update a BigBlueButton server'
+  task :update, [:id, :secret, :load_multiplier] => :environment do |_t, args|
+    server = Server.find(args.id)
+    server.secret = args.secret unless args.secret.nil?
+    tmp_load_multiplier = server.load_multiplier
+    unless args.load_multiplier.nil?
+      tmp_load_multiplier = args.load_multiplier.to_d
+      if tmp_load_multiplier.zero?
+        puts('WARNING! Load-multiplier was not readable or 0, so it is now 1')
+        tmp_load_multiplier = 1.0
+      end
+    end
+    server.load_multiplier = tmp_load_multiplier
+    server.save!
+    puts('OK')
+  rescue ApplicationRedisRecord::RecordNotFound
+    puts("ERROR: No server found with id: #{args.id}")
+  end
+
   desc 'Remove a BigBlueButton server'
   task :remove, [:id] => :environment do |_t, args|
     server = Server.find(args.id)
@@ -168,5 +187,42 @@ namespace :servers do
   desc 'Return a yaml compatible with servers:sync'
   task :yaml, [:verbose] => :environment do |_t|
     puts({ servers: ServerSync.dump(!!args.verbose) }.to_yaml)
+  end
+
+  desc('List all meetings running in specific BigBlueButton servers')
+  task :meeting_list, [:server_ids] => :environment do |_t, args|
+    include ApiHelper
+
+    args.with_defaults(server_ids: '')
+    server_ids = args.server_ids.split(':')
+    servers = if server_ids.present?
+                server_ids.map { |id| Server.find(id) }
+              else
+                Server.all
+              end
+    pool = Concurrent::FixedThreadPool.new(Rails.configuration.x.poller_threads.to_i - 1, name: 'sync-meeting-data')
+    tasks = servers.map do |server|
+      Concurrent::Promises.future_on(pool) do
+        puts("\nServer ID: #{server.id}")
+        puts("Server Url: #{server.url}")
+        resp = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
+        meetings = resp.xpath('/response/meetings/meeting')
+        meeting_ids = meetings.map { |meeting| meeting.xpath('.//meetingName').text }
+        puts("MeetingIDs: \n\t#{meeting_ids.join("\n\t")}")
+        puts("\tNo meetings to display") if meeting_ids.empty?
+      rescue BBBErrors::BBBError => e
+        puts("\nFailed to get server id=#{server.id} status: #{e}")
+      rescue StandardError => e
+        puts("\nFailed to get meetings list status: #{e}")
+      end
+    end
+    begin
+      Concurrent::Promises.zip_futures_on(pool, *tasks).wait!(Rails.configuration.x.poller_wait_timeout)
+    rescue StandardError => e
+      Rails.logger.warn("Error #{e}")
+    end
+
+    pool.shutdown
+    pool.wait_for_termination(5) || pool.kill
   end
 end
