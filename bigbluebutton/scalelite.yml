@@ -12,3 +12,7 @@ spool_dir: /var/bigbluebutton/spool
 # Extra rsync command-line options
 # You can use this to set up unusual configurations, like rsync daemon over ssh
 extra_rsync_opts: []
+
+# If recordings should be deleted locally immediately after they are
+# transferred to the spool directory. Defaults to false.
+delete_recording: false
