@@ -1,7 +1,7 @@
 servers:
-  - url: "bbb1.example.com"
+  - url: "https://bbb1.example.com/bigbluebutton/api/"
     secret: "1bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
-  - url: "bbb2.example.com"
+  - url: "https://bbb2.example.com/bigbluebutton/api/"
     secret: "2bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
-  - url: "bbb3.example.com"
+  - url: "https://bbb3.example.com/bigbluebutton/api/"
     secret: "3bdce5cbab581f3f20b199b970e53ae3c9d9df6392f79589bd58be020ed14535"
