@@ -113,7 +113,7 @@ class ApplicationRedisRecord
   end
 
   # Internal initialization helper for loading from store
-  def init_with_attributes(attributes, new_record: false)
+  def init_with_attributes(attributes, new_record = false)
     self.attributes = attributes
     clear_changes_information
     @new_record = new_record

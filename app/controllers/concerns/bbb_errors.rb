@@ -5,7 +5,7 @@ module BBBErrors
     attr_accessor :return_code, :message_key, :message
 
     def initialize(message_key = '', message = '')
-      super
+      super()
       @return_code = 'FAILED'
       @message_key = message_key if message_key.present?
       @message = message if message.present?

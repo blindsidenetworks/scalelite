@@ -18,7 +18,7 @@ class ServerSync
   # (path='-') and synchronizes cluster state. The YAML document file must
   # contain a +servers+ hash mapping IDs to server parameters. For details,
   # see +ServerSync.sync+
-  def self.sync_file(path, mode = 'cordon', dryrun: false)
+  def self.sync_file(path, mode = 'cordon', dryrun = false)
     yaml = YAML.safe_load(path == '-' ? $stdin.read : File.read(path))
     raise(SyncError, 'Invalid YAML document') unless yaml.is_a?(Hash)
 
@@ -36,7 +36,7 @@ class ServerSync
   # meetings before the server is removed.
   # A +dryrun+ logs the same output as a normal run, but does not persist
   # any changes.
-  def self.sync(servers, mode = 'cordon', dryrun: false)
+  def self.sync(servers, mode = 'cordon', dryrun = false)
     include ApiHelper
 
     raise(SyncError, 'Servers parameter not a hash') unless servers.is_a?(Hash)

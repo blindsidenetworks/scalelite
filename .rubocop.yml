@@ -61,6 +61,8 @@ Style/MethodCallWithArgsParentheses:
     - "**/*.xml.builder"
 Style/SymbolArray:
   MinSize: 6
+Style/OptionalBooleanParameter:
+  Enabled: false
 Style/TrailingCommaInArrayLiteral:
   EnforcedStyleForMultiline: consistent_comma
 Style/TrailingCommaInHashLiteral:
