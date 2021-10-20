@@ -31,7 +31,7 @@ module RedisStore
     end
   end
 
-  def self.with_connection
-    connection_pool.with { |connection| yield(connection) }
+  def self.with_connection(&block)
+    connection_pool.with(&block)
   end
 end

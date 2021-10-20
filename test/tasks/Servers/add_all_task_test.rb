@@ -7,7 +7,7 @@ class AddAllTaskTest < ActiveSupport::TestCase
   Rails.application.load_tasks
 
   test 'adds all servers from yml file' do
-    STDOUT.stub(:puts, '.') do
+    $stdout.stub(:puts, '.') do
       server_count = Server.all.size
       Rails.configuration.x.stub(:server_id_is_hostname, true) do
         Rake::Task['servers:addAll'].invoke('./test/fixtures/files/servers.yml')

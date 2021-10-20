@@ -1679,7 +1679,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     r1 = create(:recording)
     r2 = create(:recording)
 
-    params = encode_bbb_params('deleteRecordings', { recordID: [r.record_id, r1.record_id, r2.record_id].join(',') } .to_query)
+    params = encode_bbb_params('deleteRecordings', { recordID: [r.record_id, r1.record_id, r2.record_id].join(',') }.to_query)
     get bigbluebutton_api_delete_recordings_url, params: params
     assert_response :success
 

@@ -37,6 +37,10 @@ Rails/DynamicFindBy:
   Enabled: false
 Style/AsciiComments:
   AllowedChars: [ © ]
+Style/CombinableLoops:
+  Exclude:
+    - lib/server_sync.rb
+    - test/models/server_test.rb
 Style/Documentation:
   Enabled: false
 Style/DoubleNegation:

@@ -113,7 +113,7 @@ class ApplicationRedisRecord
   end
 
   # Internal initialization helper for loading from store
-  def init_with_attributes(attributes, new_record = false)
+  def init_with_attributes(attributes, new_record: false)
     self.attributes = attributes
     clear_changes_information
     @new_record = new_record
@@ -122,6 +122,7 @@ class ApplicationRedisRecord
 
   def self.application_redis_attr(*syms)
     attr_reader(*syms)
+
     syms.each do |sym|
       raise NameError, "invalid attribute name: #{sym}" unless /^[_A-Za-z]\w*$/.match?(sym)
 
@@ -139,10 +140,8 @@ class ApplicationRedisRecord
   end
   delegate :connection_pool, to: 'self.class'
 
-  def self.with_connection
-    RedisStore.with_connection do |redis|
-      yield(redis)
-    end
+  def self.with_connection(&block)
+    RedisStore.with_connection(&block)
   end
   delegate :with_connection, to: 'self.class'
 

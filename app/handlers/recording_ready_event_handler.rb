@@ -3,10 +3,6 @@
 class RecordingReadyEventHandler < EventHandler
   attr_accessor :callback_url
 
-  def initialize(params, *args)
-    super
-  end
-
   def handle
     set_callback_url
     return if callback_url.nil?
