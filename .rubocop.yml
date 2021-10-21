@@ -104,16 +104,18 @@ Layout/EmptyLineAfterGuardClause:
 Layout/ArgumentAlignment:
   Enabled: false
 
-#
-Layout/IndentationWidth:
-  Enabled: false
-
 Layout/CaseIndentation:
   Enabled: false
 
-# Checks for ambiguous block association with method when param passed without parentheses.
-Lint/AmbiguousBlockAssociation:
+Layout/EmptyLinesAroundAttributeAccessor:
+  Enabled: true
+
+Layout/IndentationWidth:
   Enabled: false
+
+Layout/SpaceAroundMethodCallOperator:
+  Enabled: true
+
 
 # Avoid long blocks with many lines.
 Metrics/BlockLength:
@@ -174,17 +176,24 @@ Naming/PredicateName:
   Exclude:
     - app/controllers/bigbluebutton_api_controller.rb
 
-Lint/LiteralInInterpolation:
+# Checks for ambiguous block association with method when param passed without parentheses.
+Lint/AmbiguousBlockAssociation:
   Enabled: false
 
-Layout/EmptyLinesAroundAttributeAccessor:
-  Enabled: true
-
-Layout/SpaceAroundMethodCallOperator:
-  Enabled: true
+Lint/ConstantDefinitionInBlock:
+  Enabled: false
 
 Lint/DeprecatedOpenSSLConstant:
   Enabled: true
+
+Lint/DuplicateBranch:
+  Enabled: false
+
+Lint/EmptyBlock:
+  Enabled: false
+
+Lint/LiteralInInterpolation:
+  Enabled: false
 
 Lint/RaiseException:
   Enabled: true
@@ -206,26 +215,17 @@ Style/ExponentialNotation:
 Style/HashEachMethods:
   Enabled: true
 
+Style/HashLikeCase:
+  Enabled: false
+
 Style/HashTransformKeys:
   Enabled: true
 
 Style/HashTransformValues:
   Enabled: true
 
-Style/SlicingWithRange:
-  Enabled: true
-
 Style/OptionalBooleanParameter:
   Enabled: false
 
-Lint/DuplicateBranch:
-  Enabled: false
-
-Lint/ConstantDefinitionInBlock:
-  Enabled: false
-
-Lint/EmptyBlock:
-  Enabled: false
-
-Style/HashLikeCase:
-  Enabled: false
+Style/SlicingWithRange:
+  Enabled: true
