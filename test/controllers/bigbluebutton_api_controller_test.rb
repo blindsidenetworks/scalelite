@@ -83,9 +83,10 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, url)
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>SHA1_meeting</meetingID></response>')
-
-    post bigbluebutton_api_get_meeting_info_url, params: { meetingID: 'SHA1_meeting',
-                                                           checksum: '169e28f735661719aa6ff8759cb763c50c904a61', }
+    Rails.configuration.x.stub(:loadbalancer_secrets, ['test-2']) do
+      post bigbluebutton_api_get_meeting_info_url, params: { meetingID: 'SHA1_meeting',
+                                                             checksum: 'cbf00ea96fae6ff06c2cb311bbde8b26ad66d765', }
+    end
     response_xml = Nokogiri::XML(@response.body)
 
     assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').content
