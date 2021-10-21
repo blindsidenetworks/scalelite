@@ -1,3 +1,5 @@
+require: rubocop-rails
+
 AllCops:
   Exclude:
   - 'bin/**/*'
@@ -8,6 +10,12 @@ AllCops:
   TargetRubyVersion: 2.7
 
   NewCops: enable
+
+Rails/DynamicFindBy:
+  Enabled: true
+
+Rails/CreateTableWithTimestamps:
+  Enabled: false
 
 Style/BlockDelimiters:
   Enabled: false

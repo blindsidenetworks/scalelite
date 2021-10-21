@@ -424,7 +424,7 @@ class BigBlueButtonApiController < ApplicationController
 
     meeting_id = params['meeting_id']
     logger.info("Making analytics callback for #{meeting_id}")
-    callback_data = CallbackData.find_by_meeting_id(meeting_id)
+    callback_data = CallbackData.find_by(meeting_id: meeting_id)
     analytics_callback_url = callback_data&.callback_attributes&.dig(:analytics_callback_url)
     return if analytics_callback_url.nil?
 
