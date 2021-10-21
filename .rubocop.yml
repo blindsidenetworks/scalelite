@@ -1,63 +1,232 @@
-inherit_mode:
-  merge:
-    - Exclude
 require:
   - rubocop-rails
+
 AllCops:
   Exclude:
-    - bin/puma
-    - bin/pumactl
-    - bin/setup
-    - bin/rainbows
-    - bin/unicorn
-    - bin/unicorn_rails
-    - bin/update
-    - bin/yarn
-    - vendor/bundle/**/*
-  TargetRubyVersion: 2.6
-Layout/HashAlignment:
-  EnforcedHashRocketStyle: [ key, table ]
-  EnforcedColonStyle: [ key, table ]
-Layout/LineLength:
-  Max: 128
-Layout/MultilineMethodCallIndentation:
-  EnforcedStyle: indented
-Metrics:
+  - 'bin/**/*'
+  - 'db/schema.rb'
+  - 'vendor/**/*'
+  - 'vendor/bundle/**/*'
+  DisabledByDefault: false
+  TargetRubyVersion: 2.7
+
+  NewCops: enable
+
+Rails/DynamicFindBy:
+  Enabled: true
+
+Rails/CreateTableWithTimestamps:
   Enabled: false
+
+Style/BlockDelimiters:
+  Enabled: false
+
+# Checks if uses of quotes match the configured preference.
+Style/StringLiterals:
+  Enabled: false
+
+# Document classes and non-namespace modules.
+Style/Documentation:
+  Enabled: false
+
+# Check for conditionals that can be replaced with guard clauses
+Style/GuardClause:
+  Enabled: false
+
+# Checks the formatting of empty method definitions.
+Style/EmptyMethod:
+  Enabled: false
+
+# Checks for trailing comma in hash literals.
+Style/TrailingCommaInHashLiteral:
+  Enabled: false
+
+# Checks for trailing comma in argument lists.
+Style/TrailingCommaInArguments:
+  Enabled: false
+
+# Checks that `include`, `extend` and `prepend` exists at the top level.
+Style/MixinUsage:
+  Enabled: false
+
+# Use %i or %I for arrays of symbols.
+Style/SymbolArray:
+  Enabled: false
+
+# Don't use begin blocks when they are not needed.
+Style/RedundantBegin:
+  Enabled: false
+
+# Use `%`-literal delimiters consistently
+Style/PercentLiteralDelimiters:
+  Enabled: false
+
+# Only use if/unless modifiers on single line statements.
+Style/MultilineIfModifier:
+  Enabled: false
+
+# Checks for trailing comma in array literals.
+Style/TrailingCommaInArrayLiteral:
+  Enabled: false
+
+# Use `expand_path(__dir__)` instead of `expand_path('..', __FILE__)`.
+Style/ExpandPathArguments:
+  Enabled: false
+
+# Do not assign mutable objects to constants.
+Style/MutableConstant:
+  Enabled: false
+
+# Avoid rescuing without specifying an error class.
+Style/RescueStandardError:
+  Enabled: false
+
+# Align the elements of a hash literal if they span more than one line.
+Layout/HashAlignment:
+  Enabled: false
+
+# Align the parameters of a method definition if they span more than one line.
+Layout/ParameterAlignment:
+  Enabled: false
+
+# Align ends corresponding to defs correctly.
+Layout/EndAlignment:
+  Enabled: false
+
+# Align elses and elsifs correctly.
+Layout/ElseAlignment:
+  Enabled: false
+
+# Add empty line after guard clause.
+Layout/EmptyLineAfterGuardClause:
+  Enabled: false
+
+# Align the arguments of a method call if they span more than one line.
+Layout/ArgumentAlignment:
+  Enabled: false
+
+Layout/CaseIndentation:
+  Enabled: false
+
+Layout/EmptyLinesAroundAttributeAccessor:
+  Enabled: true
+
+Layout/IndentationWidth:
+  Enabled: false
+
+Layout/SpaceAroundMethodCallOperator:
+  Enabled: true
+
+
+# Avoid long blocks with many lines.
+Metrics/BlockLength:
+  Enabled: false
+
+# A complexity metric geared towards measuring complexity for a human reader.
+Metrics/PerceivedComplexity:
+  Max: 17
+  Exclude:
+    - app/models/recording.rb
+    - app/models/server.rb
+    - lib/server_sync.rb
+
+# Avoid classes longer than 100 lines of code.
+Metrics/ClassLength:
+  Enabled: false
+
+# Limit lines to 80 characters.
+Layout/LineLength:
+  Max: 130
+
+# Avoid methods longer than 10 lines of code.
+Metrics/MethodLength:
+  Enabled: false
+
+Metrics/ModuleLength:
+  Enabled: false
+
+# A calculated magnitude based on number of assignments,
+# branches, and conditions.
+Metrics/AbcSize:
+  Max: 60
+  Exclude:
+    - app/controllers/bigbluebutton_api_controller.rb
+    - app/models/recording.rb
+    - app/models/server.rb
+    - lib/recording_importer.rb
+    - lib/server_sync.rb
+
+# A complexity metric that is strongly correlated to the number
+# of test cases needed to validate a method.
+Metrics/CyclomaticComplexity:
+  Max: 20
+  Exclude:
+    - app/models/recording.rb
+    - app/models/server.rb
+    - lib/server_sync.rb
+
+# Checks for method parameter names that contain capital letters, end in numbers, or do not meet a minimal length.
+Naming/MethodParameterName:
+  Enabled: false
+
 Naming/AccessorMethodName:
   Exclude:
     - app/controllers/bigbluebutton_api_controller.rb
+
 Naming/PredicateName:
   Exclude:
     - app/controllers/bigbluebutton_api_controller.rb
-Rails:
+
+# Checks for ambiguous block association with method when param passed without parentheses.
+Lint/AmbiguousBlockAssociation:
+  Enabled: false
+
+Lint/ConstantDefinitionInBlock:
+  Enabled: false
+
+Lint/DeprecatedOpenSSLConstant:
   Enabled: true
-Rails/DynamicFindBy:
-  # The models used in this code aren't actually ActiveRecord
+
+Lint/DuplicateBranch:
   Enabled: false
-Style/AsciiComments:
-  AllowedChars: [ © ]
-Style/Documentation:
+
+Lint/EmptyBlock:
   Enabled: false
+
+Lint/LiteralInInterpolation:
+  Enabled: false
+
+Lint/RaiseException:
+  Enabled: true
+
+Lint/StructNewOverride:
+  Enabled: true
+
+Style/CombinableLoops:
+  Exclude:
+    - lib/server_sync.rb
+    - test/models/server_test.rb
+
 Style/DoubleNegation:
   Enabled: false
-Style/MethodCallWithArgsParentheses:
+
+Style/ExponentialNotation:
   Enabled: true
-  IgnoredMethods:
-    - desc
-    - gem
-    - include
-    - require
-    - require_relative
-    - ruby
-    - raise
-    - source
-    - throw
-  Exclude:
-    - "**/*.xml.builder"
-Style/SymbolArray:
-  MinSize: 6
-Style/TrailingCommaInArrayLiteral:
-  EnforcedStyleForMultiline: consistent_comma
-Style/TrailingCommaInHashLiteral:
-  EnforcedStyleForMultiline: consistent_comma
+
+Style/HashEachMethods:
+  Enabled: true
+
+Style/HashLikeCase:
+  Enabled: false
+
+Style/HashTransformKeys:
+  Enabled: true
+
+Style/HashTransformValues:
+  Enabled: true
+
+Style/OptionalBooleanParameter:
+  Enabled: false
+
+Style/SlicingWithRange:
+  Enabled: true

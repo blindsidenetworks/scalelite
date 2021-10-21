@@ -24,9 +24,7 @@ class HealthCheckController < ApplicationController
   end
 
   def database_check
-    if defined?(ActiveRecord)
-      raise 'Database not responding' unless ActiveRecord::Migrator.current_version
-    end
+    raise 'Database not responding' if defined?(ActiveRecord) && !ActiveRecord::Migrator.current_version
     raise 'Pending migrations' unless ActiveRecord::Migration.check_pending!.nil?
   end
 end

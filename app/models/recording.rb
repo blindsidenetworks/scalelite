@@ -16,7 +16,7 @@ class Recording < ApplicationRecord
   def self.with_recording_id_prefixes(recording_ids)
     return none if recording_ids.empty?
 
-    rid_prefixes = recording_ids.map { |rid| sanitize_sql_like(rid, '|') + '%' }
+    rid_prefixes = recording_ids.map { |rid| "#{sanitize_sql_like(rid, '|')}%" }
     query_string = Array.new(recording_ids.length, "record_id LIKE ? ESCAPE '|'").join(' OR ')
 
     where(query_string, *rid_prefixes)

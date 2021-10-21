@@ -39,5 +39,5 @@ Rails.application.configure do
   # config.action_view.raise_on_missing_translations = true
 
   # Ensure a dummy secret is set for testing
-  config.x.loadbalancer_secrets = [ENV.fetch('LOADBALANCER_SECRET') { 'f830c18ee29c8531e0115c3da85db89b' }]
+  config.x.loadbalancer_secrets = [ENV.fetch('LOADBALANCER_SECRET', 'f830c18ee29c8531e0115c3da85db89b')]
 end
