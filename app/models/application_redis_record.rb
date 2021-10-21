@@ -122,15 +122,22 @@ class ApplicationRedisRecord
 
   def self.application_redis_attr(*syms)
     attr_reader(*syms)
+
     syms.each do |sym|
       raise NameError, "invalid attribute name: #{sym}" unless /^[_A-Za-z]\w*$/.match?(sym)
 
-      class_eval(<<-END_OF_RUBY, __FILE__, __LINE__ + 1)
-        def #{sym}=(value)
-          #{sym}_will_change! unless @#{sym} == value
-          @#{sym} = value
-        end
-      END_OF_RUBY
+      class_eval(
+        # def #{sym}=(value)
+        #   #{sym}_will_change! unless @#{sym} == value
+        #   @#{sym} = value
+        # end
+        <<-END_OF_RUBY, __FILE__, __LINE__ + 1
+          def #{sym}=(value)
+            #{sym}_will_change! unless @#{sym} == value
+            @#{sym} = value
+          end
+        END_OF_RUBY
+      )
     end
   end
 
@@ -139,10 +146,8 @@ class ApplicationRedisRecord
   end
   delegate :connection_pool, to: 'self.class'
 
-  def self.with_connection
-    RedisStore.with_connection do |redis|
-      yield(redis)
-    end
+  def self.with_connection(&block)
+    RedisStore.with_connection(&block)
   end
   delegate :with_connection, to: 'self.class'
 

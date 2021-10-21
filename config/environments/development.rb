@@ -38,7 +38,7 @@ Rails.application.configure do
     config.active_record.verbose_query_logs = true
   end
 
-  Rails.logger = Logger.new(STDOUT)
+  Rails.logger = Logger.new($stdout)
 
   # Raises error for missing translations.
   # config.action_view.raise_on_missing_translations = true
