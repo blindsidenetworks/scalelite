@@ -698,7 +698,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
     mocked_method = MiniTest::Mock.new
-    return_value = { 'meetingID': 'test-meeting-1', test4: '', test2: '' }
+    return_value = { meetingID: 'test-meeting-1', test4: '', test2: '' }
 
     Rails.configuration.x.stub(:create_exclude_params, []) do
       mocked_method.expect(:pass_through_params, return_value, [Rails.configuration.x.create_exclude_params])

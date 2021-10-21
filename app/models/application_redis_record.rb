@@ -126,12 +126,18 @@ class ApplicationRedisRecord
     syms.each do |sym|
       raise NameError, "invalid attribute name: #{sym}" unless /^[_A-Za-z]\w*$/.match?(sym)
 
-      class_eval(<<-END_OF_RUBY, __FILE__, __LINE__ + 1)
-        def #{sym}=(value)
-          #{sym}_will_change! unless @#{sym} == value
-          @#{sym} = value
-        end
-      END_OF_RUBY
+      class_eval(
+        # def #{sym}=(value)
+        #   #{sym}_will_change! unless @#{sym} == value
+        #   @#{sym} = value
+        # end
+        <<-END_OF_RUBY, __FILE__, __LINE__ + 1
+          def #{sym}=(value)
+            #{sym}_will_change! unless @#{sym} == value
+            @#{sym} = value
+          end
+        END_OF_RUBY
+      )
     end
   end
 

@@ -448,7 +448,7 @@ class BigBlueButtonApiController < ApplicationController
   # Has to be to_unsafe_hash since to_h only accepts permitted attributes
   def pass_through_params(excluded_params)
     params.except(*(excluded_params + [:format, :controller, :action, :checksum]))
-      .to_unsafe_hash
+          .to_unsafe_hash
   end
 
   # Success response if there are no meetings on any servers

@@ -1,15 +1,6 @@
 AllCops:
   Exclude:
-  - 'bin/bundle'
-  - 'bin/puma'
-  - 'bin/pumactl'
-  - 'bin/setup'
-  - 'bin/rainbows'
-  - 'bin/spring'
-  - 'bin/unicorn'
-  - 'bin/unicorn_rails'
-  - 'bin/update'
-  - 'bin/yarn'
+  - 'bin/**/*'
   - 'db/schema.rb'
   - 'vendor/**/*'
   - 'vendor/bundle/**/*'
@@ -197,6 +188,9 @@ Style/CombinableLoops:
   Exclude:
     - lib/server_sync.rb
     - test/models/server_test.rb
+
+Style/DoubleNegation:
+  Enabled: false
 
 Style/ExponentialNotation:
   Enabled: true

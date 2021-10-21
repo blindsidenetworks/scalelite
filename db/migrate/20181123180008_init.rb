@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# rubocop:disable Rails/CreateTableWithTimestamps
-
 class Init < ActiveRecord::Migration[6.0]
   def change
     create_table(:metadata, force: :cascade) do |t|
@@ -45,5 +43,3 @@ class Init < ActiveRecord::Migration[6.0]
     end
   end
 end
-
-# rubocop:enable Rails/CreateTableWithTimestamps
