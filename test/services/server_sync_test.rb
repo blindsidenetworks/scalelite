@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-class ServerSyncTest < ActiveSupport::TestCase
-  require 'rake'
-  require 'test_helper'
+require 'rake'
+require 'test_helper'
 
+class ServerSyncTest < ActiveSupport::TestCase
   test 'Sync all servers from yml file' do
     ServerSync.sync_file('./test/fixtures/files/servers-sync-a.yml')
     assert_equal 3, Server.all.size

@@ -268,11 +268,10 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def get_recordings
-    if Rails.configuration.x.get_recordings_api_filtered
-      if params[:recordID].blank? && params[:meetingID].blank?
-        raise BBBError.new('missingParameters', 'param meetingID or recordID must be included.')
-      end
+    if Rails.configuration.x.get_recordings_api_filtered && (params[:recordID].blank? && params[:meetingID].blank?)
+      raise BBBError.new('missingParameters', 'param meetingID or recordID must be included.')
     end
+
     query = Recording.includes(playback_formats: [:thumbnails], metadata: []).references(:metadata)
     query = if params[:state].present?
               states = params[:state].split(',')
@@ -284,7 +283,7 @@ class BigBlueButtonApiController < ApplicationController
     if meta_params.present?
       meta_query = '(metadata.key = ? and metadata.value in (?))'
       meta_values = [meta_params[0][0].remove('meta_'), meta_params[0][1].split(',')]
-      meta_params[1..-1].each do |val|
+      meta_params[1..].each do |val|
         meta_query += ' or (metadata.key = ? and metadata.value in (?))'
         meta_values << val[0].remove('meta_')
         meta_values << val[1].split(',')
@@ -361,7 +360,7 @@ class BigBlueButtonApiController < ApplicationController
     params.each do |key, value|
       next unless key.start_with?('meta_')
 
-      key = key[5..-1].downcase
+      key = key[5..].downcase
 
       if value.blank?
         remove_metadata << key
@@ -425,7 +424,7 @@ class BigBlueButtonApiController < ApplicationController
 
     meeting_id = params['meeting_id']
     logger.info("Making analytics callback for #{meeting_id}")
-    callback_data = CallbackData.find_by_meeting_id(meeting_id)
+    callback_data = CallbackData.find_by(meeting_id: meeting_id)
     analytics_callback_url = callback_data&.callback_attributes&.dig(:analytics_callback_url)
     return if analytics_callback_url.nil?
 
@@ -449,7 +448,7 @@ class BigBlueButtonApiController < ApplicationController
   # Has to be to_unsafe_hash since to_h only accepts permitted attributes
   def pass_through_params(excluded_params)
     params.except(*(excluded_params + [:format, :controller, :action, :checksum]))
-      .to_unsafe_hash
+          .to_unsafe_hash
   end
 
   # Success response if there are no meetings on any servers
