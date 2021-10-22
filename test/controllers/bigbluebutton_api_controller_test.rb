@@ -1300,6 +1300,63 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>recordings>recording', 1
   end
 
+  test 'getRecordings returns paginated recordings if pagination is enabled' do
+    create_list(:recording, 12, state: 'published')
+
+    params = encode_bbb_params('getRecordings', { page: 0, limit: 4 }.to_query)
+
+    Rails.configuration.x.stub(:pagination_enabled, true) do
+      get bigbluebutton_api_get_recordings_url, params: params
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 4
+  end
+
+  test 'getRecordings returns paginated recordings if pagination is enabled and page & limit value is given' do
+    list = create_list(:recording, 30, state: 'unpublished')
+    offset_zero = list.first(15).last
+    offset_five = list.first(11).last
+
+    params = encode_bbb_params('getRecordings', { page: 3, limit: 5 }.to_query)
+
+    Rails.configuration.x.stub(:pagination_enabled, true) do
+      get bigbluebutton_api_get_recordings_url, params: params
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 5
+    response_xml = Nokogiri::XML(@response.body)
+    first_rec_id = response_xml.xpath('/response/recordings/recording').first.xpath('.//recordID').text
+    last_rec_id = response_xml.xpath('/response/recordings/recording').last.xpath('.//recordID').text
+    assert_equal first_rec_id, offset_zero.record_id
+    assert_equal last_rec_id, offset_five.record_id
+  end
+
+  test 'getRecordings returns paginated recordings based on default values of limit=10 & page=0' do
+    create_list(:recording, 10, state: 'published')
+    list = create_list(:recording, 10, state: 'unpublished')
+    offset_zero = list.last
+    offset_ten = list.first
+
+    Rails.configuration.x.stub(:pagination_enabled, true) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_get_recordings_url
+      end
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'SUCCESS'
+    assert_select 'response>recordings>recording', 10
+    response_xml = Nokogiri::XML(@response.body)
+    first_rec_id = response_xml.xpath('/response/recordings/recording').first.xpath('.//recordID').text
+    last_rec_id = response_xml.xpath('/response/recordings/recording').last.xpath('.//recordID').text
+    assert_equal first_rec_id, offset_zero.record_id
+    assert_equal last_rec_id, offset_ten.record_id
+  end
+
   test 'getRecordings with get_recordings_api_filtered filters based on recording states' do
     create_list(:recording, 5, state: 'deleted')
     r1 = create(:recording, state: 'published')
