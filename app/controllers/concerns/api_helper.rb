@@ -71,6 +71,26 @@ module ApiHelper
     decoded_token(token)
   end
 
+  def validate_get_recordings_params
+    if params[:limit].present? && !params[:limit].to_i.between?(1, Rails.configuration.x.max_pagination_limit)
+      raise BBBError.new('invalidParamLimit',
+                         "param limit should be within the range 1 and #{Rails.configuration.x.max_pagination_limit}")
+    end
+
+    if params[:offset].present? && params[:offset].to_i.negative?
+      raise BBBError.new('invalidParamOffset', 'param offset cannot be negative.')
+    end
+
+    if Rails.configuration.x.get_recordings_api_filtered && (params[:recordID].blank? &&
+      params[:meetingID].blank? && limit.nil?)
+      raise BBBError.new('missingParameters', 'param meetingID or recordID or limit must be included.')
+    end
+  end
+
+  def limit
+    params[:limit] || Rails.configuration.x.default_pagination_limit
+  end
+
   def post_req(uri, body)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = (uri.scheme == 'https')

@@ -268,10 +268,7 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def get_recordings
-    if Rails.configuration.x.get_recordings_api_filtered && (params[:recordID].blank? && params[:meetingID].blank?)
-      raise BBBError.new('missingParameters', 'param meetingID or recordID must be included.')
-    end
-
+    validate_get_recordings_params
     query = Recording.includes(playback_formats: [:thumbnails], metadata: []).references(:metadata)
     query = if params[:state].present?
               states = params[:state].split(',')
@@ -293,12 +290,8 @@ class BigBlueButtonApiController < ApplicationController
     query = query.with_recording_id_prefixes(params[:recordID].split(',')) if params[:recordID].present?
     query = query.where(meeting_id: params[:meetingID].split(',')) if params[:meetingID].present?
 
-    if Rails.configuration.x.pagination_enabled
-      page = params[:page]&.to_i || 0
-      limit = params[:limit]&.to_i || Rails.configuration.x.default_pagination_limit
-      offset = page * limit
-      query = query.offset(offset).limit(limit)
-    end
+    offset = params[:offset] || 0
+    query = query.offset(offset).limit(params[:limit])
 
     @recordings = query.order(starttime: :desc).all
     @url_prefix = "#{request.protocol}#{request.host}"

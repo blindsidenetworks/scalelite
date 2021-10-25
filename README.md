@@ -164,8 +164,8 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `PROTECTED_RECORDINGS_ENABLED`: Applies to the recording import process. If set to "true", then newly imported recordings will have protected links enabled. Default is "false".
 * `PROTECTED_RECORDINGS_TOKEN_TIMEOUT`: Protected recording link token timeout in minutes. This is the amount of time that the one-time-use link returned in `getRecordings` calls will be valid for. Defaults to 60 minutes (1 hour).
 * `PROTECTED_RECORDINGS_TIMEOUT`: Protected recordings resource access cookie timeout in minutes. This is the amount of time that a user will be granted access to view a recording for after clicking on the one-time-use link. Defaults to 360 minutes (6 hours).
-* `PAGINATION_ENABLED`: Enable pagination feature for GET_RECORDINGS API by setting this to true. Defaults to `false`.
-* `DEFAULT_PAGINATION_LIMIT`: The number of records that will be displayed per page, if the limit is not specified in API params. Defaults to 10.
+* `DEFAULT_PAGINATION_LIMIT`: The number of records that will be displayed per page, this value will be considered if the pagination limit is not specified in GET_RECORDINGS_API params.
+* `MAX_PAGINATION_LIMIT`: The max pagination limit value for get_recordings api. Defaults to 100.
 
 ### Redis Connection (`config/redis_store.yml`)
 

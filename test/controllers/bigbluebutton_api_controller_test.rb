@@ -1086,7 +1086,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select 'response>returncode', 'FAILED'
     assert_select 'response>messageKey', 'missingParameters'
-    assert_select 'response>message', 'param meetingID or recordID must be included.'
+    assert_select 'response>message', 'param meetingID or recordID or limit must be included.'
   end
 
   test 'getRecordings with only checksum returns all recordings for a post request' do
@@ -1300,30 +1300,26 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_select 'response>recordings>recording', 1
   end
 
-  test 'getRecordings returns paginated recordings if pagination is enabled' do
+  test 'getRecordings returns paginated recordings based on the limit given in params' do
     create_list(:recording, 12, state: 'published')
 
-    params = encode_bbb_params('getRecordings', { page: 0, limit: 4 }.to_query)
+    params = encode_bbb_params('getRecordings', { limit: 4 }.to_query)
 
-    Rails.configuration.x.stub(:pagination_enabled, true) do
-      get bigbluebutton_api_get_recordings_url, params: params
-    end
+    get bigbluebutton_api_get_recordings_url, params: params
 
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
     assert_select 'response>recordings>recording', 4
   end
 
-  test 'getRecordings returns paginated recordings if pagination is enabled and page & limit value is given' do
-    list = create_list(:recording, 30, state: 'unpublished')
-    offset_zero = list.first(15).last
-    offset_five = list.first(11).last
+  test 'getRecordings returns paginated recordings if offset & limit value is given' do
+    list = create_list(:recording, 20, state: 'unpublished')
+    offset_zero = list.last(4).first
+    offset_five = list.last(8).first
 
-    params = encode_bbb_params('getRecordings', { page: 3, limit: 5 }.to_query)
+    params = encode_bbb_params('getRecordings', { offset: 3, limit: 5 }.to_query)
 
-    Rails.configuration.x.stub(:pagination_enabled, true) do
-      get bigbluebutton_api_get_recordings_url, params: params
-    end
+    get bigbluebutton_api_get_recordings_url, params: params
 
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
@@ -1335,26 +1331,45 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal last_rec_id, offset_five.record_id
   end
 
-  test 'getRecordings returns paginated recordings based on default values of limit=10 & page=0' do
-    create_list(:recording, 10, state: 'published')
-    list = create_list(:recording, 10, state: 'unpublished')
+  test 'getRecordings returns all recordings if values of limit=nil & offset=0' do
+    list = create_list(:recording, 20, state: 'published')
     offset_zero = list.last
     offset_ten = list.first
 
-    Rails.configuration.x.stub(:pagination_enabled, true) do
-      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
-        get bigbluebutton_api_get_recordings_url
-      end
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_get_recordings_url
     end
 
     assert_response :success
     assert_select 'response>returncode', 'SUCCESS'
-    assert_select 'response>recordings>recording', 10
+    assert_select 'response>recordings>recording', 20
     response_xml = Nokogiri::XML(@response.body)
     first_rec_id = response_xml.xpath('/response/recordings/recording').first.xpath('.//recordID').text
     last_rec_id = response_xml.xpath('/response/recordings/recording').last.xpath('.//recordID').text
     assert_equal first_rec_id, offset_zero.record_id
     assert_equal last_rec_id, offset_ten.record_id
+  end
+
+  test 'getRecordings raises error if value of limit is invalid' do
+    params = encode_bbb_params('getRecordings', { limit: 500 }.to_query)
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_get_recordings_url, params: params
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'invalidParamLimit'
+  end
+
+  test 'getRecordings raises error if value of offset is invalid' do
+    params = encode_bbb_params('getRecordings', { offset: -5 }.to_query)
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_get_recordings_url, params: params
+    end
+
+    assert_response :success
+    assert_select 'response>returncode', 'FAILED'
+    assert_select 'response>messageKey', 'invalidParamOffset'
   end
 
   test 'getRecordings with get_recordings_api_filtered filters based on recording states' do
