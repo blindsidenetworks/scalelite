@@ -1086,7 +1086,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select 'response>returncode', 'FAILED'
     assert_select 'response>messageKey', 'missingParameters'
-    assert_select 'response>message', 'param meetingID or recordID or limit must be included.'
+    assert_select 'response>message', 'param meetingID, recordID or limit must be included.'
   end
 
   test 'getRecordings with only checksum returns all recordings for a post request' do
