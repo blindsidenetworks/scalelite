@@ -83,7 +83,7 @@ module ApiHelper
 
     if Rails.configuration.x.get_recordings_api_filtered && (params[:recordID].blank? &&
       params[:meetingID].blank? && limit.nil?)
-      raise BBBError.new('missingParameters', 'param meetingID or recordID or limit must be included.')
+      raise BBBError.new('missingParameters', 'param meetingID, recordID or limit must be included.')
     end
   end
 
