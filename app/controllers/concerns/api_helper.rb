@@ -9,11 +9,14 @@ module ApiHelper
   extend ActiveSupport::Concern
   include BBBErrors
 
-  CHECKSUM_LENGTH = 40
+  CHECKSUM_LENGTH_SHA1 = 40
+  CHECKSUM_LENGTH_SHA256 = 64
 
   # Verify checksum
   def verify_checksum
-    raise ChecksumError unless params[:checksum].present? && params[:checksum].length == CHECKSUM_LENGTH
+    raise ChecksumError unless params[:checksum].present? &&
+                               (params[:checksum].length == CHECKSUM_LENGTH_SHA1 ||
+                                params[:checksum].length == CHECKSUM_LENGTH_SHA256)
 
     # Camel case (ex) get_meetings to getMeetings to match BBB server
     check_string = action_name.camelcase(:lower)
@@ -22,8 +25,10 @@ module ApiHelper
     )
 
     return if Rails.configuration.x.loadbalancer_secrets.any? do |secret|
-      checksum = Digest::SHA1.hexdigest(check_string + secret)
-      ActiveSupport::SecurityUtils.fixed_length_secure_compare(checksum, params[:checksum])
+      checksum_sha1 = Digest::SHA1.hexdigest(check_string + secret)
+      checksum_sha256 = Digest::SHA256.hexdigest(check_string + secret)
+      ActiveSupport::SecurityUtils.secure_compare(checksum_sha1, params[:checksum]) ||
+      ActiveSupport::SecurityUtils.secure_compare(checksum_sha256, params[:checksum])
     end
 
     raise ChecksumError
@@ -34,7 +39,7 @@ module ApiHelper
     # Add slash at the end if its not there
     base_uri += '/' unless base_uri.ends_with?('/')
     check_string = URI.encode_www_form(bbb_params)
-    checksum = Digest::SHA1.hexdigest(action + check_string + secret)
+    checksum = Digest::SHA256.hexdigest(action + check_string + secret)
     uri = URI.join(base_uri, action)
     uri.query = URI.encode_www_form(bbb_params.merge(checksum: checksum))
     uri
