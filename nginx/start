@@ -25,7 +25,7 @@ else
 	nginx_template=/etc/nginx/conf.d/scalelite.template
 fi
 
-# port ....
+# apply SCALELITE_API port from environment variable or use default port 3000
 $SCALELITE_API_PORT=${SCALELITE_API_PORT:-3000}
 envsubst '$SCALELITE_API_PORT' <$nginx_template >/etc/nginx/conf.d/scalelite.conf
 
