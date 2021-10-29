@@ -294,7 +294,7 @@ class BigBlueButtonApiController < ApplicationController
     query = query.where(meeting_id: params[:meetingID].split(',')) if params[:meetingID].present?
 
     @recordings = query.order(starttime: :desc).all
-    @url_prefix = "#{request.protocol}#{request.host}"
+    @url_prefix = "#{request.protocol}#{request.host_with_port}"
 
     render(:get_recordings)
   end
