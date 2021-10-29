@@ -18,7 +18,7 @@ module ActiveSupport
     # Add more helper methods to be used by all tests here...
 
     def encode_bbb_params(api_method, query_string)
-      checksum = ::Digest::SHA1.hexdigest("#{api_method}#{query_string}#{Rails.configuration.x.loadbalancer_secrets[0]}")
+      checksum = ::Digest::SHA256.hexdigest("#{api_method}#{query_string}#{Rails.configuration.x.loadbalancer_secrets[0]}")
       if query_string.blank?
         "checksum=#{checksum}"
       else
