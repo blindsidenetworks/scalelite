@@ -185,7 +185,7 @@ namespace :servers do
   end
 
   desc 'Return a yaml compatible with servers:sync'
-  task :yaml, [:verbose] => :environment do |_t|
+  task :yaml, [:verbose] => :environment do |_t, args|
     puts({ servers: ServerSync.dump(!!args.verbose) }.to_yaml)
   end
 
