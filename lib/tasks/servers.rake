@@ -185,8 +185,8 @@ namespace :servers do
   end
 
   desc 'Return a yaml compatible with servers:sync'
-  task :yaml, [:verbose] => :environment do |_t|
-    puts({ servers: ServerSync.dump(!!args.verbose) }.to_yaml)
+  task :yaml, [:verbose] => :environment do |_t, args|
+    puts({ servers: ServerSync.dump(args.verbose) }.to_yaml)
   end
 
   desc('List all meetings running in specific BigBlueButton servers')
