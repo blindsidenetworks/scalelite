@@ -164,6 +164,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `PROTECTED_RECORDINGS_ENABLED`: Applies to the recording import process. If set to "true", then newly imported recordings will have protected links enabled. Default is "false".
 * `PROTECTED_RECORDINGS_TOKEN_TIMEOUT`: Protected recording link token timeout in minutes. This is the amount of time that the one-time-use link returned in `getRecordings` calls will be valid for. Defaults to 60 minutes (1 hour).
 * `PROTECTED_RECORDINGS_TIMEOUT`: Protected recordings resource access cookie timeout in minutes. This is the amount of time that a user will be granted access to view a recording for after clicking on the one-time-use link. Defaults to 360 minutes (6 hours).
+* `SCALELITE_API_PORT`: Runs the SCALELITE_API in custom port number. Defaults to 3000.
 
 ### Redis Connection (`config/redis_store.yml`)
 
