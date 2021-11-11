@@ -12,8 +12,9 @@ namespace :recordings do
       force_polling: ActiveModel::Type::Boolean.new.cast(args.force_polling),
     }
     Rails.logger.info("Monitoring #{dir} for new recording files")
-    listener = Listen.to(dir, opts) do |_modified, added, _removed|
-      added.each do |file|
+    listener = Listen.to(dir, opts) do |modified, added, _removed|
+      files = modified + added
+      files.each do |file|
         RecordingImporter.import(file)
       rescue StandardError => e
         Rails.logger.error("Failed to import recording: #{e}")

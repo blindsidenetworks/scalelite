@@ -173,7 +173,7 @@ class ServerSync
       info = {
         url: server.url,
         secret: server.secret,
-        load_multiplier: server.load_multiplier.to_d || 1.0,
+        load_multiplier: server.load_multiplier.to_f || 1.0,
         enabled: server.enabled,
       }
       if verbose
