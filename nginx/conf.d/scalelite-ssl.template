@@ -29,7 +29,7 @@ server {
   ssl_prefer_server_ciphers off;
 
   location / {
-    proxy_pass http://scalelite-api:3000;
+    proxy_pass http://scalelite-api:$SCALELITE_API_PORT;
 
     proxy_read_timeout 60s;
     proxy_redirect off;
