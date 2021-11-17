@@ -13,6 +13,12 @@ class PlaybackController < ApplicationController
     with: :recording_not_found
   )
 
+  # The resource end point is a wrapper over static file serving. The files might include Javascript, which
+  # would be blocked by Rails default CSRF protection - but these are static Javascript files which in
+  # recording playback files are expected not to contain any sensitive user data. (Sensitive data should be
+  # in json or xml files that are protected by browser cross-site request mechanisms.)
+  skip_forgery_protection only: [:resource]
+
   def play
     @playback_format = PlaybackFormat
                        .joins(:recording)
