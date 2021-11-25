@@ -120,4 +120,12 @@ class Recording < ApplicationRecord
       retry
     end
   end
+
+  def mark_delete!
+    Recording.transaction do
+      metadata.destroy_all
+      playback_formats.destroy_all
+      update!(state: 'deleted')
+    end
+  end
 end
