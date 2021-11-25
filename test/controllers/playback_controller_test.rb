@@ -23,7 +23,7 @@ class PlaybackControllerTest < ActionDispatch::IntegrationTest
     assert_equal("/static-resource#{playback_format.url}capture.js", @response.get_header('X-Accel-Redirect'))
   end
 
-  test 'protected recording without cookies blocks resource access' do
+  test 'protected recording without cookies blocks resource access if enabled' do
     recording = create(:recording, :published, state: 'published', protected: true)
     playback_format = create(
       :playback_format,
@@ -32,6 +32,9 @@ class PlaybackControllerTest < ActionDispatch::IntegrationTest
       url: "/playback/presentation/index.html?meetingID=#{recording.record_id}"
     )
 
+    get "/#{playback_format.format}/#{recording.record_id}/slides.svg"
+    assert_response(:success)
+    Rails.configuration.x.protected_recordings_enabled = true
     get "/#{playback_format.format}/#{recording.record_id}/slides.svg"
     assert_response(:not_found)
     assert_not(@response.has_header?('X-Accel-Redirect'))
