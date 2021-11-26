@@ -4,7 +4,7 @@ default: &default
 
 development:
   <<: *default
-  namespace: scalelite_development
+  namespace: <%= ENV.fetch('REDIS_NAMESPACE') { 'scalelite_development' } %>
 
 test:
   <<: *default

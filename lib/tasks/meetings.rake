@@ -2,41 +2,44 @@
 
 require 'concurrent-ruby'
 
-namespace :meetings do
-  desc('List all/specific meetings running in BigBlueButton servers')
-  task :list, [:meeting_ids] => :environment do |_t, args|
-    include ApiHelper
+desc('List all/specific meetings running in BigBlueButton servers')
+task :meetings, [:meeting_ids] => :environment do |_t, args|
+  include ApiHelper
 
-    args.with_defaults(meeting_ids: '')
-    meeting_ids = args.meeting_ids.split(':')
+  args.with_defaults(meeting_ids: '')
+  meeting_ids = args.meeting_ids.split(':')
 
-    meetings = if meeting_ids.present?
-                 meeting_ids.map { |id| Meeting.find(id) }
-               else
-                 Meeting.all
-               end
-    pool = Concurrent::FixedThreadPool.new(Rails.configuration.x.poller_threads.to_i - 1, name: 'list-meeting-data')
-    tasks = meetings.map do |meeting|
-      Concurrent::Promises.future_on(pool) do
-        meeting_server = meeting.server
-        response = get_post_req(encode_bbb_uri('getMeetingInfo', meeting_server.url,
-                                               meeting_server.secret, meetingID: meeting.id))
-        meeting_id = response.xpath('/response/meetingID').text
-        puts("\nMeetingID: #{meeting_id}")
-        puts("\tServer ID: #{meeting_server.id}")
-        puts("\tServer Url: #{meeting_server.url}")
-      rescue BBBErrors::BBBError => e
-        puts("\nFailed to get meeting id=#{meeting.id} status: #{e}")
-      rescue StandardError => e
-        puts("\nFailed to get meetings list status: #{e}")
-      end
-    end
-    begin
-      Concurrent::Promises.zip_futures_on(pool, *tasks).wait!(Rails.configuration.x.poller_wait_timeout)
+  meetings = if meeting_ids.present?
+               meeting_ids.map { |id| Meeting.find(id) }
+             else
+               Meeting.all
+             end
+  pool = Concurrent::FixedThreadPool.new(Rails.configuration.x.poller_threads.to_i - 1, name: 'list-meeting-data')
+  tasks = meetings.map do |meeting|
+    Concurrent::Promises.future_on(pool) do
+      meeting_server = meeting.server
+      response = get_post_req(encode_bbb_uri('getMeetingInfo', meeting_server.url,
+                                             meeting_server.secret, meetingID: meeting.id))
+      meeting_id = response.xpath('/response/meetingID').text
+      puts("\nMeetingID: #{meeting_id}")
+      puts("\tServer ID: #{meeting_server.id}")
+      puts("\tServer Url: #{meeting_server.url}")
+    rescue BBBErrors::BBBError => e
+      puts("\nFailed to get meeting id=#{meeting.id} status: #{e}")
     rescue StandardError => e
-      Rails.logger.warn("Error #{e}")
+      puts("\nFailed to get meetings list status: #{e}")
     end
   end
+  begin
+    Concurrent::Promises.zip_futures_on(pool, *tasks).wait!(Rails.configuration.x.poller_wait_timeout)
+  rescue StandardError => e
+    Rails.logger.warn("Error #{e}")
+  end
+end
+
+namespace :meetings do
+  desc('List all/specific meetings running in BigBlueButton servers')
+  task :list, [:meeting_ids] => :meetings
 
   desc('End all/specific meetings running in BigBlueButton servers')
   task :end, [:meeting_ids] => :environment do |_t, args|
