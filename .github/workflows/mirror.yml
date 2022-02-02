@@ -5,6 +5,8 @@ on: [push, delete]
 jobs:
   to_codecommit:
     runs-on: ubuntu-latest
+    env:
+      CODECOMMIT_MIRROR_ENABLED: ${{ secrets.CODECOMMIT_MIRROR_ENABLED }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
