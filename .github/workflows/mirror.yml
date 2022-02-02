@@ -7,7 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        if: contains(env.CODECOMMIT_MIRROR_ENABLED, 'true')
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
