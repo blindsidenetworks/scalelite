@@ -25,3 +25,9 @@
 
 # Ignore master key for decrypting credentials and more.
 /config/master.key
+
+# IDEs
+.idea
+.idea/**
+.vscode
+.vscode/**
