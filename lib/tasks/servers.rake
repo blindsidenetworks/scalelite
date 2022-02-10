@@ -177,6 +177,7 @@ namespace :servers do
   desc 'Sync cluster state with servers defined in a YAML file'
   task :sync, [:path, :mode, :dryrun] => :environment do |_t, args|
     raise "Missing 'path' parameter" if args.path.blank?
+    args.with_defaults(mode: 'cordon', dryrun: false)
 
     ServerSync.sync_file(args.path, args.mode, args.dryrun)
   rescue StandardError => e
