@@ -105,10 +105,10 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-alpine
+          file: dockerfiles/v1/bionic240-alpine
           push: true
           target: nginx
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-alpine-nginx"
+          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic240-alpine-nginx"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -116,12 +116,12 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-alpine
+          file: dockerfiles/v1/bionic240-alpine
           push: true
           target: api
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-alpine"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-alpine-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic240-alpine"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic240-alpine-api"
           build-args: "BUILD_NUMBER=${{ steps.ci_branch_name.outputs.branch }}-${{ steps.ci_commit_short_sha.outputs.short_sha }}"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
@@ -130,10 +130,10 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-alpine
+          file: dockerfiles/v1/bionic240-alpine
           push: true
           target: poller
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-alpine-poller"
+          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic240-alpine-poller"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -141,10 +141,10 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-alpine
+          file: dockerfiles/v1/bionic240-alpine
           push: true
           target: recording-importer
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-alpine-recording-importer"
+          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic240-alpine-recording-importer"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -153,10 +153,10 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-amazonlinux
+          file: dockerfiles/v1/bionic240-amazonlinux
           push: true
           target: nginx
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-amazonlinux-nginx"
+          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic240-amazonlinux-nginx"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -164,12 +164,12 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-amazonlinux
+          file: dockerfiles/v1/bionic240-amazonlinux
           push: true
           target: api
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-amazonlinux"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-amazonlinux-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic240-amazonlinux"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic240-amazonlinux-api"
           build-args: "BUILD_NUMBER=${{ steps.ci_branch_name.outputs.branch }}-${{ steps.ci_commit_short_sha.outputs.short_sha }}"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
@@ -178,10 +178,10 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-amazonlinux
+          file: dockerfiles/v1/bionic240-amazonlinux
           push: true
           target: poller
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-amazonlinux-poller"
+          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic240-amazonlinux-poller"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -189,10 +189,10 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-amazonlinux
+          file: dockerfiles/v1/bionic240-amazonlinux
           push: true
           target: recording-importer
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic230-amazonlinux-recording-importer"
+          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-bionic240-amazonlinux-recording-importer"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 

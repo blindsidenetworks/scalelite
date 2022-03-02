@@ -123,13 +123,13 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-alpine
+          file: dockerfiles/v1/bionic240-alpine
           push: true
           target: nginx
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-alpine-nginx"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-alpine-nginx"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-alpine-nginx"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic240-alpine-nginx"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic240-alpine-nginx"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic240-alpine-nginx"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -137,16 +137,16 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-alpine
+          file: dockerfiles/v1/bionic240-alpine
           push: true
           target: api
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-alpine"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-alpine"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-alpine"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-alpine-api"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-alpine-api"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-alpine-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic240-alpine"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic240-alpine"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic240-alpine"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic240-alpine-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic240-alpine-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic240-alpine-api"
           build-args: "BUILD_NUMBER=${{ steps.ci_tag_release_revision.outputs.tag }}"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
@@ -155,13 +155,13 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-alpine
+          file: dockerfiles/v1/bionic240-alpine
           push: true
           target: poller
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-alpine-poller"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-alpine-poller"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-alpine-poller"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic240-alpine-poller"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic240-alpine-poller"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic240-alpine-poller"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -169,13 +169,13 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-alpine
+          file: dockerfiles/v1/bionic240-alpine
           push: true
           target: recording-importer
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-alpine-recording-importer"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-alpine-recording-importer"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-alpine-recording-importer"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic240-alpine-recording-importer"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic240-alpine-recording-importer"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic240-alpine-recording-importer"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -184,13 +184,13 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-amazonlinux
+          file: dockerfiles/v1/bionic240-amazonlinux
           push: true
           target: nginx
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-amazonlinux-nginx"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-amazonlinux-nginx"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-amazonlinux-nginx"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic240-amazonlinux-nginx"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic240-amazonlinux-nginx"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic240-amazonlinux-nginx"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -198,16 +198,16 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-amazonlinux
+          file: dockerfiles/v1/bionic240-amazonlinux
           push: true
           target: api
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-amazonlinux"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-amazonlinux"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-amazonlinux"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-amazonlinux-api"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-amazonlinux-api"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-amazonlinux-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic240-amazonlinux"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic240-amazonlinux"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic240-amazonlinux"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic240-amazonlinux-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic240-amazonlinux-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic240-amazonlinux-api"
           build-args: "BUILD_NUMBER=${{ steps.ci_tag_release_revision.outputs.tag }}"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
@@ -216,13 +216,13 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-amazonlinux
+          file: dockerfiles/v1/bionic240-amazonlinux
           push: true
           target: poller
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-amazonlinux-poller"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-amazonlinux-poller"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-amazonlinux-poller"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic240-amazonlinux-poller"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic240-amazonlinux-poller"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic240-amazonlinux-poller"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -230,13 +230,13 @@ jobs:
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
         with:
-          file: dockerfiles/v1/bionic230-amazonlinux
+          file: dockerfiles/v1/bionic240-amazonlinux
           push: true
           target: recording-importer
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-amazonlinux-recording-importer"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-amazonlinux-recording-importer"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-amazonlinux-recording-importer"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic240-amazonlinux-recording-importer"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic240-amazonlinux-recording-importer"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic240-amazonlinux-recording-importer"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 

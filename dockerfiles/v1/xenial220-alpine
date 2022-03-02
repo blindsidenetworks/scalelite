@@ -13,7 +13,7 @@ RUN curl -sL https://ubuntu.bigbluebutton.org/repo/bigbluebutton.asc | apt-key a
 RUN useradd --system --user-group --home-dir /var/bigbluebutton bigbluebutton
 RUN touch /.dockerenv
 RUN apt-get update \
-    && apt-get download bbb-playback-notes bbb-playback-podcast bbb-playback-presentation bbb-playback-screenshare \
+    && apt-get download bbb-playback bbb-playback-presentation bbb-playback-podcast bbb-playback-screenshare bbb-playback-notes \
     && dpkg -i --force-depends *.deb
 
 FROM alpine AS nginx
