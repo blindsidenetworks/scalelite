@@ -1,4 +1,4 @@
-FROM amazonlinux:2.0.20211223.0 AS amazonlinux
+FROM amazonlinux:2.0.20220121.0 AS amazonlinux
 
 FROM ubuntu:18.04 AS bbb-playback
 ENV DEBIAN_FRONTEND=noninteractive
@@ -31,7 +31,7 @@ RUN yum -y install redhat-rpm-config
 
 FROM amazonlinux-base AS nginx
 RUN yum -y install gettext
-COPY nginx.repo /etc/yum.repos.d/nginx.repo
+COPY nginx/nginx.repo /etc/yum.repos.d/nginx.repo
 RUN yum install yum-utils -y
 RUN yum install nginx -y
 RUN ln -sf /dev/stdout /var/log/nginx/access.log
