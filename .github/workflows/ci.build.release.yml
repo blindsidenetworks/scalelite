@@ -118,7 +118,7 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
-      # Alternate Images for bbb-bionic-230 with alpine
+      # Alternate Images for bbb-bionic-240 with alpine
       - name: Alternate Alpine Build and Push nginx
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
@@ -180,6 +180,67 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       # Alternate Images for bbb-bionic-230 with amazonlinux
+      - name: Alternate Amazon Linux Build and Push nginx
+        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        uses: docker/build-push-action@v2
+        with:
+          file: dockerfiles/v1/bionic230-amazonlinux
+          push: true
+          target: nginx
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-amazonlinux-nginx"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-amazonlinux-nginx"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-amazonlinux-nginx"
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Alternate Amazon Linux Build and Push api
+        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        uses: docker/build-push-action@v2
+        with:
+          file: dockerfiles/v1/bionic230-amazonlinux
+          push: true
+          target: api
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-amazonlinux"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-amazonlinux"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-amazonlinux"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-amazonlinux-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-amazonlinux-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-amazonlinux-api"
+          build-args: "BUILD_NUMBER=${{ steps.ci_tag_release_revision.outputs.tag }}"
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Alternate Amazon Linux Build and Push poller
+        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        uses: docker/build-push-action@v2
+        with:
+          file: dockerfiles/v1/bionic230-amazonlinux
+          push: true
+          target: poller
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-amazonlinux-poller"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-amazonlinux-poller"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-amazonlinux-poller"
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Alternate Amazon Linux Build and Push recording-importer
+        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        uses: docker/build-push-action@v2
+        with:
+          file: dockerfiles/v1/bionic230-amazonlinux
+          push: true
+          target: recording-importer
+          tags: |
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_major.outputs.tag }}-bionic230-amazonlinux-recording-importer"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_minor.outputs.tag }}-bionic230-amazonlinux-recording-importer"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_tag_release_revision.outputs.tag }}-bionic230-amazonlinux-recording-importer"
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      # Alternate Images for bbb-bionic-240 with amazonlinux
       - name: Alternate Amazon Linux Build and Push nginx
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         uses: docker/build-push-action@v2
