@@ -127,5 +127,11 @@ module Scalelite
     config.x.recording_token_ttl = ENV.fetch('PROTECTED_RECORDINGS_TOKEN_TIMEOUT', '60').to_i.minutes
     # Protected recordings resource access cookie timeout in minutes. Defaults to 360 (6 hours)
     config.x.recording_cookie_ttl = ENV.fetch('PROTECTED_RECORDINGS_TIMEOUT', '360').to_i.minutes
+
+    # Set default pagination limit for get_recordings api.
+    config.x.default_pagination_limit = ENV['DEFAULT_PAGINATION_LIMIT']
+
+    # Set max pagination limit for get_recordings api.
+    config.x.max_pagination_limit = ENV.fetch('MAX_PAGINATION_LIMIT', '100').to_i
   end
 end
