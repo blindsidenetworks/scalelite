@@ -23,6 +23,14 @@ class PlaybackControllerTest < ActionDispatch::IntegrationTest
     assert_equal("/static-resource#{playback_format.url}capture.js", @response.get_header('X-Accel-Redirect'))
   end
 
+  # :recording_not_found
+
+  test 'renders a 404 page if the recording url is invalid' do
+    get "/recording/invalid_recording_id/invalid_format"
+    assert_response :not_found
+    assert_template "errors/recording_not_found"
+  end
+
   test 'protected recording without cookies blocks resource access if enabled' do
     recording = create(:recording, :published, state: 'published', protected: true)
     playback_format = create(
