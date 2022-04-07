@@ -165,19 +165,19 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `PROTECTED_RECORDINGS_TOKEN_TIMEOUT`: Protected recording link token timeout in minutes. This is the amount of time that the one-time-use link returned in `getRecordings` calls will be valid for. Defaults to 60 minutes (1 hour).
 * `PROTECTED_RECORDINGS_TIMEOUT`: Protected recordings resource access cookie timeout in minutes. This is the amount of time that a user will be granted access to view a recording for after clicking on the one-time-use link. Defaults to 360 minutes (6 hours).
 * `SCALELITE_API_PORT`: Runs the SCALELITE_API in custom port number. Defaults to 3000.
-* `LOCALE`: Change the language that user facing pages displays in (currently supports `en`)
+* `DEFAULT_LOCALE`: Change the language that user facing pages displays in (currently supports `en`)
 
 ### Customizing Strings
 
-If you'd like to customize the strings on certain error pages returned by Scaltelite (`recording_not_found`), you can do so by duplicating the locale file and changing whatever lines you see fit.
+If you'd like to customize the strings on certain error pages returned by Scalelite (`recording_not_found`), you can do so by duplicating the locale file and changing whatever lines you see fit.
 
-Create the directory `/etc/default/scalelite/locales` and copy over the locale file which you want to customize the strings of. All locales can be found [here](https://github.com/blindsidenetworks/scalelite/tree/master/config/locales).
+Create the directory `/etc/default/scalelite-locales` and copy over the contents of the locales folder that can be found [here](https://github.com/blindsidenetworks/scalelite/tree/master/config/locales).
 
-Edit the file that you copied over and replace any string with whatever text you want. Note that you will need to manually update this file if any new strings are added in a release. 
+Choose the locale that you want to edit replace any string with whatever text you want. Note that you will need to manually update this file if any new strings are added in a release. 
 
 Edit `/etc/default/scalelite` and add the following line
 ```
-SCALELITE_API_EXTRA_OPTS=--mount type=bind,source=/etc/default/scalelite/locales,target=config/locales
+SCALELITE_API_EXTRA_OPTS=--mount type=bind,source=/etc/default/scalelite/locales,target=/srv/scalelite/config/locales
 ```
 Now restart all scalelite services by running `systemctl restart scalelite.target`
 

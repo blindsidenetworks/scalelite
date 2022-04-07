@@ -2,5 +2,4 @@ en:
   errors:
     recording_not_found:
       title: Recording Not Found
-      info: The recording url is invalid
-
+      info_html: The recording URL is invalid. This recording may have been either protected or deleted.

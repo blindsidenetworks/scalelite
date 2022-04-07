@@ -128,6 +128,6 @@ module Scalelite
     # Protected recordings resource access cookie timeout in minutes. Defaults to 360 (6 hours)
     config.x.recording_cookie_ttl = ENV.fetch('PROTECTED_RECORDINGS_TIMEOUT', '360').to_i.minutes
 
-    config.i18n.default_locale = ENV.fetch('LOCALE', 'en')
+    config.i18n.default_locale = ENV.fetch('DEFAULT_LOCALE', 'en')
   end
 end
