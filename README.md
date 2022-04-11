@@ -177,7 +177,7 @@ Choose the locale that you want to edit replace any string with whatever text yo
 
 Edit `/etc/default/scalelite` and add the following line
 ```
-SCALELITE_API_EXTRA_OPTS=--mount type=bind,source=/etc/default/scalelite/locales,target=/srv/scalelite/config/locales
+SCALELITE_API_EXTRA_OPTS=--mount type=bind,source=/etc/default/scalelite-locales,target=/srv/scalelite/config/locales
 ```
 Now restart all scalelite services by running `systemctl restart scalelite.target`
 
