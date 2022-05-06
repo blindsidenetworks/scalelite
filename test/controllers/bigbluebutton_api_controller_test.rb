@@ -803,20 +803,6 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal callback_data.callback_attributes, analytics_callback_url: 'https://test.scalelite.com/bigbluebutton/api/analytics_callback'
   end
 
-  test 'create sets default params if set' do
-    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1-secret', enabled: true, load: 0)
-
-    params = {
-      meetingID: 'test-meeting-1', test_param: 'test',
-    }
-
-    mocked_method = MiniTest::Mock.new
-
-    Rails.configuration.x.stub(:default_create_params, { test_param: 'other-value', test_param_2: 'value' }) do
-      mocked_method.expect(:encode_bbb_uri, ['create', server1.url, server1.secret, {}])
-    end
-  end
-
   # analytics_callback
 
   test 'analytics_callback makes a callback to the specific meetings analytics_callback_url stored in
