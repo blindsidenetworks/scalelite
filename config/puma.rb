@@ -6,6 +6,8 @@
 # Workers do not work on JRuby or Windows (both of which do not support
 # processes).
 workers(ENV.fetch('WEB_CONCURRENCY', 0))
+worker_timeout 3600 if ENV.fetch("RAILS_ENV", "development") == "development"
+
 
 # Puma can serve each request in a thread from an internal thread pool.
 # The `threads` method setting takes two numbers: a minimum and maximum.

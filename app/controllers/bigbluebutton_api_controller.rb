@@ -152,6 +152,9 @@ class BigBlueButtonApiController < ApplicationController
     # Create meeting in database
     logger.debug("Creating meeting #{params[:meetingID]} in database.")
 
+    # Merge default params with the passed in params (passed in params take precedence)
+    params = Rails.configuration.x.default_create_params.merge(params.to_h)
+
     moderator_pwd = params[:moderatorPW].presence || SecureRandom.alphanumeric(8)
     params[:moderatorPW] = moderator_pwd
     meeting = Meeting.find_or_create_with_server(params[:meetingID], server, moderator_pwd)
@@ -172,14 +175,13 @@ class BigBlueButtonApiController < ApplicationController
     end
 
     logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
-    params_hash = params
 
+    # Override the requested params with the requested value
+    params = params.merge(Rails.configuration.x.override_create_params)
     # EventHandler will handle all the events associated with the create action
-    params = EventHandler.new(params_hash, meeting.id).handle
-    # Get list of params that should not be modified by create API call
-    excluded_params = Rails.configuration.x.create_exclude_params
+    params = EventHandler.new(params, meeting.id).handle
     # Pass along all params except the built in rails ones and excluded_params
-    uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params(excluded_params))
+    uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params(Rails.configuration.x.create_exclude_params))
 
     begin
       # Read the body if POST
@@ -256,6 +258,11 @@ class BigBlueButtonApiController < ApplicationController
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
       raise MeetingNotFoundError
     end
+
+    # Merge default params with the passed in params (passed in params take precedence)
+    params = Rails.configuration.x.default_join_params.merge(params.to_h)
+    # Override the requested params with the requested value
+    params = params.merge(Rails.configuration.x.override_join_params)
     # Get list of params that should not be modified by join API call
     excluded_params = Rails.configuration.x.join_exclude_params
 
