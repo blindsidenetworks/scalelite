@@ -181,7 +181,8 @@ class BigBlueButtonApiController < ApplicationController
     # EventHandler will handle all the events associated with the create action
     params = EventHandler.new(params, meeting.id).handle
     # Pass along all params except the built in rails ones and excluded_params
-    uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params(Rails.configuration.x.create_exclude_params))
+    uri = encode_bbb_uri('create', server.url, server.secret,
+                         pass_through_params(params, Rails.configuration.x.create_exclude_params))
 
     begin
       # Read the body if POST
@@ -267,7 +268,7 @@ class BigBlueButtonApiController < ApplicationController
     excluded_params = Rails.configuration.x.join_exclude_params
 
     # Pass along all params except the built in rails ones and excluded_params
-    uri = encode_bbb_uri('join', server.url, server.secret, pass_through_params(excluded_params))
+    uri = encode_bbb_uri('join', server.url, server.secret, pass_through_params(params, excluded_params))
 
     # Redirect the user to the join url
     logger.debug("Redirecting user to join url: #{uri}")
@@ -453,9 +454,9 @@ class BigBlueButtonApiController < ApplicationController
 
   # Filter out unneeded params when passing through to join and create calls
   # Has to be to_unsafe_hash since to_h only accepts permitted attributes
-  def pass_through_params(excluded_params)
-    params.except(*(excluded_params + [:format, :controller, :action, :checksum]))
-          .to_unsafe_hash
+  def pass_through_params(all_params, excluded_params)
+    all_params.except(*(excluded_params + [:format, :controller, :action, :checksum]))
+              .to_unsafe_hash
   end
 
   # Success response if there are no meetings on any servers
