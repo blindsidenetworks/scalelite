@@ -76,6 +76,7 @@ GEM
     crack (0.4.5)
       rexml
     crass (1.0.6)
+    diff-lcs (1.5.0)
     dotenv (2.7.6)
     dotenv-rails (2.7.6)
       dotenv (= 2.7.6)
@@ -164,6 +165,23 @@ GEM
       redis (>= 3.0.4)
     regexp_parser (2.1.1)
     rexml (3.2.5)
+    rspec-core (3.11.0)
+      rspec-support (~> 3.11.0)
+    rspec-expectations (3.11.0)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.11.0)
+    rspec-mocks (3.11.1)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.11.0)
+    rspec-rails (5.1.2)
+      actionpack (>= 5.2)
+      activesupport (>= 5.2)
+      railties (>= 5.2)
+      rspec-core (~> 3.10)
+      rspec-expectations (~> 3.10)
+      rspec-mocks (~> 3.10)
+      rspec-support (~> 3.10)
+    rspec-support (3.11.0)
     rubocop (1.10.0)
       parallel (~> 1.10)
       parser (>= 3.0.0.0)
@@ -229,6 +247,7 @@ DEPENDENCIES
   rails-controller-testing
   redis (~> 4.2)
   redis-namespace (~> 1.8)
+  rspec-rails (~> 5.1.2)
   rubocop (~> 1.10.0)
   rubocop-rails (~> 2.4.0)
   spring
@@ -237,3 +256,9 @@ DEPENDENCIES
   tabulo (~> 2.3.0)
   tzinfo-data
   webmock
+
+RUBY VERSION
+   ruby 2.7.2p137
+
+BUNDLED WITH
+   2.1.4
