@@ -46,6 +46,8 @@ group :development, :test do
   gem 'dotenv-rails'
   gem 'factory_bot_rails'
 
+  gem 'rspec-rails', '~> 5.1.2'
+
   gem 'rubocop', '~> 1.10.0', require: false
   gem 'rubocop-rails', '~> 2.4.0', require: false
 end
