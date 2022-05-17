@@ -13,18 +13,40 @@ jobs:
       DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
       DOCKER_BUILD_ENABLED: ${{ secrets.DOCKER_BUILD_ENABLED }}
       DOCKER_BUILD_ALTERNATE_ENABLED: ${{ secrets.DOCKER_BUILD_ALTERNATE_ENABLED }}
+      DOCKER_BUILD_ON_PUSH_DISABLED: ${{ secrets.DOCKER_BUILD_ON_PUSH_DISABLED }}
     runs-on: ubuntu-20.04
     steps:
+      - name: Check preconditions
+        id: preconditions
+        shell: bash
+        run: |
+          if ([ "${{ env.DOCKER_BUILD_ON_PUSH_DISABLED }}" == "" ] || [ "${{ env.DOCKER_BUILD_ON_PUSH_DISABLED }}" != "true" ]) && [ "${{ env.DOCKER_BUILD_ENABLED }}" == "true" ]; then
+            echo ::set-output name=build::true
+          fi
+          if [ "${{ env.DOCKER_BUILD_ALTERNATE_ENABLED }}" == "true" ]; then
+            echo ::set-output name=build_alternate::true
+          fi
+
+      - name: Build main
+        if: ${{ steps.preconditions.outputs.build }}
+        run: |
+          echo Main is being built
+
+      - name: Build alternate
+        if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
+        run: |
+          echo Alternate is being built
+
       - name: Checkout
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build }}
         uses: actions/checkout@v2
 
       - name: Set up Docker Buildx
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build }}
         uses: docker/setup-buildx-action@v1
 
       - name: Cache Docker layers
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build }}
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
@@ -33,7 +55,7 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Login to DockerHub
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build }}
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -41,24 +63,24 @@ jobs:
 
       - name: Extract Docker Repository
         id: ci_docker_repository
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build }}
         shell: bash
         run: echo "##[set-output name=repository;]$(echo ${DOCKER_REPOSITORY:-$GITHUB_REPOSITORY})"
 
       - name: Extract Branch Name
         id: ci_branch_name
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build }}
         shell: bash
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
 
       - name: Extract Commit Short SHA
         id: ci_commit_short_sha
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build }}
         shell: bash
         run: echo "##[set-output name=short_sha;]$(echo ${GITHUB_SHA} | cut -c1-7)"
 
       - name: Build and Push nginx
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build }}
         uses: docker/build-push-action@v2
         with:
           push: true
@@ -68,7 +90,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Build and Push api
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build }}
         uses: docker/build-push-action@v2
         with:
           push: true
@@ -81,7 +103,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Build and Push poller
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build }}
         uses: docker/build-push-action@v2
         with:
           push: true
@@ -91,7 +113,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Build and Push recording-importer
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build }}
         uses: docker/build-push-action@v2
         with:
           push: true
@@ -102,7 +124,7 @@ jobs:
 
       # Alternate Images for bbb-bionic-230 with alpine
       - name: Alternate Alpine Build and Push nginx
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic240-alpine
@@ -113,7 +135,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Alpine Build and Push api
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic240-alpine
@@ -127,7 +149,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Alpine Build and Push poller
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic240-alpine
@@ -138,7 +160,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Alpine Build and Push recording-importer
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic240-alpine
@@ -150,7 +172,7 @@ jobs:
 
       # Alternate Images for bbb-bionic-230 with amazonlinux
       - name: Alternate Amazon Linux Build and Push nginx
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic240-amazonlinux
@@ -161,7 +183,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Amazon Linux Build and Push api
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic240-amazonlinux
@@ -175,7 +197,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Amazon Linux Build and Push poller
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic240-amazonlinux
@@ -186,7 +208,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Alternate Amazon Linux Build and Push recording-importer
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true') && contains(env.DOCKER_BUILD_ALTERNATE_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v2
         with:
           file: dockerfiles/v1/bionic240-amazonlinux
@@ -197,7 +219,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Move cache
-        if: contains(env.DOCKER_BUILD_ENABLED, 'true')
+        if: ${{ steps.preconditions.outputs.build }}
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
