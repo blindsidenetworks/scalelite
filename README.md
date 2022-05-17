@@ -157,6 +157,10 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `SERVER_ID_IS_HOSTNAME`: If set to "true", then instead of generating random UUIDs as the server ID when adding a server Scalelite will use the hostname of the server as the id. Server hostnames will be checked for uniqueness. Defaults to "false".
 * `CREATE_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by create API call. Should be in the format 'CREATE_EXCLUDE_PARAMS=param1,param2,param3'.
 * `JOIN_EXCLUDE_PARAMS`: List of BBB server attributes that should not be modified by join API call. Should be in the format 'JOIN_EXCLUDE_PARAMS=param1,param2,param3'.
+* `DEFAULT_CREATE_PARAMS`: Sets a list of default params on the create call that CAN be overridden by the client/requester. Should be in the format 'DEFAULT_CREATE_PARAMS=param1=param1value,param2=param2value'
+* `OVERRIDE_CREATE_PARAMS`: Sets a list of params on the create call that CANNOT be overridden by the client/requester. Should be in the format 'OVERRIDE_CREATE_PARAMS=param1=param1value,param2=param2value'
+* `DEFAULT_JOIN_PARAMS`: Sets a list of default params on the join call that CAN be overridden by the client/requester. Should be in the format 'DEFAULT_JOIN_PARAMS=param1=param1value,param2=param2value'
+* `OVERRIDE_JOIN_PARAMS`: Sets a list of  params on the create call that CANNOT be overridden by the client/requester. Should be in the format 'OVERRIDE_JOIN_PARAMS=param1=param1value,param2=param2value'
 * `GET_RECORDINGS_API_FILTERED`: Prevent get_recordings api from returning all recordings when recordID is not specified in the request, by setting value to 'true'. Defaults to false.
 * `PREPARED_STATEMENT`: Enable/Disable Active Record prepared statements feature, can be disabled by setting the value as `false`. Defaults to `true`.
 * `DB_CONNECTION_RETRY_COUNT`: The number of times db connection retries will be attempted, in case of a db connection failure. Defaults to `3`.

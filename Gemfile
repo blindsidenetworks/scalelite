@@ -6,7 +6,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '>= 2.6.5'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 6.0.4', '>= 6.0.4.6'
+gem 'rails', '~> 6.0.4', '>= 6.0.4.8'
 # Use Puma as the app server
 gem 'puma', '~> 5.6'
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
@@ -45,6 +45,8 @@ group :development, :test do
 
   gem 'dotenv-rails'
   gem 'factory_bot_rails'
+
+  gem 'rspec-rails', '~> 5.1.2'
 
   gem 'rubocop', '~> 1.10.0', require: false
   gem 'rubocop-rails', '~> 2.4.0', require: false
