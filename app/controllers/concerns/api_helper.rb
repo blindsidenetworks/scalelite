@@ -38,6 +38,9 @@ module ApiHelper
   def encode_bbb_uri(action, base_uri, secret, bbb_params = {})
     # Add slash at the end if its not there
     base_uri += '/' unless base_uri.ends_with?('/')
+
+    bbb_params = add_additional_params(action, bbb_params)
+
     check_string = URI.encode_www_form(bbb_params)
     checksum = Digest::SHA256.hexdigest(action + check_string + secret)
     uri = URI.join(base_uri, action)
@@ -120,5 +123,24 @@ module ApiHelper
 
       doc
     end
+  end
+
+  def add_additional_params(action, bbb_params)
+    bbb_params = bbb_params.symbolize_keys
+
+    case action
+    when 'create'
+      # Merge with the default (bbb_params takes precedence)
+      final_params = Rails.configuration.x.default_create_params.merge(bbb_params)
+      # Merge with the override (override takes precedence)
+      final_params.merge(Rails.configuration.x.override_create_params)
+    when 'join'
+      # Merge with the default (bbb_params takes precedence)
+      final_params = Rails.configuration.x.default_join_params.merge(bbb_params)
+      # Merge with the override (override takes precedence)
+      final_params.merge(Rails.configuration.x.override_join_params)
+   else
+     bbb_params
+   end
   end
 end

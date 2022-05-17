@@ -129,5 +129,18 @@ module Scalelite
     config.x.recording_cookie_ttl = ENV.fetch('PROTECTED_RECORDINGS_TIMEOUT', '360').to_i.minutes
 
     config.i18n.default_locale = ENV.fetch('DEFAULT_LOCALE', 'en')
+
+    # Comma separated list of create params that can be overridden by the client
+    config.x.default_create_params = ENV.fetch('DEFAULT_CREATE_PARAMS', '')
+                                        .split(',').map { |param| param.split('=') }.to_h.symbolize_keys
+    # Comma separated list of create params that CANT be overridden by the client
+    config.x.override_create_params = ENV.fetch('OVERRIDE_CREATE_PARAMS', '')
+                                         .split(',').map { |param| param.split('=') }.to_h.symbolize_keys
+    # Comma separated list of join params that can be overridden by the client
+    config.x.default_join_params = ENV.fetch('DEFAULT_JOIN_PARAMS', '')
+                                      .split(',').map { |param| param.split('=') }.to_h.symbolize_keys
+    # Comma separated list of join params that CANT be overridden by the client
+    config.x.override_join_params = ENV.fetch('OVERRIDE_JOIN_PARAMS', '')
+                                       .split(',').map { |param| param.split('=') }.to_h.symbolize_keys
   end
 end
