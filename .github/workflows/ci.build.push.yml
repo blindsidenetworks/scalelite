@@ -9,7 +9,6 @@ on:
       - v1.0-stable
       - v1.1-stable
       - v1.2-stable
-    branches: "*"
 
 jobs:
   main:

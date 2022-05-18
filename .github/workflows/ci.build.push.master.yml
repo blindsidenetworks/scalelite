@@ -6,6 +6,9 @@ on:
   push:
     branches:
       - master
+      - v1.0-stable
+      - v1.1-stable
+      - v1.2-stable
 
 jobs:
   main:
