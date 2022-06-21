@@ -19,6 +19,13 @@ class Meeting < ApplicationRedisRecord
   # @return [String] the voice bridge number.
   attr_reader :voice_bridge
 
+  def voice_bridge=(value)
+    raise AttributeError, "Voice bridge cannot be updated once set" unless @voice_bridge.nil?
+
+    voice_bridge_will_change! unless @voice_bridge == value
+    @voice_bridge = value
+  end
+
   # ID of the server that the meeting was created on.
   # @return [String] the server ID, which might be a UUID or normalized hostname depending on configuration.
   attr_reader :server_id
@@ -110,7 +117,7 @@ class Meeting < ApplicationRedisRecord
     with_connection do |redis|
       voice_bridge = allocate_voice_bridge(id, voice_bridge)
       meeting_key = key(id)
-      created, _password_set, hash, _sadd_id = redis.multi do
+      created, _password_set, _voice_bridge_set, hash, _sadd_id = redis.multi do
         redis.hsetnx(meeting_key, 'server_id', server.id)
         redis.hsetnx(meeting_key, 'moderator_pw', moderator_pw)
         redis.hsetnx(meeting_key, 'voice_bridge', voice_bridge)
@@ -141,7 +148,7 @@ class Meeting < ApplicationRedisRecord
 
     # In order to make consistent random pin numbers, use the provided meeting as the seed. Ruby's 'Random' PRNG takes a 128bit
     # integer as seed. Create one from a truncated hash of the meeting id.
-    seed = Digest::SHA256.digest(meeting.id).unpack('QQ').inject { |val, n| val << 64 | n }
+    seed = Digest::SHA256.digest(meeting_id).unpack('QQ').inject { |val, n| val << 64 | n }
     prng = Random.new(seed)
     tries = 0
     with_connection do |redis|
@@ -159,10 +166,11 @@ class Meeting < ApplicationRedisRecord
           end
         end
         tries += 1
+        logger.debug { "Trying to allocate voice bridge number #{voice_bridge}, try #{tries}" }
 
         _created, allocated_meeting_id = redis.multi do |transaction|
           transaction.hsetnx('voice_bridges', voice_bridge, meeting_id)
-          transaction.hget('voice_bridges', meeting_id)
+          transaction.hget('voice_bridges', voice_bridge)
         end
 
         break voice_bridge if allocated_meeting_id == meeting_id
