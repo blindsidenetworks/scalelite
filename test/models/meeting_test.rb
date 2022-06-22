@@ -87,11 +87,15 @@ class MeetingTest < ActiveSupport::TestCase
     assert_equal('Demo Meeting', meeting.id)
     assert_same(server, meeting.server)
     assert_equal('test-server-1', meeting.server_id)
+    assert_equal(Rails.application.config.x.voice_bridge_len, meeting.voice_bridge.length)
+    assert_match(/[1-9][0-9]+/, meeting.voice_bridge)
 
     RedisStore.with_connection do |redis|
       assert(redis.sismember('meetings', 'Demo Meeting'))
       meeting_hash = redis.hgetall('meeting:Demo Meeting')
       assert_equal('test-server-1', meeting_hash['server_id'])
+      assert_equal('Demo Meeting', redis.hget('voice_bridges', meeting.voice_bridge))
+      assert_equal(1, redis.hlen('voice_bridges'))
     end
   end
 
@@ -101,8 +105,9 @@ class MeetingTest < ActiveSupport::TestCase
       redis.sadd('servers', 'test-server-1')
       redis.mapped_hmset('server:test-server-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2')
       redis.sadd('servers', 'test-server-2')
-      redis.mapped_hmset('meeting:Demo Meeting', server_id: 'test-server-1')
+      redis.mapped_hmset('meeting:Demo Meeting', server_id: 'test-server-1', voice_bridge: '12435687')
       redis.sadd('meetings', 'Demo Meeting')
+      redis.hset('voice_bridges', '12435687', 'Demo Meeting')
     end
 
     meeting = Meeting.find('Demo Meeting')
@@ -118,6 +123,8 @@ class MeetingTest < ActiveSupport::TestCase
       assert(redis.sismember('meetings', 'Demo Meeting'))
       meeting_hash = redis.hgetall('meeting:Demo Meeting')
       assert_equal('test-server-1', meeting_hash['server_id'])
+      assert_equal('12435687', meeting_hash['voice_bridge'])
+      assert_equal(1, redis.hlen('voice_bridges'))
     end
   end
 
