@@ -422,7 +422,7 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def analytics_callback
-    token = request.headers['HTTP_AUTHORIZATION'].gsub!('Bearer ', '')
+    token = request.headers['HTTP_AUTHORIZATION'].gsub('Bearer ', '')
     raise 'Token Invalid' unless valid_token?(token)
 
     meeting_id = params['meeting_id']
