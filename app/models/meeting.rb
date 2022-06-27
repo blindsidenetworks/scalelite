@@ -121,12 +121,7 @@ class Meeting < ApplicationRedisRecord
         hash = redis.hgetall(meeting_key)
         unless hash.empty?
           hash[:id] = id
-          hash[:server] = \
-            if server.id == hash['server_id']
-              server
-            else
-              Server.find(hash['server_id'])
-            end
+          hash[:server] = server if server.id == hash['server_id']
           redis.unwatch
           logger.debug { "Meeting find_or_create: loaded existing meeting on server_id=#{hash['server_id']}" }
           return new.init_with_attributes(hash)
@@ -150,6 +145,21 @@ class Meeting < ApplicationRedisRecord
         hash[:server] = server if server.id == hash['server_id']
         new.init_with_attributes(hash)
       end
+    end
+  end
+
+  # Atomic operation to either find an existing meeting or create one, with automatic retries
+  #
+  # A helper function to retry the {find_or_create_with_server} method in the case of {ConcurrentModificationError}
+  # until it runs to completion.
+  #
+  # All the parameters, return value, etc., are the same as the {find_or_create_with_server} method.
+  def self.find_or_create_with_server!(id, server, moderator_pw, voice_bridge = nil)
+    loop do
+      break find_or_create_with_server(id, server, moderator_pw, voice_bridge)
+    rescue ConcurrentModificationError => e
+      logger.debug(e)
+      retry
     end
   end
 
