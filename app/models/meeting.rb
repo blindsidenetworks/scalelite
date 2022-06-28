@@ -20,7 +20,7 @@ class Meeting < ApplicationRedisRecord
   attr_reader :voice_bridge
 
   def voice_bridge=(value)
-    raise AttributeError, "Voice bridge cannot be updated once set" unless @voice_bridge.nil?
+    raise ArgumentError, "Voice bridge cannot be updated once set" unless @voice_bridge.nil?
 
     voice_bridge_will_change! unless @voice_bridge == value
     @voice_bridge = value
@@ -184,7 +184,7 @@ class Meeting < ApplicationRedisRecord
     with_connection do |redis|
       loop do
         # @todo what exception class should this be?
-        raise "Failed to allocate conference number for meeting #{meeting_id} after #{tries} tries" if tries > 10
+        raise "Failed to allocate conference number for meeting #{meeting_id} after #{tries} tries" if tries >= 10
 
         # Use the externally provided conference number on the first try if configured to allow it.
         unless tries.zero? && use_external_voice_bridge && voice_bridge.present?

@@ -231,4 +231,69 @@ class MeetingTest < ActiveSupport::TestCase
       meeting.destroy!
     end
   end
+
+  test 'allocate_voice_bridge generates unique numbers' do
+    RedisStore.with_connection do |redis|
+      voice_bridges = Set.new
+
+      10.times do
+        voice_bridge = Meeting.allocate_voice_bridge('meeting-id-1')
+        assert_not_nil(voice_bridges.add?(voice_bridge))
+
+        # Update redis to mark voice bridge as allocated to a different meeting to force re-allocation
+        redis.hset('voice_bridges', voice_bridge, 'meeting-id-2')
+      end
+
+      # Gives up after 10 tries
+      assert_raises do
+        Meeting.allocate_voice_bridge('meeting-id-1')
+      end
+    end
+  end
+
+  test 'allocate_voice_bridge ignores externally provided number' do
+    Rails.configuration.x.stub(:use_external_voice_bridge, false) do
+      voice_bridge = Meeting.allocate_voice_bridge('meeting-id-1', '12345')
+      assert_not_equal('12345', voice_bridge)
+    end
+  end
+
+  test 'allocate_voice_bridge with externally provided number' do
+    Rails.configuration.x.stub(:use_external_voice_bridge, true) do
+      voice_bridge = Meeting.allocate_voice_bridge('meeting-id-1', '12345')
+      assert_equal('12345', voice_bridge)
+
+      # Check that it still protects against duplicate allocations
+      RedisStore.with_connection { |redis| redis.hset('voice_bridges', voice_bridge, 'meeting-id-2') }
+      voice_bridge = Meeting.allocate_voice_bridge('meeting-id-1', '12345')
+      assert_not_equal('12345', voice_bridge)
+    end
+  end
+
+  test 'allocate_voice_bridge length configuration' do
+    Rails.configuration.x.stub(:voice_bridge_len, 5) do
+      voice_bridge = Meeting.allocate_voice_bridge('meeting-id-1')
+      assert_equal(5, voice_bridge.length)
+    end
+    Rails.configuration.x.stub(:voice_bridge_len, 12) do
+      voice_bridge = Meeting.allocate_voice_bridge('meeting-id-2')
+      assert_equal(12, voice_bridge.length)
+    end
+  end
+
+  test 'cannot update voice_bridge' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
+      redis.sadd('servers', 'test-server-1')
+    end
+    server = Server.find('test-server-1')
+    meeting = Meeting.find_or_create_with_server('Demo Meeting', server, 'mp')
+    assert_predicate(meeting, :persisted?)
+    assert_not_predicate(meeting.voice_bridge, :blank?)
+
+    assert_raises(ArgumentError) do
+      meeting.voice_bridge = '12345'
+    end
+    assert_not_equal(meeting.voice_bridge, '12345')
+  end
 end
