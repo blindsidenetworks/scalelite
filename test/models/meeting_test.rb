@@ -88,7 +88,7 @@ class MeetingTest < ActiveSupport::TestCase
     assert_same(server, meeting.server)
     assert_equal('test-server-1', meeting.server_id)
     assert_equal(Rails.application.config.x.voice_bridge_len, meeting.voice_bridge.length)
-    assert_match(/[1-9][0-9]+/, meeting.voice_bridge)
+    assert_match(/\A[1-9][0-9]+\z/, meeting.voice_bridge)
 
     RedisStore.with_connection do |redis|
       assert(redis.sismember('meetings', 'Demo Meeting'))
