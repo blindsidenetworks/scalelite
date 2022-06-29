@@ -14,56 +14,6 @@ RSpec.describe BigBlueButtonApiController, type: :controller do
                   secret: 'test-1-secret', enabled: true, load: 0, online: true)
   end
 
-  context '#create' do
-    context 'default and override params' do
-      let(:create_params) do
-        {
-          meetingID: 'test-meeting-1',
-          moderatorPW: 'test-password',
-          param1: "param1",
-        }
-      end
-
-      it 'sets the default params if they are not already set' do
-        expected_params = {
-          meetingID: 'test-meeting-1',
-          moderatorPW: 'test-password',
-          param1: "param1",
-          param2: "param2"
-        }
-        expected_url = encode_bbb_uri('create', server.url, server.secret, expected_params) # Calculate uri before env var is set
-
-        ENV['DEFAULT_CREATE_PARAMS'] = 'param1=not-param1,param2=param2'
-
-        expect_any_instance_of(described_class)
-          .to receive(:encode_bbb_uri)
-          .with('create', server.url, server.secret, create_params)
-          .and_return(expected_url)
-
-        get :create, params: create_params
-      end
-
-      it 'overrides the params even if they are set' do
-        expected_params = {
-          meetingID: 'test-meeting-1',
-          moderatorPW: 'test-password',
-          param1: "not-param1",
-          param2: "param2"
-        }
-        expected_url = encode_bbb_uri('create', server.url, server.secret, expected_params) # Calculate uri before env var is set
-
-        ENV['OVERRIDE_CREATE_PARAMS'] = 'param1=not-param1,param2=param2'
-
-        expect_any_instance_of(described_class)
-          .to receive(:encode_bbb_uri)
-          .with('create', server.url, server.secret, create_params)
-          .and_return(expected_url)
-
-        get :create, params: create_params
-      end
-    end
-  end
-
   context '#join' do
     context 'default and override params' do
       let!(:meeting) do

@@ -872,6 +872,66 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal({ analytics_callback_url: params['meta_analytics-callback-url'] }, callback_data.callback_attributes)
   end
 
+  test 'create sets default params if they are not already set' do
+    server = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1-secret', enabled: true, load: 0)
+    params = {
+      meetingID: 'test-meeting-1',
+      param1: 'param1',
+    }
+    default_params = {
+      param1: 'not-param1',
+      param2: 'param2',
+    }
+
+    bbb_create = \
+      stub_request(:get, "#{server.url}create")
+      .with(query: hash_including({}))
+      .to_return do |request|
+        request_params = URI.decode_www_form(request.uri.query)
+        assert_equal(params[:param1], request_params.assoc('param1').last)
+        assert_equal(default_params[:param2], request_params.assoc('param2').last)
+        { body: meeting_create_response(params[:meetingID]) }
+      end
+
+    Rails.configuration.x.stub(:default_create_params, default_params) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_create_url, params: params
+      end
+    end
+
+    assert_requested bbb_create
+  end
+
+  test 'create sets override params even if they are set' do
+    server = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1-secret', enabled: true, load: 0)
+    params = {
+      meetingID: 'test-meeting-1',
+      param1: 'not-param1',
+    }
+    override_params = {
+      param1: 'param1',
+      param2: 'param2',
+    }
+
+    bbb_create = \
+      stub_request(:get, "#{server.url}create")
+      .with(query: hash_including({}))
+      .to_return do |request|
+        request_params = URI.decode_www_form(request.uri.query)
+        assert_equal(override_params[:param1], request_params.assoc('param1').last)
+        assert_equal(override_params[:param2], request_params.assoc('param2').last)
+        { body: meeting_create_response(params[:meetingID]) }
+      end
+
+    Rails.configuration.x.stub(:override_create_params, override_params) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_create_url, params: params
+      end
+    end
+
+    assert_requested bbb_create
+  end
+
   # analytics_callback
 
   test 'analytics_callback makes a callback to the specific meetings analytics_callback_url stored in
