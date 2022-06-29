@@ -1226,6 +1226,72 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
   end
 
+  test 'join sets default params if they are not already set' do
+    server = Server.create(
+      url: 'https://test-1.example.com/bigbluebutton/api/',
+      secret: 'test-1-secret',
+      enabled: true,
+      load: 0,
+      online: true
+    )
+    meeting = Meeting.find_or_create_with_server('test-meeting-1', server, 'mp')
+    params = {
+      meetingID: meeting.id,
+      moderatorPW: 'mp',
+      fullName: 'test-name',
+      param1: 'param1'
+    }
+    default_params = {
+      param1: 'not-param1',
+      param2: 'param2',
+    }
+
+    Rails.configuration.x.stub(:default_join_params, default_params) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_join_url, params: params
+      end
+    end
+
+    assert_operator(@response.headers['Location'], :starts_with?, server.url)
+    redirect_url = URI(@response.headers['Location'])
+    redirect_params = URI.decode_www_form(redirect_url.query)
+    assert_equal(params[:param1], redirect_params.assoc('param1').last)
+    assert_equal(default_params[:param2], redirect_params.assoc('param2').last)
+  end
+
+  test 'join sets override params even if they are set' do
+    server = Server.create(
+      url: 'https://test-1.example.com/bigbluebutton/api/',
+      secret: 'test-1-secret',
+      enabled: true,
+      load: 0,
+      online: true
+    )
+    meeting = Meeting.find_or_create_with_server('test-meeting-1', server, 'mp')
+    params = {
+      meetingID: meeting.id,
+      moderatorPW: 'mp',
+      fullName: 'test-name',
+      param1: 'not-param1'
+    }
+    override_params = {
+      param1: 'param1',
+      param2: 'param2',
+    }
+
+    Rails.configuration.x.stub(:override_join_params, override_params) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_join_url, params: params
+      end
+    end
+
+    assert_operator(@response.headers['Location'], :starts_with?, server.url)
+    redirect_url = URI(@response.headers['Location'])
+    redirect_params = URI.decode_www_form(redirect_url.query)
+    assert_equal(override_params[:param1], redirect_params.assoc('param1').last)
+    assert_equal(override_params[:param2], redirect_params.assoc('param2').last)
+  end
+
   # getRecordings
 
   test 'getRecordings with no parameters returns checksum error' do
