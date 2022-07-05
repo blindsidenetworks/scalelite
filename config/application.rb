@@ -148,5 +148,11 @@ module Scalelite
 
     # Whether to try to use the voice bridge number requested on the BigBlueButton create API call.
     config.x.use_external_voice_bridge = ENV.fetch('USE_EXTERNAL_VOICE_BRIDGE', 'false').casecmp?('true')
+
+    # Password to access the freeswitch dialplan API
+    config.x.fsapi_password = ENV.fetch('FSAPI_PASSWORD', config.x.loadbalancer_secrets[0])
+
+    # Maximum amount of time to allow bridged calls to stay connected for. Defaults to same as max meeting duration.
+    config.x.fsapi_max_duration = ENV.fetch('FSAPI_MAX_DURATION', config.x.max_meeting_duration).to_i
   end
 end

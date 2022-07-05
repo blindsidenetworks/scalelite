@@ -43,6 +43,8 @@ Rails.application.routes.draw do
     end
   end
 
+  get('fsapi', to: 'fsapi#index', format: false, defaults: { format: 'xml' })
+
   match '*any', via: :all, to: 'errors#unsupported_request'
   root to: 'health_check#index', via: :all
 end
