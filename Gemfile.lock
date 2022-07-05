@@ -1,11 +1,3 @@
-GIT
-  remote: https://github.com/guilleiguaran/fakeredis.git
-  revision: 2ebe19229954c7234bed019a0c5d28d5cf5b40f6
-  ref: 2ebe19229954c7234bed019a0c5d28d5cf5b40f6
-  specs:
-    fakeredis (0.7.0)
-      redis (~> 4.1)
-
 GEM
   remote: https://rubygems.org/
   specs:
@@ -67,8 +59,8 @@ GEM
     addressable (2.8.0)
       public_suffix (>= 2.0.2, < 5.0)
     ast (2.4.2)
-    bootsnap (1.9.1)
-      msgpack (~> 1.0)
+    bootsnap (1.12.0)
+      msgpack (~> 1.2)
     builder (3.2.4)
     byebug (11.1.3)
     concurrent-ruby (1.1.10)
@@ -76,7 +68,6 @@ GEM
     crack (0.4.5)
       rexml
     crass (1.0.6)
-    diff-lcs (1.5.0)
     dotenv (2.7.6)
     dotenv-rails (2.7.6)
       dotenv (= 2.7.6)
@@ -87,17 +78,18 @@ GEM
     factory_bot_rails (6.2.0)
       factory_bot (~> 6.2.0)
       railties (>= 5.0.0)
-    ffi (1.15.4)
+    fakeredis (0.8.0)
+      redis (~> 4.1)
+    ffi (1.15.5)
     globalid (1.0.0)
       activesupport (>= 5.0)
     hashdiff (1.0.1)
     i18n (1.10.0)
       concurrent-ruby (~> 1.0)
     jwt (2.2.3)
-    listen (3.1.5)
+    listen (3.0.8)
       rb-fsevent (~> 0.9, >= 0.9.4)
       rb-inotify (~> 0.9, >= 0.9.7)
-      ruby_dep (~> 1.2)
     loofah (2.18.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
@@ -109,7 +101,7 @@ GEM
     mini_portile2 (2.8.0)
     minitest (5.15.0)
     minitest-stub_any_instance (1.0.2)
-    msgpack (1.4.2)
+    msgpack (1.5.2)
     nio4r (2.5.8)
     nokogiri (1.13.6)
       mini_portile2 (~> 2.8.0)
@@ -157,7 +149,7 @@ GEM
       thor (>= 0.20.3, < 2.0)
     rainbow (3.1.1)
     rake (13.0.6)
-    rb-fsevent (0.11.0)
+    rb-fsevent (0.11.1)
     rb-inotify (0.10.1)
       ffi (~> 1.0)
     redis (4.5.1)
@@ -165,23 +157,6 @@ GEM
       redis (>= 3.0.4)
     regexp_parser (2.5.0)
     rexml (3.2.5)
-    rspec-core (3.11.0)
-      rspec-support (~> 3.11.0)
-    rspec-expectations (3.11.0)
-      diff-lcs (>= 1.2.0, < 2.0)
-      rspec-support (~> 3.11.0)
-    rspec-mocks (3.11.1)
-      diff-lcs (>= 1.2.0, < 2.0)
-      rspec-support (~> 3.11.0)
-    rspec-rails (5.1.2)
-      actionpack (>= 5.2)
-      activesupport (>= 5.2)
-      railties (>= 5.2)
-      rspec-core (~> 3.10)
-      rspec-expectations (~> 3.10)
-      rspec-mocks (~> 3.10)
-      rspec-support (~> 3.10)
-    rspec-support (3.11.0)
     rubocop (1.10.0)
       parallel (~> 1.10)
       parser (>= 3.0.0.0)
@@ -193,11 +168,11 @@ GEM
       unicode-display_width (>= 1.4.0, < 3.0)
     rubocop-ast (1.18.0)
       parser (>= 3.1.1.0)
-    rubocop-rails (2.4.2)
+    rubocop-rails (2.10.1)
+      activesupport (>= 4.2.0)
       rack (>= 1.1)
-      rubocop (>= 0.72.0)
+      rubocop (>= 1.7.0, < 2.0)
     ruby-progressbar (1.11.0)
-    ruby_dep (1.5.0)
     spring (2.1.1)
     spring-watcher-listen (2.0.1)
       listen (>= 2.7, < 4.0)
@@ -237,7 +212,7 @@ DEPENDENCIES
   connection_pool (~> 2.2.2)
   dotenv-rails
   factory_bot_rails
-  fakeredis!
+  fakeredis (~> 0.8)
   jwt (= 2.2.3)
   listen (>= 3.0.5, < 3.2)
   minitest-stub_any_instance
@@ -247,9 +222,8 @@ DEPENDENCIES
   rails-controller-testing
   redis (~> 4.2)
   redis-namespace (~> 1.8)
-  rspec-rails (~> 5.1.2)
   rubocop (~> 1.10.0)
-  rubocop-rails (~> 2.4.2)
+  rubocop-rails (~> 2.10.0)
   spring
   spring-watcher-listen (~> 2.0.0)
   sqlite3
