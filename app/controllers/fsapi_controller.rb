@@ -29,8 +29,12 @@ class FsapiController < ApplicationController
     @meeting = begin
       Meeting.find_by_voice_bridge(@pin)
     rescue ApplicationRedisRecord::RecordNotFound
-      # If no meeting was found, it might have been a breakout room pin, which adds one digit to the end
-      Meeting.find_by_voice_bridge(@pin[0...-1]) if @pin.length > 5
+      begin
+        # If no meeting was found, it might have been a breakout room pin, which adds one digit to the end
+        Meeting.find_by_voice_bridge(@pin[0...-1]) if @pin.length > 5
+      rescue ApplicationRedisRecord::RecordNotFound
+        nil
+      end
     end
 
     # Prompt for a new pin if there was none found
