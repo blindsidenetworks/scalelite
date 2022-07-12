@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class FsapiController < ApplicationController
+  skip_before_action :verify_authenticity_token
   before_action :authenticate
 
   def index
