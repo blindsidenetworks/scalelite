@@ -5,7 +5,7 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
 
   def test_unauthenticated_request
     Rails.configuration.x.stub(:fsapi_password, 'password') do
-      get(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
+      post(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
     end
     assert_response(401)
     assert_match(/\ABasic realm="[^"]*"\z/, @response.headers['WWW-Authenticate'])
@@ -13,7 +13,7 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
 
   def test_request_with_authentication_disabled
     Rails.configuration.x.stub(:fsapi_password, '') do
-      get(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
+      post(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
     end
     assert_response(:success)
     assert_select('section[name="dialplan"]', 1)
@@ -21,7 +21,7 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
 
   def test_authenticated_request
     Rails.configuration.x.stub(:fsapi_password, 'password') do
-      get(
+      post(
         fsapi_url,
         params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' },
         headers: { HTTP_AUTHORIZATION: ActionController::HttpAuthentication::Basic.encode_credentials('fsapi', 'password') },
@@ -35,7 +35,7 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
 
   def test_initial_call_no_pin
     FsapiController.stub_any_instance(:authenticate, true) do
-      get(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
+      post(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
     end
     assert_response(:success)
     assert_select('section[name="dialplan"]', 1) do
@@ -49,7 +49,7 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
 
   def test_non_matching_pin
     FsapiController.stub_any_instance(:authenticate, true) do
-      get(fsapi_url, params: { section: 'dialplan', variable_pin: '12345', 'Caller-Destination-Number': '5551234' })
+      post(fsapi_url, params: { section: 'dialplan', variable_pin: '12345', 'Caller-Destination-Number': '5551234' })
     end
     assert_response(:success)
     assert_select('section[name="dialplan"]', 1) do
@@ -66,7 +66,7 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
     voice_bridge = meeting.voice_bridge
 
     FsapiController.stub_any_instance(:authenticate, true) do
-      get(fsapi_url, params: { section: 'dialplan', variable_pin: voice_bridge, 'Caller-Destination-Number': '5551234' })
+      post(fsapi_url, params: { section: 'dialplan', variable_pin: voice_bridge, 'Caller-Destination-Number': '5551234' })
     end
     assert_response(:success)
     assert_select('section[name="dialplan"]', 1) do
@@ -88,7 +88,7 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
     breakout_voice_bridge = "#{voice_bridge}7"
 
     FsapiController.stub_any_instance(:authenticate, true) do
-      get(fsapi_url, params: { section: 'dialplan', variable_pin: breakout_voice_bridge, 'Caller-Destination-Number': '5551234' })
+      post(fsapi_url, params: { section: 'dialplan', variable_pin: breakout_voice_bridge, 'Caller-Destination-Number': '5551234' })
     end
     assert_response(:success)
     assert_select('section[name="dialplan"]', 1) do
@@ -111,7 +111,7 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
     voice_bridge = meeting.voice_bridge
 
     FsapiController.stub_any_instance(:authenticate, true) do
-      get(
+      post(
         fsapi_url,
         params: {
           section: 'dialplan',
@@ -133,7 +133,7 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
     voice_bridge = meeting.voice_bridge
 
     FsapiController.stub_any_instance(:authenticate, true) do
-      get(
+      post(
         fsapi_url,
         params: {
           section: 'dialplan',
@@ -156,7 +156,7 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
     voice_bridge = meeting.voice_bridge
 
     FsapiController.stub_any_instance(:authenticate, true) do
-      get(
+      post(
         fsapi_url,
         params: {
           section: 'dialplan',
@@ -178,7 +178,7 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
     voice_bridge = meeting.voice_bridge
 
     FsapiController.stub_any_instance(:authenticate, true) do
-      get(
+      post(
         fsapi_url,
         params: {
           section: 'dialplan',
@@ -199,7 +199,7 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
 
   def test_pin_prompt_allotted_timeout_not_set
     Rails.configuration.x.stub(:fsapi_max_duration, 0) do
-      get(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
+      post(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
     end
     assert_response(:success)
     assert_select('section > context > extension > condition') do
@@ -209,7 +209,7 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
 
   def test_pin_prompt_allotted_timeout
     Rails.configuration.x.stub(:fsapi_max_duration, 90) do
-      get(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
+      post(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
     end
     assert_response(:success)
     Rails.logger.debug { @response.body }
