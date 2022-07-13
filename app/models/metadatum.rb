@@ -10,7 +10,10 @@ class Metadatum < ApplicationRecord
     Recording.transaction do
       Recording.where(record_id: record_ids).ids.each do |recording_id|
         upsert_records = metadata.map { |key, value| { recording_id: recording_id, key: key, value: value } }
+        # Safe in this case because there *are* no model validations.
+        # rubocop:disable Rails/SkipsModelValidations
         Metadatum.upsert_all(upsert_records, returning: false, unique_by: [:recording_id, :key])
+        # rubocop:enable Rails/SkipsModelValidations
       end
     end
   end

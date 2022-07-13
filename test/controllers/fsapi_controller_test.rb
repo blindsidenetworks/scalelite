@@ -88,7 +88,14 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
     breakout_voice_bridge = "#{voice_bridge}7"
 
     FsapiController.stub_any_instance(:authenticate, true) do
-      post(fsapi_url, params: { section: 'dialplan', variable_pin: breakout_voice_bridge, 'Caller-Destination-Number': '5551234' })
+      post(
+        fsapi_url,
+        params: {
+          section: 'dialplan',
+          variable_pin: breakout_voice_bridge,
+          'Caller-Destination-Number': '5551234'
+        }
+      )
     end
     assert_response(:success)
     assert_select('section[name="dialplan"]', 1) do
