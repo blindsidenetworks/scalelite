@@ -18,7 +18,16 @@ Rails/DynamicFindBy:
 Rails/CreateTableWithTimestamps:
   Enabled: false
 
+Rails/NegateInclude:
+  Enabled: false
+
+Rails/SkipsModelValidations:
+  Enabled: false
+
 Style/BlockDelimiters:
+  Enabled: false
+
+Style/OpenStructUse:
   Enabled: false
 
 # Checks if uses of quotes match the configured preference.
@@ -230,3 +239,6 @@ Style/OptionalBooleanParameter:
 
 Style/SlicingWithRange:
   Enabled: true
+
+Security/IoMethods:
+  Enabled: false

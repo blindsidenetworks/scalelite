@@ -132,15 +132,17 @@ module Scalelite
 
     # Comma separated list of create params that can be overridden by the client
     config.x.default_create_params = ENV.fetch('DEFAULT_CREATE_PARAMS', '')
-                                        .split(',').map { |param| param.split('=', 2) }.to_h.symbolize_keys
+                                        .split(',').to_h { |param| param.split('=', 2) }.symbolize_keys
     # Comma separated list of create params that CANT be overridden by the client
     config.x.override_create_params = ENV.fetch('OVERRIDE_CREATE_PARAMS', '')
-                                         .split(',').map { |param| param.split('=', 2) }.to_h.symbolize_keys
+                                         .split(',').to_h { |param| param.split('=', 2) }.symbolize_keys
     # Comma separated list of join params that can be overridden by the client
     config.x.default_join_params = ENV.fetch('DEFAULT_JOIN_PARAMS', '')
-                                      .split(',').map { |param| param.split('=', 2) }.to_h.symbolize_keys
+                                      .split(',').to_h { |param| param.split('=', 2) }.symbolize_keys
     # Comma separated list of join params that CANT be overridden by the client
     config.x.override_join_params = ENV.fetch('OVERRIDE_JOIN_PARAMS', '')
-                                       .split(',').map { |param| param.split('=', 2) }.to_h.symbolize_keys
+                                       .split(',').to_h { |param| param.split('=', 2) }.symbolize_keys
+
+    config.x.rails_max_threads = ENV.fetch('RAILS_MAX_THREADS', 5).to_i
   end
 end

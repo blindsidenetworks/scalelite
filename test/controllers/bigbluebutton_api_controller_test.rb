@@ -364,7 +364,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
                        '<meeting>test-meeting-2<meeting></meetings></response>')
     stub_request(:get, encode_bbb_uri('getMeetings', server3.url, server3.secret))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
-                    '<meeting>test-meeting-3<meeting></meetings></response>')
+                       '<meeting>test-meeting-3<meeting></meetings></response>')
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_get_meetings_url
@@ -446,7 +446,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+                       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_create_url, params: params
@@ -474,7 +474,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:post, encode_bbb_uri('create', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+                       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       post bigbluebutton_api_create_url, params: params
@@ -524,7 +524,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+                       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_create_url, params: params
@@ -545,7 +545,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:post, encode_bbb_uri('create', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+                       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       post bigbluebutton_api_create_url, params: params
@@ -580,7 +580,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+                       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
     Rails.configuration.x.stub(:max_meeting_duration, 3600) do
       BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
@@ -611,7 +611,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+                       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
     Rails.configuration.x.stub(:max_meeting_duration, 3600) do
       BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
@@ -642,7 +642,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+                       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
     Rails.configuration.x.stub(:max_meeting_duration, 3600) do
       BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
@@ -673,7 +673,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+                       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
     Rails.configuration.x.stub(:max_meeting_duration, 3600) do
       BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
@@ -696,7 +696,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     filtered_params = { meetingID: 'test-meeting-1', moderatorPW: 'test-password' }
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, filtered_params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+                       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
     mocked_method = MiniTest::Mock.new
     return_value = { 'meetingID' => 'test-meeting-1' }
@@ -731,7 +731,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     filtered_params = { meetingID: 'test-meeting-1', test4: '', test2: '', moderatorPW: 'test-password' }
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, filtered_params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+                       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
     mocked_method = MiniTest::Mock.new
     return_value = { meetingID: 'test-meeting-1', test4: '', test2: '' }
@@ -769,7 +769,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     }
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, bbb_params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+                       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_create_url, params: params
@@ -792,7 +792,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     Rails.configuration.x.stub(:url_host, 'test.scalelite.com') do
       stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
         .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+                         '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
       BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
         get bigbluebutton_api_create_url, params: params
       end
@@ -816,7 +816,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-    '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+                       '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
     stub_request(:post, 'https://test.scalelite.com/bigbluebutton/api/analytics_callback')
       .to_return(status: :ok, body: '', headers: {})
 
@@ -870,8 +870,8 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, encode_bbb_uri('end', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>FAILED</returncode><messageKey>notFound</messageKey>' \
-        '<message>We could not find a meeting with that meeting ID - perhaps the meeting is not yet' \
-        ' running?</message></response>')
+                       '<message>We could not find a meeting with that meeting ID - perhaps the meeting is not yet' \
+                       ' running?</message></response>')
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_end_url, params: params
@@ -897,8 +897,8 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, encode_bbb_uri('end', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><messageKey>sentEndMeetingRequest</messageKey>' \
-        '<message>A request to end the meeting was sent. Please wait a few seconds, and then use the getMeetingInfo' \
-        ' or isMeetingRunning API calls to verify that it was ended.</message></response>')
+                       '<message>A request to end the meeting was sent. Please wait a few seconds, and then use the' \
+                       ' getMeetingInfo or isMeetingRunning API calls to verify that it was ended.</message></response>')
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_end_url, params: params
@@ -925,8 +925,8 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, encode_bbb_uri('end', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><messageKey>sentEndMeetingRequest</messageKey>' \
-        '<message>A request to end the meeting was sent. Please wait a few seconds, and then use the getMeetingInfo' \
-        ' or isMeetingRunning API calls to verify that it was ended.</message></response>')
+                       '<message>A request to end the meeting was sent. Please wait a few seconds, and then use the' \
+                       ' getMeetingInfo or isMeetingRunning API calls to verify that it was ended.</message></response>')
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       post bigbluebutton_api_end_url, params: params

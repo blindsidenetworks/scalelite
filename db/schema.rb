@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_25_200414) do
+ActiveRecord::Schema.define(version: 2022_07_26_213121) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -21,6 +21,7 @@ ActiveRecord::Schema.define(version: 2021_07_25_200414) do
     t.text "callback_attributes"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.index ["meeting_id"], name: "index_callback_data_on_meeting_id", unique: true
   end
 
   create_table "metadata", force: :cascade do |t|
@@ -49,8 +50,8 @@ ActiveRecord::Schema.define(version: 2021_07_25_200414) do
     t.datetime "starttime"
     t.datetime "endtime"
     t.datetime "deleted_at"
-    t.boolean "publish_updated", default: false
     t.boolean "protected"
+    t.boolean "publish_updated", default: false
     t.index ["meeting_id"], name: "index_recordings_on_meeting_id"
     t.index ["record_id"], name: "index_recordings_on_record_id", unique: true
   end

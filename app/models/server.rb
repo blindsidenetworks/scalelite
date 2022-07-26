@@ -241,7 +241,7 @@ class Server < ApplicationRedisRecord
   end
 
   def disabled?
-    state.eql?('disabled') || state.nil? && !enabled
+    state.eql?('disabled') || (state.nil? && !enabled)
   end
 
   def cordoned?
@@ -249,7 +249,7 @@ class Server < ApplicationRedisRecord
   end
 
   def enabled?
-    state.eql?('enabled') || state.nil? && enabled
+    state.eql?('enabled') || (state.nil? && enabled)
   end
 
   # Find a server by ID

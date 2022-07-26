@@ -82,7 +82,7 @@ module ApiHelper
   def post_req(uri, body)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = (uri.scheme == 'https')
-    exp = Time.now.to_i + 24 * 3600
+    exp = Time.now.to_i + (24 * 3600)
     token = encoded_token(exp: exp)
     # Setup a request and attach our JWT token
     request = Net::HTTP::Post.new(uri.request_uri,
