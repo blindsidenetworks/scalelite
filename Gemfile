@@ -32,9 +32,6 @@ gem 'bootsnap', '>= 1.13.0', require: false
 # Generates a terminal table
 gem 'tabulo', '~> 2.8.1'
 
-# Used by recording watch task. Version limit is for compat with rails auto-reloader.
-gem 'listen', '>= 3.0.5', '< 3.2'
-
 gem 'jwt', '~> 2.5.0'
 
 group :development, :test do
