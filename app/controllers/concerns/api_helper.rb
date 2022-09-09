@@ -14,9 +14,11 @@ module ApiHelper
 
   # Verify checksum
   def verify_checksum
+    secrets = Rails.configuration.x.loadbalancer_secrets
     raise ChecksumError unless params[:checksum].present? &&
                                (params[:checksum].length == CHECKSUM_LENGTH_SHA1 ||
-                                params[:checksum].length == CHECKSUM_LENGTH_SHA256)
+                                params[:checksum].length == CHECKSUM_LENGTH_SHA256) &&
+                                secrets.any?
 
     # Camel case (ex) get_meetings to getMeetings to match BBB server
     check_string = action_name.camelcase(:lower)
@@ -24,14 +26,17 @@ module ApiHelper
       /&checksum=#{params[:checksum]}|checksum=#{params[:checksum]}&|checksum=#{params[:checksum]}/, ''
     )
 
-    return if Rails.configuration.x.loadbalancer_secrets.any? do |secret|
-      checksum_sha1 = Digest::SHA1.hexdigest(check_string + secret)
-      checksum_sha256 = Digest::SHA256.hexdigest(check_string + secret)
-      ActiveSupport::SecurityUtils.secure_compare(checksum_sha1, params[:checksum]) ||
-      ActiveSupport::SecurityUtils.secure_compare(checksum_sha256, params[:checksum])
+    checksum_algorithms = Rails.configuration.x.loadbalancer_checksum_algorithms
+    secrets.product(checksum_algorithms).each do |secret, checksum_algorithm|
+      return if ActiveSupport::SecurityUtils.secure_compare(get_checksum(check_string + secret, checksum_algorithm), params[:checksum])
     end
 
     raise ChecksumError
+  end
+
+  def get_checksum(check_string, checksum_algorithm)
+    return Digest::SHA256.hexdigest(check_string) if checksum_algorithm == 'SHA256'
+    Digest::SHA1.hexdigest(check_string)
   end
 
   # Encode URI and append checksum
@@ -42,7 +47,7 @@ module ApiHelper
     bbb_params = add_additional_params(action, bbb_params)
 
     check_string = URI.encode_www_form(bbb_params)
-    checksum = Digest::SHA256.hexdigest(action + check_string + secret)
+    checksum = get_checksum(action + check_string + secret, 'SHA256')
     uri = URI.join(base_uri, action)
     uri.query = URI.encode_www_form(bbb_params.merge(checksum: checksum))
     uri
