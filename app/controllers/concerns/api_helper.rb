@@ -11,13 +11,15 @@ module ApiHelper
 
   CHECKSUM_LENGTH_SHA1 = 40
   CHECKSUM_LENGTH_SHA256 = 64
+  CHECKSUM_LENGTH_SHA512 = 128
 
   # Verify checksum
   def verify_checksum
     secrets = Rails.configuration.x.loadbalancer_secrets
     raise ChecksumError unless params[:checksum].present? &&
                                (params[:checksum].length == CHECKSUM_LENGTH_SHA1 ||
-                                params[:checksum].length == CHECKSUM_LENGTH_SHA256) &&
+                                params[:checksum].length == CHECKSUM_LENGTH_SHA256 ||
+                                params[:checksum].length == CHECKSUM_LENGTH_SHA512) &&
                                secrets.any?
 
     # Camel case (ex) get_meetings to getMeetings to match BBB server
@@ -36,6 +38,7 @@ module ApiHelper
   end
 
   def get_checksum(check_string, checksum_algorithm)
+    return Digest::SHA512.hexdigest(check_string) if checksum_algorithm == 'SHA512'
     return Digest::SHA256.hexdigest(check_string) if checksum_algorithm == 'SHA256'
     Digest::SHA1.hexdigest(check_string)
   end

@@ -45,7 +45,7 @@ module Scalelite
     config.x.loadbalancer_secrets.concat(ENV['LOADBALANCER_SECRETS'].split(':')) if ENV['LOADBALANCER_SECRETS']
 
     # Algorithms used for calculating checksum [SHA1|SHA256|...]
-    config.x.loadbalancer_checksum_algorithm = ENV.fetch('LOADBALANCER_CHECKSUM_ALGORITHM', 'SHA1:SHA256')
+    config.x.loadbalancer_checksum_algorithm = ENV.fetch('LOADBALANCER_CHECKSUM_ALGORITHM', 'SHA1:SHA256:SHA512')
     config.x.loadbalancer_checksum_algorithms = config.x.loadbalancer_checksum_algorithm.split(':')
 
     # Defaults to 0 since nil/"".to_i = 0
