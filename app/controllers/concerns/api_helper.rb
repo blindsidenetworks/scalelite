@@ -18,7 +18,7 @@ module ApiHelper
     raise ChecksumError unless params[:checksum].present? &&
                                (params[:checksum].length == CHECKSUM_LENGTH_SHA1 ||
                                 params[:checksum].length == CHECKSUM_LENGTH_SHA256) &&
-                                secrets.any?
+                               secrets.any?
 
     # Camel case (ex) get_meetings to getMeetings to match BBB server
     check_string = action_name.camelcase(:lower)
@@ -27,8 +27,9 @@ module ApiHelper
     )
 
     checksum_algorithms = Rails.configuration.x.loadbalancer_checksum_algorithms
-    secrets.product(checksum_algorithms).each do |secret, checksum_algorithm|
-      return if ActiveSupport::SecurityUtils.secure_compare(get_checksum(check_string + secret, checksum_algorithm), params[:checksum])
+    secrets.product(checksum_algorithms).any? do |secret, checksum_algorithm|
+      return true if ActiveSupport::SecurityUtils.secure_compare(get_checksum(check_string + secret, checksum_algorithm),
+      params[:checksum])
     end
 
     raise ChecksumError
@@ -87,7 +88,7 @@ module ApiHelper
   def post_req(uri, body)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = (uri.scheme == 'https')
-    exp = Time.now.to_i + 24 * 3600
+    exp = Time.now.to_i + (24 * 3600)
     token = encoded_token(exp: exp)
     # Setup a request and attach our JWT token
     request = Net::HTTP::Post.new(uri.request_uri,
