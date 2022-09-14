@@ -13,7 +13,9 @@ class Checksum
   def self.get_algorithm(checksum = nil)
     case ENV['ENFORCE_CHECKSUM_ALGORITHM']
     when nil
+      # Default algorithm
       return ChecksumSha256.new if checksum.nil?
+      
       case checksum.size
       when CHECKSUM_LENGTH_SHA1
           ChecksumSha1.new
