@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'net/http'
+require 'checksum'
 
 # The following is necessary to fix a DNS resolution timeout bug see https://github.com/ruby/ruby/pull/597#issuecomment-40507119
 require 'resolv-replace'
@@ -9,14 +10,9 @@ module ApiHelper
   extend ActiveSupport::Concern
   include BBBErrors
 
-  CHECKSUM_LENGTH_SHA1 = 40
-  CHECKSUM_LENGTH_SHA256 = 64
-
   # Verify checksum
   def verify_checksum
-    raise ChecksumError unless params[:checksum].present? &&
-                               (params[:checksum].length == CHECKSUM_LENGTH_SHA1 ||
-                                params[:checksum].length == CHECKSUM_LENGTH_SHA256)
+    raise ChecksumError if params[:checksum].blank?
 
     # Camel case (ex) get_meetings to getMeetings to match BBB server
     check_string = action_name.camelcase(:lower)
@@ -24,12 +20,7 @@ module ApiHelper
       /&checksum=#{params[:checksum]}|checksum=#{params[:checksum]}&|checksum=#{params[:checksum]}/, ''
     )
 
-    return if Rails.configuration.x.loadbalancer_secrets.any? do |secret|
-      checksum_sha1 = Digest::SHA1.hexdigest(check_string + secret)
-      checksum_sha256 = Digest::SHA256.hexdigest(check_string + secret)
-      ActiveSupport::SecurityUtils.secure_compare(checksum_sha1, params[:checksum]) ||
-      ActiveSupport::SecurityUtils.secure_compare(checksum_sha256, params[:checksum])
-    end
+    return if Checksum.verify(check_string, params[:checksum])
 
     raise ChecksumError
   end
@@ -42,7 +33,7 @@ module ApiHelper
     bbb_params = add_additional_params(action, bbb_params)
 
     check_string = URI.encode_www_form(bbb_params)
-    checksum = Digest::SHA256.hexdigest(action + check_string + secret)
+    checksum = Checksum.generate(action + check_string + secret)
     uri = URI.join(base_uri, action)
     uri.query = URI.encode_www_form(bbb_params.merge(checksum: checksum))
     uri

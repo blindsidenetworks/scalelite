@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'test_helper'
+require 'digest'
+
 class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   include BBBErrors
   include ApiHelper
@@ -109,6 +112,126 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     response_xml = Nokogiri::XML(@response.body)
     assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').content
     assert_equal 'SHA256_meeting', response_xml.at_xpath('/response/meetingID').content
+  end
+
+  test 'getMeetingInfo responds with the correct meeting info for a get request with checksum value computed using SHA512' do
+    server = Server.create!(url: 'https://test.example.com/bigbluebutton/api/', secret: 'test-1234')
+    Meeting.create!(id: 'SHA512_meeting', server: server)
+
+    # The following causes an error since SHA256 is the default and the checksum is
+    # overwritten.
+    # data = "getMeetingInfomeetingID=SHA512_meetingtest-1234"
+    # checksum = Digest::SHA512.hexdigest data
+    # url = "https://test.example.com/bigbluebutton/api/getMeetingInfo?meetingID=SHA512_meeting&checksum=#{checksum}"
+
+    # The following uses the same code as the scalelite server to generate the
+    # checksum using SHA256 by default
+    url = encode_bbb_uri 'getMeetingInfo',
+      'https://test.example.com/bigbluebutton/api/', 'test-1234',
+      { 'meetingID' => 'SHA512_meeting' }
+
+    stub_request(:get, url)
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>SHA512_meeting</meetingID></response>')
+
+    Rails.configuration.x.stub(:loadbalancer_secrets, ['test-1234']) do
+      data = "getMeetingInfomeetingID=SHA512_meetingtest-1234"
+      checksum = Checksum.generate(data)
+      get bigbluebutton_api_get_meeting_info_url,
+           params: { meetingID: 'SHA512_meeting', checksum: checksum }
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').content
+    assert_equal 'SHA512_meeting', response_xml.at_xpath('/response/meetingID').content
+  end
+
+  test 'getMeetingInfo responds with the correct meeting info for a post request with checksum value computed using SHA512' do
+    server = Server.create!(url: 'https://test.example.com/bigbluebutton/api/', secret: 'test-1234')
+    Meeting.create!(id: 'SHA512_meeting', server: server)
+
+    # The following causes an error since SHA256 is the default and the checksum is
+    # overwritten.
+    # data = "getMeetingInfomeetingID=SHA512_meetingtest-1234"
+    # checksum = Digest::SHA512.hexdigest data
+    # url = "https://test.example.com/bigbluebutton/api/getMeetingInfo?meetingID=SHA512_meeting&checksum=#{checksum}"
+
+    # The following uses the same code as the scalelite server to generate the
+    # checksum
+    url = encode_bbb_uri 'getMeetingInfo',
+      'https://test.example.com/bigbluebutton/api/', 'test-1234',
+      { 'meetingID' => 'SHA512_meeting' }
+
+    stub_request(:get, url)
+      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>SHA512_meeting</meetingID></response>')
+
+    Rails.configuration.x.stub(:loadbalancer_secrets, ['test-1234']) do
+      data = "getMeetingInfotest-1234"
+      checksum = Checksum.generate(data)
+      post bigbluebutton_api_get_meeting_info_url,
+           params: { meetingID: 'SHA512_meeting', checksum: checksum }
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').content
+    assert_equal 'SHA512_meeting', response_xml.at_xpath('/response/meetingID').content
+  end
+
+  test 'ENFORCE_CHECKSUM_ALGORITHM overrides default algorithm' do
+    server = Server.create!(url: 'https://test.example.com/bigbluebutton/api/', secret: 'test-1234')
+    Meeting.create!(id: 'SHA512_meeting', server: server)
+
+    mock_env('ENFORCE_CHECKSUM_ALGORITHM' => 'SHA512') do
+      data = "getMeetingInfomeetingID=SHA512_meetingtest-1234"
+      checksum = Digest::SHA512.hexdigest data
+      url = "https://test.example.com/bigbluebutton/api/getMeetingInfo?meetingID=SHA512_meeting&checksum=#{checksum}"
+
+      stub_request(:get, url)
+        .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>SHA512_meeting</meetingID></response>')
+
+      Rails.configuration.x.stub(:loadbalancer_secrets, ['test-1234']) do
+        data = "getMeetingInfomeetingID=SHA512_meetingtest-1234"
+        checksum = Digest::SHA512.hexdigest data
+        get bigbluebutton_api_get_meeting_info_url,
+            params: { meetingID: 'SHA512_meeting', checksum: checksum }
+      end
+
+      response_xml = Nokogiri::XML(@response.body)
+      assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').content
+      assert_equal 'SHA512_meeting', response_xml.at_xpath('/response/meetingID').content
+    end
+  end
+
+  test 'FAIL when algorithm differs from ENFORCE_CHECKSUM_ALGORITHM' do
+    server = Server.create!(url: 'https://test.example.com/bigbluebutton/api/', secret: 'test-1234')
+    Meeting.create!(id: 'SHA512_meeting', server: server)
+
+    mock_env('ENFORCE_CHECKSUM_ALGORITHM' => 'SHA512') do
+      data = "getMeetingInfomeetingID=SHA512_meetingtest-1234"
+      checksum = Digest::SHA256.hexdigest data
+      url = "https://test.example.com/bigbluebutton/api/getMeetingInfo?meetingID=SHA512_meeting&checksum=#{checksum}"
+
+      failed_body = <<~END_XML
+        <response>
+        <returncode>FAILED</returncode>
+        <messageKey>checksumError</messageKey>
+        <message>You did not pass the checksum security check</message>
+        </response>
+      END_XML
+
+      stub_request(:get, url).to_return(body: failed_body)
+
+      Rails.configuration.x.stub(:loadbalancer_secrets, ['test-1234']) do
+        data = "getMeetingInfomeetingID=SHA512_meetingtest-1234"
+        checksum = Digest::SHA256.hexdigest data
+        get bigbluebutton_api_get_meeting_info_url,
+            params: { meetingID: 'SHA512_meeting', checksum: checksum }
+      end
+
+      response_xml = Nokogiri::XML(@response.body)
+      assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').content
+      assert_equal 'checksumError', response_xml.at_xpath('/response/messageKey').content
+      assert_equal 'You did not pass the checksum security check', response_xml.at_xpath('/response/message').content
+    end
   end
 
   test 'getMeetingInfo responds with the correct meeting info for a get request' do
