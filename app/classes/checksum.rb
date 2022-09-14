@@ -15,7 +15,7 @@ class Checksum
     when nil
       # Default algorithm
       return ChecksumSha256.new if checksum.nil?
-      
+
       case checksum.size
       when CHECKSUM_LENGTH_SHA1
           ChecksumSha1.new
