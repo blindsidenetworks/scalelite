@@ -170,6 +170,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `PROTECTED_RECORDINGS_TIMEOUT`: Protected recordings resource access cookie timeout in minutes. This is the amount of time that a user will be granted access to view a recording for after clicking on the one-time-use link. Defaults to 360 minutes (6 hours).
 * `SCALELITE_API_PORT`: Runs the SCALELITE_API in custom port number. Defaults to 3000.
 * `DEFAULT_LOCALE`: Change the language that user facing pages displays in (currently supports `en`)
+* `ENFORCE_CHECKSUM_ALGORITHM`: Force the use of one algorithm when verifying or generating checksums. When not set, Scalelite accepts checksums generated with SHA1, SHA256, or SHA512 and calls to BigBlueButton servers use SHA256.
 
 ### Customizing Strings
 
