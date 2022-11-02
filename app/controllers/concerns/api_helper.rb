@@ -40,8 +40,11 @@ module ApiHelper
     allowed_checksum_algorithms = Rails.configuration.x.loadbalancer_checksum_algorithms
     raise ChecksumError unless allowed_checksum_algorithms.include? checksum_algorithm
 
-    return true if ActiveSupport::SecurityUtils.secure_compare(get_checksum(check_string + secret, checksum_algorithm),
-                                                               params[:checksum])
+    secrets.each do |secret|
+      return true if ActiveSupport::SecurityUtils.secure_compare(get_checksum(check_string + secret, checksum_algorithm),
+                                                                 params[:checksum])
+    end
+
     raise ChecksumError
   end
 
