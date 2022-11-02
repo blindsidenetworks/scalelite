@@ -19,24 +19,26 @@ RSpec.describe ApiHelper, type: :helper do
   include ApiHelper
 
   describe 'checksum length' do
-    context 'with sha1' do
-      let(:sha1) { Faker::Crypto.sha1 }
-      it 'has correct length' do
-        expect(ApiHelper::CHECKSUM_LENGTH_SHA1).to eq sha1.length
+    context 'with correct length' do
+      context 'with sha1' do
+        let(:sha1) { Faker::Crypto.sha1 }
+        it 'has correct length' do
+          expect(ApiHelper::CHECKSUM_LENGTH_SHA1).to eq sha1.length
+        end
       end
-    end
 
-    context 'with sha256' do
-      let(:sha256) { Faker::Crypto.sha256 }
-      it 'has correct length' do
-        expect(ApiHelper::CHECKSUM_LENGTH_SHA256).to eq sha256.length
+      context 'with sha256' do
+        let(:sha256) { Faker::Crypto.sha256 }
+        it 'has correct length' do
+          expect(ApiHelper::CHECKSUM_LENGTH_SHA256).to eq sha256.length
+        end
       end
-    end
 
-    context 'with sha512' do
-      let(:sha512) { Faker::Crypto.sha512 }
-      it 'has correct length' do
-        expect(ApiHelper::CHECKSUM_LENGTH_SHA512).to eq sha512.length
+      context 'with sha512' do
+        let(:sha512) { Faker::Crypto.sha512 }
+        it 'has correct length' do
+          expect(ApiHelper::CHECKSUM_LENGTH_SHA512).to eq sha512.length
+        end
       end
     end
   end
@@ -92,6 +94,19 @@ RSpec.describe ApiHelper, type: :helper do
         end
 
         include_examples 'proper verify_checksum behavior'
+      end
+
+      context 'with incorrect checksum' do
+        let(:checksum_algo) { 'MD5' }
+        before do
+          params[:checksum] = 'totallyNotAHash'
+        end
+
+        it 'throws an error' do
+          expect {
+            verify_checksum
+          }.to raise_error(BBBErrors::ChecksumError)
+        end
       end
     end
   end

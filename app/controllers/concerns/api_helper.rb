@@ -16,11 +16,20 @@ module ApiHelper
   # Verify checksum
   def verify_checksum
     secrets = Rails.configuration.x.loadbalancer_secrets
-    raise ChecksumError unless params[:checksum].present? &&
-                               (params[:checksum].length == CHECKSUM_LENGTH_SHA1 ||
-                                params[:checksum].length == CHECKSUM_LENGTH_SHA256 ||
-                                params[:checksum].length == CHECKSUM_LENGTH_SHA512) &&
-                               secrets.any?
+
+    raise ChecksumError if params[:checksum].blank?
+    raise ChecksumError if secrets.empty?
+
+    checksum_algorithm = case params[:checksum].length
+                   when CHECKSUM_LENGTH_SHA1
+                     'SHA1'
+                   when CHECKSUM_LENGTH_SHA256
+                     'SHA256'
+                   when CHECKSUM_LENGTH_SHA512
+                     'SHA512'
+                   else
+                     raise ChecksumError
+                   end
 
     # Camel case (ex) get_meetings to getMeetings to match BBB server
     check_string = action_name.camelcase(:lower)
@@ -28,12 +37,11 @@ module ApiHelper
       /&checksum=#{params[:checksum]}|checksum=#{params[:checksum]}&|checksum=#{params[:checksum]}/, ''
     )
 
-    checksum_algorithms = Rails.configuration.x.loadbalancer_checksum_algorithms
-    secrets.product(checksum_algorithms).any? do |secret, checksum_algorithm|
-      return true if ActiveSupport::SecurityUtils.secure_compare(get_checksum(check_string + secret, checksum_algorithm),
-      params[:checksum])
-    end
+    allowed_checksum_algorithms = Rails.configuration.x.loadbalancer_checksum_algorithms
+    raise ChecksumError unless allowed_checksum_algorithms.include? checksum_algorithm
 
+    return true if ActiveSupport::SecurityUtils.secure_compare(get_checksum(check_string + secret, checksum_algorithm),
+                                                               params[:checksum])
     raise ChecksumError
   end
 
