@@ -87,6 +87,8 @@ GEM
     factory_bot_rails (6.2.0)
       factory_bot (~> 6.2.0)
       railties (>= 5.0.0)
+    faker (2.22.0)
+      i18n (>= 1.8.11, < 2)
     ffi (1.15.5)
     globalid (1.0.0)
       activesupport (>= 5.0)
@@ -238,6 +240,7 @@ DEPENDENCIES
   connection_pool (~> 2.3.0)
   dotenv-rails
   factory_bot_rails
+  faker
   fakeredis!
   jwt (~> 2.5.0)
   listen (>= 3.0.5, < 3.2)
