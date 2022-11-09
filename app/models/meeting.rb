@@ -45,9 +45,9 @@ class Meeting < ApplicationRedisRecord
 
     with_connection do |redis|
       meeting_key = key
-      redis.multi do
-        redis.hset(meeting_key, 'server_id', server_id) if server_id_changed?
-        redis.sadd('meetings', id) if id_changed?
+      redis.multi do |pipeline|
+        pipeline.hset(meeting_key, 'server_id', server_id) if server_id_changed?
+        pipeline.sadd('meetings', id) if id_changed?
       end
     end
 
@@ -60,9 +60,9 @@ class Meeting < ApplicationRedisRecord
     raise RecordNotDestroyed.new('Object has uncommitted changes', self) if changed?
 
     with_connection do |redis|
-      redis.multi do
-        redis.del(key)
-        redis.srem('meetings', id)
+      redis.multi do |pipeline|
+        pipeline.del(key)
+        pipeline.srem('meetings', id)
       end
     end
 
@@ -78,11 +78,11 @@ class Meeting < ApplicationRedisRecord
 
     with_connection do |redis|
       meeting_key = key(id)
-      created, _password_set, hash, _sadd_id = redis.multi do
-        redis.hsetnx(meeting_key, 'server_id', server.id)
-        redis.hsetnx(meeting_key, 'moderator_pw', moderator_pw)
-        redis.hgetall(meeting_key)
-        redis.sadd('meetings', id)
+      created, _password_set, hash, _sadd_id = redis.multi do |pipeline|
+        pipeline.hsetnx(meeting_key, 'server_id', server.id)
+        pipeline.hsetnx(meeting_key, 'moderator_pw', moderator_pw)
+        pipeline.hgetall(meeting_key)
+        pipeline.sadd('meetings', id)
       end
 
       logger.debug("Meeting find_or_create: created=#{created} on server_id=#{hash['server_id']} (wanted #{server.id})")
