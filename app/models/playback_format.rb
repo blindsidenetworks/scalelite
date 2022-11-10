@@ -19,9 +19,9 @@ class PlaybackFormat < ApplicationRecord
 
     key = "#{PROTECTOR_TOKEN_KEY_PREFIX}#{token}"
     RedisStore.with_connection do |redis|
-      redis.multi do
-        redis.set(key, payload)
-        redis.expire(key, Rails.configuration.x.recording_token_ttl)
+      redis.multi do |pipeline|
+        pipeline.set(key, payload)
+        pipeline.expire(key, Rails.configuration.x.recording_token_ttl)
       end
     end
 
@@ -34,9 +34,9 @@ class PlaybackFormat < ApplicationRecord
 
     key = "#{PROTECTOR_TOKEN_KEY_PREFIX}#{token}"
     result = RedisStore.with_connection do |redis|
-      redis.multi do
-        redis.get(key)
-        redis.del(key)
+      redis.multi do |pipeline|
+        pipeline.get(key)
+        pipeline.del(key)
       end
     end
     raise ProtectorTokenError, 'Token not found' if result[0].blank?

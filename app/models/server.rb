@@ -88,18 +88,18 @@ class Server < ApplicationRedisRecord
         raise RecordNotSaved.new("Server with id '#{id}' is deleted", self) if !id_changed? && !exists
 
         server_key = key
-        result = redis.multi do
-          redis.hset(server_key, 'url', url) if url_changed?
-          redis.hset(server_key, 'secret', secret) if secret_changed?
-          redis.hset(server_key, 'online', online ? 'true' : 'false') if online_changed?
-          redis.hset(server_key, 'load_multiplier', load_multiplier) if load_multiplier_changed?
-          redis.hset(server_key, 'state', state) if state_changed?
-          redis.hset(server_key, 'meetings', meetings) if meetings_changed?
-          redis.hset(server_key, 'users', users) if users_changed?
-          redis.hset(server_key, 'largest_meeting', largest_meeting) if largest_meeting_changed?
-          redis.hset(server_key, 'videos', videos) if videos_changed?
-          redis.sadd('servers', id) if id_changed?
-          state.present? ? save_with_state(redis) : save_without_state(redis)
+        result = redis.multi do |pipeline|
+          pipeline.hset(server_key, 'url', url) if url_changed?
+          pipeline.hset(server_key, 'secret', secret) if secret_changed?
+          pipeline.hset(server_key, 'online', online ? 'true' : 'false') if online_changed?
+          pipeline.hset(server_key, 'load_multiplier', load_multiplier) if load_multiplier_changed?
+          pipeline.hset(server_key, 'state', state) if state_changed?
+          pipeline.hset(server_key, 'meetings', meetings) if meetings_changed?
+          pipeline.hset(server_key, 'users', users) if users_changed?
+          pipeline.hset(server_key, 'largest_meeting', largest_meeting) if largest_meeting_changed?
+          pipeline.hset(server_key, 'videos', videos) if videos_changed?
+          pipeline.sadd('servers', id) if id_changed?
+          state.present? ? save_with_state(pipeline) : save_without_state(pipeline)
         end
 
         raise ConcurrentModificationError.new('Servers list concurrently modified', self) if result.nil?
@@ -176,12 +176,12 @@ class Server < ApplicationRedisRecord
       raise RecordNotDestroyed.new('Object is not persisted', self) unless persisted?
       raise RecordNotDestroyed.new('Object has uncommitted changes', self) if changed?
 
-      redis.multi do
-        redis.del(key)
-        redis.srem('servers', id)
-        redis.zrem('server_load', id)
-        redis.srem('server_enabled', id)
-        redis.zrem('cordoned_server_load', id)
+      redis.multi do |pipeline|
+        pipeline.del(key)
+        pipeline.srem('servers', id)
+        pipeline.zrem('server_load', id)
+        pipeline.srem('server_enabled', id)
+        pipeline.zrem('cordoned_server_load', id)
       end
     end
 
@@ -255,10 +255,10 @@ class Server < ApplicationRedisRecord
   # Find a server by ID
   def self.find(id)
     with_connection do |redis|
-      hash, enabled, load = redis.pipelined do
-        redis.hgetall(key(id))
-        redis.sismember('server_enabled', id)
-        redis.zscore('server_load', id)
+      hash, enabled, load = redis.pipelined do |pipeline|
+        pipeline.hgetall(key(id))
+        pipeline.sismember('server_enabled', id)
+        pipeline.zscore('server_load', id)
       end
       raise RecordNotFound.new("Couldn't find Server with id=#{id}", name, id) if hash.blank?
 
@@ -308,10 +308,10 @@ class Server < ApplicationRedisRecord
       return servers if ids.blank?
 
       ids.each do |id|
-        hash, enabled, load = redis.pipelined do
-          redis.hgetall(key(id))
-          redis.sismember('server_enabled', id)
-          redis.zscore('server_load', id)
+        hash, enabled, load = redis.pipelined do |pipeline|
+          pipeline.hgetall(key(id))
+          pipeline.sismember('server_enabled', id)
+          pipeline.zscore('server_load', id)
         end
         next if hash.blank?
 
@@ -357,9 +357,9 @@ class Server < ApplicationRedisRecord
     servers = []
     with_connection do |redis|
       redis.smembers('server_enabled').each do |id|
-        hash, load = redis.pipelined do
-          redis.hgetall(key(id))
-          redis.zscore('server_load', id)
+        hash, load = redis.pipelined do |pipeline|
+          pipeline.hgetall(key(id))
+          pipeline.zscore('server_load', id)
         end
 
         hash['id'] = id
