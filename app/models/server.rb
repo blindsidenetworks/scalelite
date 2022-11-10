@@ -99,7 +99,7 @@ class Server < ApplicationRedisRecord
           pipeline.hset(server_key, 'largest_meeting', largest_meeting) if largest_meeting_changed?
           pipeline.hset(server_key, 'videos', videos) if videos_changed?
           pipeline.sadd('servers', id) if id_changed?
-          pipeline.present? ? save_with_state(redis) : save_without_state(redis)
+          state.present? ? save_with_state(pipeline) : save_without_state(pipeline)
         end
 
         raise ConcurrentModificationError.new('Servers list concurrently modified', self) if result.nil?
