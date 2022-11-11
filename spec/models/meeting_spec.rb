@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Meeting do
+RSpec.describe Meeting, redis: true do
   describe '.find' do
     context 'with non-existent ID' do
       it 'raises proper exception' do
@@ -46,6 +46,58 @@ RSpec.describe Meeting do
         server = meeting.server
         expect(server.id).to eq 'test-server-1'
       end
+
+      describe 'multitenancy' do
+        context 'with multiple tenants' do
+          let(:tenant1) { create(:tenant) }
+          let(:tenant2) { create(:tenant) }
+
+          let(:meeting1) { Meeting.find 'test-meeting-1', tenant1.id }
+          let(:fetching_wrong_meeting) { Meeting.find 'test-meeting-1', tenant2.id }
+
+          before do
+            RedisStore.with_connection do |redis|
+              redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1', tenant_id: tenant1.id)
+              redis.mapped_hmset('meeting:test-meeting-2', server_id: 'test-server-1', tenant_id: tenant2.id)
+              redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
+            end
+          end
+
+          it 'returns correct tenant\'s Meeting' do
+            expect(meeting1).to be_present
+          end
+
+          it 'does not fetch meeting with incorrect id/tenant_id' do
+            expect {
+              fetching_wrong_meeting
+            }.to raise_error(ApplicationRedisRecord::RecordNotFound)
+          end
+        end
+
+        context 'without tenant' do
+          let(:tenant1) { create(:tenant) }
+          let(:meeting_with_tenant) { Meeting.find 'test-meeting-1', tenant1.id }
+          let(:meeting_without_tenant) { Meeting.find 'test-meeting-1' }
+
+          before do
+            RedisStore.with_connection do |redis|
+              redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
+              redis.mapped_hmset('meeting:test-meeting-2', server_id: 'test-server-1', tenant_id: tenant1.id)
+              redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
+            end
+          end
+
+          it 'returns only Meeting with empty tenant_id' do
+            expect(Meeting.find('test-meeting-1')).to be_present
+          end
+
+          it 'throws error when trying to fetch existing Meeting providing incorrect Tenant' do
+            expect {
+              Meeting.find 'test-meeting-1', tenant1.id
+            }.to raise_error(ApplicationRedisRecord::RecordNotFound)
+          end
+        end
+      end
     end
   end
 
@@ -67,6 +119,61 @@ RSpec.describe Meeting do
 
       it 'creates different meetings' do
         expect(all_meetings[0].id).to_not eq all_meetings[1].id
+      end
+    end
+
+    describe 'multitenancy' do
+      let(:tenant1) { create(:tenant) }
+      let(:tenant2) { create(:tenant) }
+
+      before do
+        RedisStore.with_connection do |redis|
+          # Meetings with no tenant
+          redis.mapped_hmset('meeting:test-meeting-01', server_id: 'test-server-1')
+          redis.mapped_hmset('meeting:test-meeting-02', server_id: 'test-server-1')
+          # Meetings with Tenant1
+          redis.mapped_hmset('meeting:test-meeting-11', server_id: 'test-server-1', tenant_id: tenant1.id)
+          redis.mapped_hmset('meeting:test-meeting-12', server_id: 'test-server-1', tenant_id: tenant1.id)
+          redis.mapped_hmset('meeting:test-meeting-13', server_id: 'test-server-1', tenant_id: tenant1.id)
+          # Meetings with Tenant2
+          redis.mapped_hmset('meeting:test-meeting-21', server_id: 'test-server-1', tenant_id: tenant2.id)
+          redis.mapped_hmset('meeting:test-meeting-22', server_id: 'test-server-1', tenant_id: tenant2.id)
+
+          # server
+          redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
+
+          redis.sadd('meetings', %w[test-meeting-01 test-meeting-02
+                                    test-meeting-11 test-meeting-12 test-meeting-13
+                                    test-meeting-21 test-meeting-22])
+        end
+      end
+
+      context 'with tenant_id param' do
+        let(:meetings) { Meeting.all(tenant1.id) }
+
+        it 'fetches correct nb of Meetings' do
+          expect(meetings.size).to eq 3
+        end
+
+        it 'fetches Meetings with correct tenant_id' do
+          meetings.each do |meeting|
+            expect(meeting.tenant_id.to_i).to eq tenant1.id
+          end
+        end
+      end
+
+      context 'without tenant_id param' do
+        let(:meetings) { Meeting.all }
+
+        it 'fetches correct nb of Meetings' do
+          expect(meetings.size).to eq 2
+        end
+
+        it 'fetches Meetings with correct tenant_id' do
+          meetings.each do |meeting|
+            expect(meeting.tenant_id).to be_nil
+          end
+        end
       end
     end
   end
