@@ -27,7 +27,7 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      meeting = Meeting.find(params[:meetingID])
+      meeting = get_meeting_for_current_tenant(params[:meetingID])
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with MeetingNotFoundError if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
@@ -60,7 +60,7 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      meeting = Meeting.find(params[:meetingID])
+      meeting = get_meeting_for_current_tenant(params[:meetingID])
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with false if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
@@ -117,6 +117,20 @@ class BigBlueButtonApiController < ApplicationController
         # Send a GET request to the server
         response = get_post_req(uri)
 
+        # filter to only show messages for current Tennant
+        current_tenant = fetch_tenant
+        if current_tenant.present?
+          response.xpath('/response/meetings/meeting').each do |m|
+            meeting_tenant_id = m.xpath('metadata/tenant-id').text.to_i
+            m.remove if meeting_tenant_id != current_tenant.id
+          end
+        else
+          response.xpath('/response/meetings/meeting').each do |m|
+            meeting_tenant_id = m.xpath('metadata/tenant-id').text.to_i
+            m.remove if meeting_tenant_id != 0
+          end
+        end
+
         # Skip over if no meetings on this server
         server_meetings = response.xpath('/response/meetings/meeting')
         next if server_meetings.empty?
@@ -154,7 +168,14 @@ class BigBlueButtonApiController < ApplicationController
 
     moderator_pwd = params[:moderatorPW].presence || SecureRandom.alphanumeric(8)
     params[:moderatorPW] = moderator_pwd
-    meeting = Meeting.find_or_create_with_server(params[:meetingID], server, moderator_pwd)
+
+    meeting = Meeting.find_or_create_with_server!(
+      params[:meetingID],
+      server,
+      moderator_pwd,
+      params[:voiceBridge],
+      fetch_tenant&.id
+    )
 
     # Update with old server if meeting already existed in database
     server = meeting.server
@@ -164,12 +185,17 @@ class BigBlueButtonApiController < ApplicationController
 
     duration = params[:duration].to_i
 
+    tenant = fetch_tenant
+    params[:'meta_tenant-id'] = tenant.id if tenant.present?
+
     # Set/Overite duration if MAX_MEETING_DURATION is set and it's greater than params[:duration] (if passed)
     if !Rails.configuration.x.max_meeting_duration.zero? &&
        (duration.zero? || duration > Rails.configuration.x.max_meeting_duration)
       logger.debug("Setting duration to #{Rails.configuration.x.max_meeting_duration}")
       params[:duration] = Rails.configuration.x.max_meeting_duration
     end
+
+    params[:voiceBridge] = meeting.voice_bridge
 
     logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
     params_hash = params
@@ -192,6 +218,7 @@ class BigBlueButtonApiController < ApplicationController
       raise
     rescue StandardError => e
       logger.warn("Error #{e} creating meeting #{params[:meetingID]} on server #{server.id}.")
+      logger.debug { e.full_message }
       raise InternalError, 'Unable to create meeting on server.'
     end
 
@@ -203,7 +230,7 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      meeting = Meeting.find(params[:meetingID])
+      meeting = get_meeting_for_current_tenant(params[:meetingID])
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with MeetingNotFoundError if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
@@ -244,7 +271,7 @@ class BigBlueButtonApiController < ApplicationController
   def join
     params.require(:meetingID)
     begin
-      meeting = Meeting.find(params[:meetingID])
+      meeting = get_meeting_for_current_tenant(params[:meetingID])
       server = meeting.server
       raise ServerUnavailableError if server.offline? || server.disabled?
     rescue ServerUnavailableError
@@ -292,6 +319,13 @@ class BigBlueButtonApiController < ApplicationController
     end
     query = query.with_recording_id_prefixes(params[:recordID].split(',')) if params[:recordID].present?
     query = query.where(meeting_id: params[:meetingID].split(',')) if params[:meetingID].present?
+
+    tenant = fetch_tenant
+    if tenant.present?
+      # fetch tenant's meetings. only return recordings of tenant's meetings
+      allowed_meetings = Meeting.all(tenant.id).map(&:id)
+      query = query.where(meeting_id: allowed_meetings)
+    end
 
     @recordings = query.order(starttime: :desc).all
     @url_prefix = "#{request.protocol}#{request.host_with_port}"
@@ -419,7 +453,7 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def analytics_callback
-    token = request.headers['HTTP_AUTHORIZATION'].gsub!('Bearer ', '')
+    token = request.headers['HTTP_AUTHORIZATION'].gsub('Bearer ', '')
     raise 'Token Invalid' unless valid_token?(token)
 
     meeting_id = params['meeting_id']

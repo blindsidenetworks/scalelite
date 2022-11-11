@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
 class Meeting < ApplicationRedisRecord
-  define_attribute_methods :id, :server_id, :moderator_pw
+  define_attribute_methods :id, :server_id, :moderator_pw, :tenant_id
 
   # Meeting ID and moderator_pw provided on create request
   application_redis_attr :id, :moderator_pw
 
   # ID of the server that the meeting was created on
+  attr_accessor :tenant_id
   attr_reader :server_id
 
   def server_id=(value)
@@ -15,6 +16,24 @@ class Meeting < ApplicationRedisRecord
     return if @server.nil?
 
     @server = nil unless @server.id == value
+  end
+
+  def tenant=(obj)
+    if obj.nil?
+      @tenant_id = @tenant = nil
+    else
+      @tenant = obj
+      @tenant_id = obj.id
+    end
+  end
+
+  def tenant
+    @tenant ||= \
+      if tenant_id.nil?
+        nil
+      else
+        Tenant.find_by(id: tenant_id)
+      end
   end
 
   # Implement a "belongs to" style relation to Server
@@ -72,17 +91,18 @@ class Meeting < ApplicationRedisRecord
 
   # Atomic operation to either find an existing meeting, or create one assigned to a specific server
   # Intended for use with the BigBlueButton "create" api command.
-  def self.find_or_create_with_server(id, server, moderator_pw)
+  def self.find_or_create_with_server(id, server, moderator_pw, tenant_id = nil)
     raise ArgumentError, 'id is nil' if id.nil?
     raise ArgumentError, "Provided server doesn't have an id" if server.nil? || server.id.nil?
 
     with_connection do |redis|
       meeting_key = key(id)
-      created, _password_set, hash, _sadd_id = redis.multi do |pipeline|
+      created, _password_set, hash, _sadd_id, tenant_id = redis.multi do |pipeline|
         pipeline.hsetnx(meeting_key, 'server_id', server.id)
         pipeline.hsetnx(meeting_key, 'moderator_pw', moderator_pw)
         pipeline.hgetall(meeting_key)
         pipeline.sadd('meetings', id)
+        pipeline.hsetnx(meeting_key, 'tenant_id', tenant_id)
       end
 
       logger.debug("Meeting find_or_create: created=#{created} on server_id=#{hash['server_id']} (wanted #{server.id})")
@@ -94,10 +114,15 @@ class Meeting < ApplicationRedisRecord
   end
 
   # Find a meeting by ID
-  def self.find(id)
+  def self.find(id, tenant_id = nil)
     with_connection do |redis|
       hash = redis.hgetall(key(id))
+
       raise RecordNotFound.new("Couldn't find Meeting with id=#{id}", name, id) if hash.blank?
+
+      if tenant_id.to_i != hash['tenant_id'].to_i
+        raise RecordNotFound.new("Couldn't find Meeting with id=#{id} and tenant_id=#{tenant_id}", name, id)
+      end
 
       hash[:id] = id
       new.init_with_attributes(hash)
@@ -105,13 +130,21 @@ class Meeting < ApplicationRedisRecord
   end
 
   # Retrieve all meetings
-  def self.all
+  def self.all(tenant_id = nil)
     meetings = []
     with_connection do |redis|
       ids = redis.smembers('meetings')
       ids.each do |id|
         hash = redis.hgetall(key(id))
         next if hash.blank?
+
+        if tenant_id.present?
+          # Only fetch meetings for particular Tenant
+          next if tenant_id.to_i != hash['tenant_id'].to_i
+        elsif hash['tenant_id'].present?
+          next
+end
+        # Only fetch meetings without Tenant
 
         hash[:id] = id
         meetings << new.init_with_attributes(hash)

@@ -172,6 +172,31 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `SCALELITE_API_PORT`: Runs the SCALELITE_API in custom port number. Defaults to 3000.
 * `DEFAULT_LOCALE`: Change the language that user facing pages displays in (currently supports `en`)
 
+### Multitenancy
+Scalelite supports multitenancy by way of using subdomains. For example, if you have two tenants, t1 and t2, setup DNS entries t1.example.com and t2.example.com pointing your scalelite server (sl.example.com). Update the scalelite-api docker container with the following environmental variables:  
+`MULTITENANCY_ENABLED` : true to enable multitenancy; defaults to `false` when variable is absent.  
+`BASE_URL` : base domain.  `example.com` in our example
+Register the tenants using:
+```sh
+docker exec -it scalelite-api /bin/bash
+bin/rake tenants:add[t1,secret1]
+bin/rake tenants:add[t2,secret2]
+bin/rake tenants:showall #confirm tenants
+```
+In your LMS BigBlueButton module configuration settings, update the url and secret fields:
+`https://sl.example.com/bigbluebutton/api => https://t1.example.com/bigbluebutton/api`
+`secret => secret1`
+#### Add Tenant
+`bin/rake tenants:add[id,secrets]`
+Add multiple secret if required by providing a comma separated list.
+#### Remove Tenant
+`bin/rake tenants:remove[id]`
+#### Update Tenant
+`bin/rake tenants:update[id,id2,secrets] #change from subdomain id1 to id2`
+#### Show Tenants
+`bin/rake tenants:showall`
+
+
 ### Customizing Strings
 
 If you'd like to customize the strings on certain error pages returned by Scalelite (`recording_not_found`), you can do so by duplicating the locale file and changing whatever lines you see fit.
