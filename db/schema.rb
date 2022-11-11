@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_25_200414) do
+ActiveRecord::Schema.define(version: 2022_11_11_194252) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -53,6 +53,11 @@ ActiveRecord::Schema.define(version: 2021_07_25_200414) do
     t.boolean "protected"
     t.index ["meeting_id"], name: "index_recordings_on_meeting_id"
     t.index ["record_id"], name: "index_recordings_on_record_id", unique: true
+  end
+
+  create_table "tenants", force: :cascade do |t|
+    t.string "name"
+    t.string "secret"
   end
 
   create_table "thumbnails", force: :cascade do |t|
