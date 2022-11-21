@@ -40,5 +40,18 @@ module ActiveSupport
         reload_routes!
       end
     end
+
+    def meeting_create_response(meeting_id, moderator_pw = 'mp', attendee_pw = 'ap')
+      Nokogiri::XML::Builder.new do |xml|
+        xml.response {
+          xml.returncode 'SUCCESS'
+          xml.meetingID meeting_id
+          xml.attendeePW attendee_pw
+          xml.moderatorPW moderator_pw
+          xml.messageKey
+          xml.message
+        }
+      end.to_xml
+    end
   end
 end

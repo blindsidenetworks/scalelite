@@ -14,6 +14,9 @@ AllCops:
 
 Rails/DynamicFindBy:
   Enabled: true
+  AllowedReceivers:
+    - Meeting
+    - Server
 
 Rails/CreateTableWithTimestamps:
   Enabled: false
@@ -117,7 +120,6 @@ Layout/IndentationWidth:
 Layout/SpaceAroundMethodCallOperator:
   Enabled: true
 
-
 # Avoid long blocks with many lines.
 Metrics/BlockLength:
   Enabled: false
@@ -148,13 +150,7 @@ Metrics/ModuleLength:
 # A calculated magnitude based on number of assignments,
 # branches, and conditions.
 Metrics/AbcSize:
-  Max: 60
-  Exclude:
-    - app/controllers/bigbluebutton_api_controller.rb
-    - app/models/recording.rb
-    - app/models/server.rb
-    - lib/recording_importer.rb
-    - lib/server_sync.rb
+  Enabled: false
 
 # A complexity metric that is strongly correlated to the number
 # of test cases needed to validate a method.

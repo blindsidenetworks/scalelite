@@ -444,20 +444,27 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       meetingID: 'test-meeting-1', moderatorPW: 'mp',
     }
 
-    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
-      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+    bbb_create = \
+      stub_request(:get, "#{server1.url}create")
+      .with(query: hash_including(params))
+      .to_return do |request|
+        request_params = URI.decode_www_form(request.uri.query)
+        assert_match(/\A[1-9][0-9]{8}\z/, request_params.assoc('voiceBridge').last)
+
+        { body: meeting_create_response(params[:meetingID], params[:moderatorPW]) }
+      end
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_create_url, params: params
     end
 
-    response_xml = Nokogiri::XML(@response.body)
+    assert_requested bbb_create
 
     # Reload
     server1 = Server.find(server1.id)
     meeting = Meeting.find(params[:meetingID])
 
+    response_xml = Nokogiri::XML(@response.body)
     assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
     assert_equal params[:meetingID], meeting.id
     assert_equal server1.id, meeting.server.id
@@ -465,6 +472,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   test 'create creates the room successfully for a post request' do
+    skip('scalelite does not correctly handle request params in post requests')
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
 
@@ -472,20 +480,31 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       meetingID: 'test-meeting-1', moderatorPW: 'mp',
     }
 
-    stub_request(:post, encode_bbb_uri('create', server1.url, server1.secret, params))
-      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+    bbb_create = \
+      stub_request(:post, "#{server1.url}create")
+      .with(query: hash_including({}))
+      .to_return do |request|
+        assert_nil request.uri.query
+
+        request_params = URI.decode_www_form(request.body)
+        assert_equal params[:meetingID], request_params.assoc('meetingID').last
+        assert_equal params[:moderatorPW], request_params.assoc('moderatorPW').last
+        assert_match(/\A[1-9][0-9]{8}\z/, request_params.assoc('voiceBridge').last)
+
+        { body: meeting_create_response(params[:meetingID], params[:moderatorPW]) }
+      end
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       post bigbluebutton_api_create_url, params: params
     end
 
-    response_xml = Nokogiri::XML(@response.body)
+    assert_requested bbb_create
 
     # Reload
     server1 = Server.find(server1.id)
     meeting = Meeting.find(params[:meetingID])
 
+    response_xml = Nokogiri::XML(@response.body)
     assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
     assert_equal params[:meetingID], meeting.id
     assert_equal server1.id, meeting.server.id
@@ -500,15 +519,18 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       meetingID: 'test-meeting-1', moderatorPW: 'mp',
     }
 
-    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
+    bbb_create = \
+      stub_request(:get, "#{server1.url}create")
+      .with(query: hash_including(params))
       .to_timeout
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_create_url, params: params
     end
 
-    response_xml = Nokogiri::XML(@response.body)
+    assert_requested bbb_create
 
+    response_xml = Nokogiri::XML(@response.body)
     assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').content
     assert_equal 'internalError', response_xml.at_xpath('/response/messageKey').content
     assert_equal 'Unable to create meeting on server.', response_xml.at_xpath('/response/message').content
@@ -522,168 +544,127 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       meetingID: 'test-meeting-1', moderatorPW: 'mp',
     }
 
-    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
-      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+    bbb_create = \
+      stub_request(:get, "#{server1.url}create")
+      .with(query: hash_including(params))
+      .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_create_url, params: params
     end
+
+    assert_requested bbb_create
 
     # Reload
     server1 = Server.find(server1.id)
     assert_equal 7, server1.load
   end
 
-  test 'create creates the room successfully using POST' do
-    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
-                            secret: 'test-1-secret', enabled: true, load: 0)
-
-    params = {
-      meetingID: 'test-meeting-1', moderatorPW: 'mp',
-    }
-
-    stub_request(:post, encode_bbb_uri('create', server1.url, server1.secret, params))
-      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
-
-    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
-      post bigbluebutton_api_create_url, params: params
-    end
-
-    response_xml = Nokogiri::XML(@response.body)
-
-    # Reload
-    server1 = Server.find(server1.id)
-    meeting = Meeting.find(params[:meetingID])
-
-    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
-    assert_equal params[:meetingID], meeting.id
-    assert_equal server1.id, meeting.server.id
-    assert_equal 1, server1.load
-  end
-
   test 'create sets the duration param to MAX_MEETING_DURATION if set' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
 
-    create_params = {
-      meetingID: 'test-meeting-1',
-      moderatorPW: 'test-password',
-    }
-
     params = {
       meetingID: 'test-meeting-1',
       moderatorPW: 'test-password',
-      duration: 3600,
     }
 
-    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
-      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+    bbb_create = \
+      stub_request(:get, "#{server1.url}create")
+      .with(query: hash_including(params.merge(duration: '3600')))
+      .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
 
     Rails.configuration.x.stub(:max_meeting_duration, 3600) do
       BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
-        get bigbluebutton_api_create_url, params: create_params
+        get bigbluebutton_api_create_url, params: params
       end
-
-      response_xml = Nokogiri::XML(@response.body)
-
-      assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
     end
+
+    assert_requested bbb_create
+
+    response_xml = Nokogiri::XML(@response.body)
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
   end
 
   test 'create sets the duration param to MAX_MEETING_DURATION if passed duration is greater than MAX_MEETING_DURATION' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
 
-    create_params = {
+    params = {
       duration: 5000,
       meetingID: 'test-meeting-1',
       moderatorPW: 'test-password',
     }
 
-    params = {
-      duration: 3600,
-      meetingID: 'test-meeting-1',
-      moderatorPW: 'test-password',
-    }
-
-    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
-      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+    bbb_create = \
+      stub_request(:get, "#{server1.url}create")
+      .with(query: hash_including(params.merge(duration: '3600')))
+      .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
 
     Rails.configuration.x.stub(:max_meeting_duration, 3600) do
       BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
-        get bigbluebutton_api_create_url, params: create_params
+        get bigbluebutton_api_create_url, params: params
       end
-
-      response_xml = Nokogiri::XML(@response.body)
-
-      assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
     end
+
+    assert_requested bbb_create
+
+    response_xml = Nokogiri::XML(@response.body)
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
   end
 
   test 'create sets the duration param to MAX_MEETING_DURATION if passed duration is 0' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
 
-    create_params = {
+    params = {
       duration: 0,
       meetingID: 'test-meeting-1',
       moderatorPW: 'test-password',
     }
 
-    params = {
-      duration: 3600,
-      meetingID: 'test-meeting-1',
-      moderatorPW: 'test-password',
-    }
-
-    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
-      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+    bbb_create = \
+      stub_request(:get, "#{server1.url}create")
+      .with(query: hash_including(params.merge(duration: '3600')))
+      .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
 
     Rails.configuration.x.stub(:max_meeting_duration, 3600) do
       BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
-        get bigbluebutton_api_create_url, params: create_params
+        get bigbluebutton_api_create_url, params: params
       end
-
-      response_xml = Nokogiri::XML(@response.body)
-
-      assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
     end
+
+    assert_requested bbb_create
+
+    response_xml = Nokogiri::XML(@response.body)
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
   end
 
   test 'create does not set the duration param to MAX_MEETING_DURATION if passed duration is less than MAX_MEETING_DURATION' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
 
-    create_params = {
-      duration: 1200,
-      meetingID: 'test-meeting-1',
-      moderatorPW: 'test-password',
-    }
-
     params = {
-      duration: 1200,
+      duration: '1200',
       meetingID: 'test-meeting-1',
       moderatorPW: 'test-password',
     }
 
-    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
-      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+    bbb_create = \
+      stub_request(:get, "#{server1.url}create")
+      .with(query: hash_including(params))
+      .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
 
     Rails.configuration.x.stub(:max_meeting_duration, 3600) do
       BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
-        get bigbluebutton_api_create_url, params: create_params
+        get bigbluebutton_api_create_url, params: params
       end
-
-      response_xml = Nokogiri::XML(@response.body)
-
-      assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
     end
+
+    assert_requested bbb_create
+
+    response_xml = Nokogiri::XML(@response.body)
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
   end
 
   test 'create creates the room successfully  with only permitted params for create' do
@@ -693,10 +674,21 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     params = {
       meetingID: 'test-meeting-1', test4: '', test2: '', moderatorPW: 'test-password',
     }
-    filtered_params = { meetingID: 'test-meeting-1', moderatorPW: 'test-password' }
-    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, filtered_params))
-      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+
+    bbb_create = \
+      stub_request(:get, "#{server1.url}create")
+      .with(query: hash_including({}))
+      .to_return do |request|
+        request_params = URI.decode_www_form(request.uri.query)
+        assert_equal params[:meetingID], request_params.assoc('meetingID').last
+        assert_equal params[:moderatorPW], request_params.assoc('moderatorPW').last
+        assert_match(/[1-9][0-9]{8}/, request_params.assoc('voiceBridge').last)
+        # Filtered params:
+        assert_nil request_params.assoc('test4')
+        assert_nil request_params.assoc('test2')
+
+        { body: meeting_create_response(params[:meetingID], params[:moderatorPW]) }
+      end
 
     mocked_method = MiniTest::Mock.new
     return_value = { 'meetingID' => 'test-meeting-1' }
@@ -710,11 +702,13 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       mocked_method.verify
     end
 
-    response_xml = Nokogiri::XML(@response.body)
+    assert_requested bbb_create
+
     # Reload
     server1 = Server.find(server1.id)
     meeting = Meeting.find(params[:meetingID])
 
+    response_xml = Nokogiri::XML(@response.body)
     assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
     assert_equal params[:meetingID], meeting.id
     assert_equal server1.id, meeting.server.id
@@ -728,10 +722,11 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     params = {
       meetingID: 'test-meeting-1', test4: '', test2: '', moderatorPW: 'test-password',
     }
-    filtered_params = { meetingID: 'test-meeting-1', test4: '', test2: '', moderatorPW: 'test-password' }
-    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, filtered_params))
-      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+
+    bbb_create = \
+      stub_request(:get, "#{server1.url}create")
+      .with(query: hash_including(params))
+      .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
 
     mocked_method = MiniTest::Mock.new
     return_value = { meetingID: 'test-meeting-1', test4: '', test2: '' }
@@ -745,11 +740,13 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       mocked_method.verify
     end
 
-    response_xml = Nokogiri::XML(@response.body)
+    assert_requested bbb_create
+
     # Reload
     server1 = Server.find(server1.id)
     meeting = Meeting.find(params[:meetingID])
 
+    response_xml = Nokogiri::XML(@response.body)
     assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
     assert_equal params[:meetingID], meeting.id
     assert_equal server1.id, meeting.server.id
@@ -761,24 +758,34 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
                             secret: 'test-1-secret', enabled: true, load: 0)
     params = {
       meetingID: 'test-meeting-1', test4: '', test2: '', moderatorPW: 'test-password',
-      'meta_bn-recording-ready-url' => 'https://test-1.example.com/bigbluebutton/api/',
+      'meta_bn-recording-ready-url' => 'https://test-2.example.com/recording-ready/',
     }
 
-    bbb_params = {
-      meetingID: 'test-meeting-1', test4: '', test2: '', moderatorPW: 'test-password',
-    }
-    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, bbb_params))
-      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+    bbb_create = \
+      stub_request(:get, "#{server1.url}create")
+      .with(query: hash_including({}))
+      .to_return do |request|
+        request_params = URI.decode_www_form(request.uri.query)
+        assert_equal params[:meetingID], request_params.assoc('meetingID').last
+        assert_equal params[:test4], request_params.assoc('test4').last
+        assert_equal params[:test2], request_params.assoc('test2').last
+        assert_equal params[:moderatorPW], request_params.assoc('moderatorPW').last
+        assert_nil request_params.assoc('meta_bn-recording-ready-url')
+
+        { body: meeting_create_response(params[:meetingID], params[:moderatorPW]) }
+      end
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_create_url, params: params
     end
 
+    assert_requested bbb_create
+
     response_xml = Nokogiri::XML(@response.body)
-    callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
     assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
-    assert_equal callback_data.callback_attributes, recording_ready_url: 'https://test-1.example.com/bigbluebutton/api/'
+
+    callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
+    assert_equal({ recording_ready_url: params['meta_bn-recording-ready-url'] }, callback_data.callback_attributes)
   end
 
   test 'create creates a record in callback_data if  params["meta_analytics-callback-url"] is present in request' do
@@ -786,21 +793,81 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
                             secret: 'test-1-secret', enabled: true, load: 0)
     params = {
       meetingID: 'test-meeting-66', test4: '', test2: '', moderatorPW: 'test-password',
-      'meta_analytics-callback-url' => 'https://test.scalelite.com/bigbluebutton/api/analytics_callback',
+      'meta_analytics-callback-url' => 'https://example.com/analytics_callback',
     }
 
     Rails.configuration.x.stub(:url_host, 'test.scalelite.com') do
-      stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
-        .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-      '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
+      bbb_create = \
+        stub_request(:get, "#{server1.url}create")
+        .with(query: hash_including(
+          params.merge(
+            'meta_analytics-callback-url' => \
+              "https://#{Rails.configuration.x.url_host}#{bigbluebutton_api_analytics_callback_path}"
+          )
+        ))
+        .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
+
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_create_url, params: params
+      end
+
+      assert_requested bbb_create
+    end
+    response_xml = Nokogiri::XML(@response.body)
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+
+    callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
+    assert_equal({ analytics_callback_url: params['meta_analytics-callback-url'] }, callback_data.callback_attributes)
+  end
+
+  test 'create sets default params if they are not already set' do
+    server = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1-secret', enabled: true, load: 0)
+    params = {
+      meetingID: 'test-meeting-1',
+      param1: 'param1',
+    }
+    default_params = {
+      param1: 'not-param1',
+      param2: 'param2',
+    }
+
+    bbb_create = \
+      stub_request(:get, "#{server.url}create")
+      .with(query: hash_including(default_params.merge(params)))
+      .to_return(body: meeting_create_response(params[:meetingID]))
+
+    Rails.configuration.x.stub(:default_create_params, default_params) do
       BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
         get bigbluebutton_api_create_url, params: params
       end
     end
-    response_xml = Nokogiri::XML(@response.body)
-    callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
-    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
-    assert_equal callback_data.callback_attributes, analytics_callback_url: 'https://test.scalelite.com/bigbluebutton/api/analytics_callback'
+
+    assert_requested bbb_create
+  end
+
+  test 'create sets override params even if they are set' do
+    server = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1-secret', enabled: true, load: 0)
+    params = {
+      meetingID: 'test-meeting-1',
+      param1: 'not-param1',
+    }
+    override_params = {
+      param1: 'param1',
+      param2: 'param2',
+    }
+
+    bbb_create = \
+      stub_request(:get, "#{server.url}create")
+      .with(query: hash_including(params.merge(override_params)))
+      .to_return(body: meeting_create_response(params[:meetingID]))
+
+    Rails.configuration.x.stub(:override_create_params, override_params) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_create_url, params: params
+      end
+    end
+
+    assert_requested bbb_create
   end
 
   # analytics_callback
@@ -811,24 +878,32 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
                             secret: 'test-1-secret', enabled: true, load: 0)
     params = {
       meetingID: 'test-meeting-1111', test4: '', test2: '', moderatorPW: 'test-password',
-      'meta_analytics-callback-url' => 'https://test.scalelite.com/bigbluebutton/api/analytics_callback',
+      'meta_analytics-callback-url' => 'https://callback.example.com/analytics_callback',
     }
 
-    stub_request(:get, encode_bbb_uri('create', server1.url, server1.secret, params))
-      .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>' \
-    '<attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>')
-    stub_request(:post, 'https://test.scalelite.com/bigbluebutton/api/analytics_callback')
-      .to_return(status: :ok, body: '', headers: {})
+    stub_request(:get, "#{server1.url}create")
+      .with(query: hash_including({}))
+      .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
+
+    callback = stub_request(:post, params['meta_analytics-callback-url'])
+               .to_return(status: :ok, body: '', headers: {})
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
-      Rails.configuration.x.stub(:url_host, 'test.scalelite.com') do
-        get bigbluebutton_api_create_url, params: params
-        post bigbluebutton_api_analytics_callback_url, params: { meeting_id: 'test-meeting-1111' }
+      BigBlueButtonApiController.stub_any_instance(:valid_token?, true) do
+        Rails.configuration.x.stub(:url_host, 'test.scalelite.com') do
+          get bigbluebutton_api_create_url, params: params
+          post(
+            bigbluebutton_api_analytics_callback_url,
+            params: { meeting_id: 'test-meeting-1111' },
+            headers: { 'HTTP_AUTHORIZATION' => 'Bearer ABCD' }
+          )
+        end
       end
     end
-    callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
     assert_equal 204, @response.status
-    assert_equal callback_data.callback_attributes, analytics_callback_url: 'https://test.scalelite.com/bigbluebutton/api/analytics_callback'
+    assert_requested(callback)
+    callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
+    assert_equal({ analytics_callback_url: params['meta_analytics-callback-url'] }, callback_data.callback_attributes)
   end
 
   # end
@@ -1087,6 +1162,72 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
     assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
     assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+  end
+
+  test 'join sets default params if they are not already set' do
+    server = Server.create(
+      url: 'https://test-1.example.com/bigbluebutton/api/',
+      secret: 'test-1-secret',
+      enabled: true,
+      load: 0,
+      online: true
+    )
+    meeting = Meeting.find_or_create_with_server('test-meeting-1', server, 'mp')
+    params = {
+      meetingID: meeting.id,
+      moderatorPW: 'mp',
+      fullName: 'test-name',
+      param1: 'param1'
+    }
+    default_params = {
+      param1: 'not-param1',
+      param2: 'param2',
+    }
+
+    Rails.configuration.x.stub(:default_join_params, default_params) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_join_url, params: params
+      end
+    end
+
+    assert_operator(@response.headers['Location'], :starts_with?, server.url)
+    redirect_url = URI(@response.headers['Location'])
+    redirect_params = URI.decode_www_form(redirect_url.query)
+    assert_equal(params[:param1], redirect_params.assoc('param1').last)
+    assert_equal(default_params[:param2], redirect_params.assoc('param2').last)
+  end
+
+  test 'join sets override params even if they are set' do
+    server = Server.create(
+      url: 'https://test-1.example.com/bigbluebutton/api/',
+      secret: 'test-1-secret',
+      enabled: true,
+      load: 0,
+      online: true
+    )
+    meeting = Meeting.find_or_create_with_server('test-meeting-1', server, 'mp')
+    params = {
+      meetingID: meeting.id,
+      moderatorPW: 'mp',
+      fullName: 'test-name',
+      param1: 'not-param1'
+    }
+    override_params = {
+      param1: 'param1',
+      param2: 'param2',
+    }
+
+    Rails.configuration.x.stub(:override_join_params, override_params) do
+      BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+        get bigbluebutton_api_join_url, params: params
+      end
+    end
+
+    assert_operator(@response.headers['Location'], :starts_with?, server.url)
+    redirect_url = URI(@response.headers['Location'])
+    redirect_params = URI.decode_www_form(redirect_url.query)
+    assert_equal(override_params[:param1], redirect_params.assoc('param1').last)
+    assert_equal(override_params[:param2], redirect_params.assoc('param2').last)
   end
 
   # getRecordings

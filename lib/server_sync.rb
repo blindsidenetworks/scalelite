@@ -44,7 +44,7 @@ class ServerSync
       unless SYNC_MODES.include?(mode)
 
     mode = mode.presence || 'cordon'
-    dryrun &&= !%w[n no false].include?(dryrun.to_s.downcase)
+    dryrun &&= %w[n no false].exclude?(dryrun.to_s.downcase)
 
     # Validate server list and add missing parameters
     servers.each do |id, params|
