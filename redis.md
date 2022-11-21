@@ -42,8 +42,21 @@ The ID is the `meetingID=` parameter as passed on the `create` API call.
 This hash contains the following keys:
 
 * `server_id`: The ID of the server that the meeting is allocated on.
+* `moderator_pw`: The value of the `moderatorPW` parameter from the create API call.
+  This information is stored because it is used for performing some types of requests on older BigBlueButton server versions.
+* `voice_bridge`: The voice bridge number (conference number).
+  Depending on configuration, this may be provided on the create API call, or generated dynamically by Scalelite.
 
 ### Meetings Set
 
 This is a single set with the key `meetings`.
 It contains the ID field for each meeting that the load balancer knows about.
+
+### Voice Bridge Hash
+
+This is a single hash with the key `voice_bridges`.
+The keys are meeting `voice_bridge` values, and the values are the meeting `id`.
+This hash is used for two purposes:
+* Ensuring that voice bridge allocations are unique for each meeting, and
+* Providing an index to look up the meeting from the voice bridge (for handling dial-in callers).
+

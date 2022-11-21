@@ -46,10 +46,8 @@ group :development, :test do
   gem 'dotenv-rails'
   gem 'factory_bot_rails'
 
-  gem 'rspec-rails', '~> 5.1.2'
-
   gem 'rubocop', '~> 1.10.0', require: false
-  gem 'rubocop-rails', '~> 2.4.2', require: false
+  gem 'rubocop-rails', '~> 2.10.0', require: false
 end
 
 group :development do
@@ -60,7 +58,7 @@ end
 
 group :test do
   gem 'faker'
-  gem 'fakeredis', github: 'guilleiguaran/fakeredis', ref: '2ebe19229954c7234bed019a0c5d28d5cf5b40f6'
+  gem 'fakeredis', '~> 0.8'
   gem 'minitest-stub_any_instance'
   gem 'rails-controller-testing'
   gem 'webmock'
