@@ -2,8 +2,8 @@
 
 class Tenant < ApplicationRecord
   validates :name, presence: true
-  validates :secret, presence: true
+  validates :secrets, presence: true
 
   validates :name, uniqueness: true
-  validates :secret, uniqueness: true
+  validates :secrets, uniqueness: true
 end

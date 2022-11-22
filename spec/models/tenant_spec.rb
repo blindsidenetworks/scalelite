@@ -17,19 +17,19 @@ RSpec.describe Tenant, redis: true do
       end
 
       it 'is invalid without a secret' do
-        tenant.secret = ''
+        tenant.secrets = ''
         expect(tenant).to_not be_valid
       end
 
       context 'with duplicating attributes' do
         it 'is invalid with duplicating name' do
-          Tenant.create(name: tenant.name, secret: 'uniq secret')
+          Tenant.create(name: tenant.name, secrets: 'uniq secret')
 
           expect(tenant).to_not be_valid
         end
 
         it 'is invalid with duplicating secret' do
-          Tenant.create(name: 'uniq name', secret: tenant.secret)
+          Tenant.create(name: 'uniq name', secrets: tenant.secrets)
 
           expect(tenant).to_not be_valid
         end
