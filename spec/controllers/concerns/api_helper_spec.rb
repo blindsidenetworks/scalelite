@@ -86,7 +86,7 @@ RSpec.describe ApiHelper, type: :helper do
         include_examples 'proper verify_checksum behavior'
       end
 
-      context 'with SHA256' do
+      context 'with SHA512' do
         let(:checksum_algo) { 'SHA512' }
 
         before do
