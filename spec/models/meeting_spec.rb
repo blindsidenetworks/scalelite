@@ -46,6 +46,56 @@ RSpec.describe Meeting do
         server = meeting.server
         expect(server.id).to eq 'test-server-1'
       end
+
+      describe 'multitenancy' do
+        context 'with multiple tenants' do
+          let(:tenant1) { create(:tenant) }
+          let(:tenant2) { create(:tenant) }
+
+          let(:meeting1) { Meeting.find 'test-meeting-1', tenant1.id }
+          let(:fetching_wrong_meeting) { Meeting.find 'test-meeting-1', tenant2.id }
+
+          before do
+            RedisStore.with_connection do |redis|
+              redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1', tenant_id: tenant1.id)
+              redis.mapped_hmset('meeting:test-meeting-2', server_id: 'test-server-1', tenant_id: tenant2.id)
+              redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
+            end
+          end
+
+          it 'returns correct tenant\'s Meeting' do
+            expect(meeting1).to be_present
+          end
+
+          it 'does not fetch meeting with incorrect id/tenant_id' do
+            expect {
+              fetching_wrong_meeting
+            }.to raise_error(ApplicationRedisRecord::RecordNotFound)
+          end
+        end
+
+        context 'without tenant' do
+          let(:tenant1) { create(:tenant) }
+          let(:meeting_with_tenant) { Meeting.find 'test-meeting-1', tenant1.id }
+          let(:meeting_without_tenant) { Meeting.find 'test-meeting-1'}
+
+          before do
+            RedisStore.with_connection do |redis|
+              redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
+              redis.mapped_hmset('meeting:test-meeting-2', server_id: 'test-server-1', tenant_id: tenant1.id)
+              redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
+            end
+          end
+
+          it 'returns only Meeting with empty tenant_id' do
+            expect( Meeting.find 'test-meeting-1' ).to be_present
+
+            expect {
+              Meeting.find 'test-meeting-1', tenant1.id
+            }.to raise_error(ApplicationRedisRecord::RecordNotFound)
+          end
+        end
+      end
     end
   end
 

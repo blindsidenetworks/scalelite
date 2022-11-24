@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 class Meeting < ApplicationRedisRecord
-  define_attribute_methods :id, :server_id, :moderator_pw
+  define_attribute_methods :id, :server_id, :moderator_pw, :tenant_id
 
   # Meeting ID and moderator_pw provided on create request
   application_redis_attr :id, :moderator_pw
 
   # ID of the server that the meeting was created on
-  attr_reader :server_id
+  attr_reader :server_id, :tenant_id
 
   def server_id=(value)
     server_id_will_change! unless @server_id == value
@@ -15,6 +15,29 @@ class Meeting < ApplicationRedisRecord
     return if @server.nil?
 
     @server = nil unless @server.id == value
+  end
+
+  def tenant_id=(value)
+    #server_id_will_change! unless @server_id == value
+    @tenant_id = value
+  end
+
+  def tenant=(obj)
+    if obj.nil?
+      @tenant_id = @tenant = nil
+    else
+      @tenant= obj
+      @tenant_id = obj.id
+    end
+  end
+
+  def tenant
+    @tenant ||= \
+      if tenant_id.nil?
+        nil
+      else
+        Tenant.find(tenant_id)
+      end
   end
 
   # Implement a "belongs to" style relation to Server
@@ -94,10 +117,15 @@ class Meeting < ApplicationRedisRecord
   end
 
   # Find a meeting by ID
-  def self.find(id)
+  def self.find(id, tenant_id=nil)
     with_connection do |redis|
       hash = redis.hgetall(key(id))
+
       raise RecordNotFound.new("Couldn't find Meeting with id=#{id}", name, id) if hash.blank?
+
+      if tenant_id.to_i != hash['tenant_id'].to_i
+        raise RecordNotFound.new("Couldn't find Meeting with id=#{id} and tenant_id=#{tenant_id}", name, id)
+      end
 
       hash[:id] = id
       new.init_with_attributes(hash)
