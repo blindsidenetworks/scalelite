@@ -133,13 +133,21 @@ class Meeting < ApplicationRedisRecord
   end
 
   # Retrieve all meetings
-  def self.all
+  def self.all(tenant_id=nil)
     meetings = []
     with_connection do |redis|
       ids = redis.smembers('meetings')
       ids.each do |id|
         hash = redis.hgetall(key(id))
         next if hash.blank?
+
+        if tenant_id.present?
+          #Only fetch meetings for particular Tenant
+          next if tenant_id.to_i != hash['tenant_id'].to_i
+        else
+          #Only fetch meetings without Tenant
+          next if hash['tenant_id'].present?
+        end
 
         hash[:id] = id
         meetings << new.init_with_attributes(hash)
