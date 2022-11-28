@@ -13,23 +13,23 @@ fi
 echo "Generating templated nginx configuration..."
 if [ "$NGINX_RECORDINGS_ONLY" = "true" ] ; then
 	echo "Using nginx recordings only configuration template."
-	nginx_template=/etc/nginx/conf.d/scalelite-recordings-only.template
+	nginx_template=/etc/nginx/http.d/scalelite-recordings-only.template
 elif [ "$NGINX_BEHIND_PROXY" = "true" ] ; then
 	echo "Using proxy configuration template."
-	nginx_template=/etc/nginx/conf.d/scalelite-proxy.template
+	nginx_template=/etc/nginx/http.d/scalelite-proxy.template
 elif [ "$NGINX_SSL" = "true" ] ; then
 	echo "Using SSL configuration template."
-	nginx_template=/etc/nginx/conf.d/scalelite-ssl.template
+	nginx_template=/etc/nginx/http.d/scalelite-ssl.template
 else
 	echo "Using non-SSL configuration template."
-	nginx_template=/etc/nginx/conf.d/scalelite.template
+	nginx_template=/etc/nginx/http.d/scalelite.template
 fi
 
 # apply SCALELITE_API port from environment variable or use default port 3000
 SCALELITE_API_PORT=${SCALELITE_API_PORT:-3000}
 export SCALELITE_API_PORT
 
-envsubst '$SCALELITE_API_PORT $URL_HOST' <$nginx_template >/etc/nginx/conf.d/scalelite.conf
+envsubst '$SCALELITE_API_PORT $URL_HOST' <$nginx_template >/etc/nginx/http.d/scalelite.conf
 unset nginx_template
 
 mkdir -p /run/nginx
