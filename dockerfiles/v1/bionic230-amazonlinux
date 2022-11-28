@@ -1,4 +1,4 @@
-FROM amazonlinux:2.0.20211201.0 AS amazonlinux
+FROM amazonlinux:2.0.20221004.0 AS amazonlinux
 
 FROM ubuntu:18.04 AS bbb-playback
 ENV DEBIAN_FRONTEND=noninteractive
@@ -30,15 +30,18 @@ RUN chmod +x /sbin/tini
 RUN yum -y install redhat-rpm-config
 
 FROM amazonlinux-base AS nginx
-RUN yes | amazon-linux-extras install nginx1
 RUN yum -y install gettext
+COPY nginx/nginx.repo /etc/yum.repos.d/nginx.repo
+RUN yum install yum-utils -y
+RUN yum install nginx -y
 RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log
 COPY --from=bbb-playback /etc/bigbluebutton/nginx /etc/bigbluebutton/nginx/
 COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback/
 COPY nginx/start /etc/nginx/start
 COPY nginx/dhparam.pem /etc/nginx/dhparam.pem
-COPY nginx/conf.d /etc/nginx/conf.d/
+COPY nginx/http.d /etc/nginx/http.d/
+RUN rm -r /etc/nginx/conf.d; ln -s /etc/nginx/http.d/ /etc/nginx/conf.d
 EXPOSE 80
 EXPOSE 443
 ENV NGINX_HOSTNAME=localhost
@@ -51,9 +54,10 @@ RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash -
 RUN yum -y install nodejs
 # Install Ruby & Rails
 RUN curl -sL -o /etc/yum.repos.d/yarn.repo https://dl.yarnpkg.com/rpm/yarn.repo
-RUN amazon-linux-extras enable ruby2.6 \
-    && yum -y install git tar gzip yarn shared-mime-info libxslt zlib-devel sqlite-devel mariadb-devel postgresql-devel ruby-devel rubygems-devel rubygem-bundler rubygem-io-console rubygem-irb rubygem-json rubygem-minitest rubygem-net-http-persistent rubygem-net-telnet rubygem-power_assert rubygem-rake rubygem-test-unit rubygem-thor rubygem-xmlrpc rubygem-bigdecimal
+RUN amazon-linux-extras enable ruby2.6 postgresql14 \
+    && yum -y install git tar gzip yarn shared-mime-info libxslt zlib-devel sqlite-devel mariadb-devel libpq-devel ruby-devel rubygems-devel rubygem-bundler rubygem-io-console rubygem-irb rubygem-json rubygem-minitest rubygem-power_assert rubygem-rake rubygem-test-unit rubygem-bigdecimal
 RUN yum -y install python3 python3-pip shadow-utils
+RUN gem install bundler -v '2.1.4'
 RUN groupadd scalelite --gid 1000 && \
     useradd -u 1000 -d /srv/scalelite -g scalelite scalelite
 RUN groupadd scalelite-spool --gid 2000 && \
@@ -61,14 +65,17 @@ RUN groupadd scalelite-spool --gid 2000 && \
 WORKDIR /srv/scalelite
 
 FROM base as builder
+RUN rm -rf nginx
 USER scalelite:scalelite
 COPY --chown=scalelite:scalelite Gemfile* ./
-RUN bundle config build.nokogiri --use-system-libraries \
-    && bundle install --deployment --without development:test -j4 \
-    && rm -rf vendor/bundle/ruby/*/cache \
-    && find vendor/bundle/ruby/*/gems/ \( -name '*.c' -o -name '*.o' \) -delete
+RUN bundle --version
+RUN bundle config build.nokogiri --use-system-libraries
+RUN bundle config set --local deployment 'true'
+RUN bundle config set --local without 'development:test'
+RUN bundle install -j4
+RUN rm -rf vendor/bundle/ruby/*/cache
+RUN find vendor/bundle/ruby/*/gems/ \( -name '*.c' -o -name '*.o' \) -delete
 COPY --chown=scalelite:scalelite . ./
-RUN rm -rf nginx
 
 FROM base AS application
 USER scalelite:scalelite
