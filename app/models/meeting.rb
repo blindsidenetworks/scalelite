@@ -18,7 +18,6 @@ class Meeting < ApplicationRedisRecord
   end
 
   def tenant_id=(value)
-    #server_id_will_change! unless @server_id == value
     @tenant_id = value
   end
 
@@ -95,7 +94,7 @@ class Meeting < ApplicationRedisRecord
 
   # Atomic operation to either find an existing meeting, or create one assigned to a specific server
   # Intended for use with the BigBlueButton "create" api command.
-  def self.find_or_create_with_server(id, server, moderator_pw)
+  def self.find_or_create_with_server(id, server, moderator_pw, tenant_id=nil)
     raise ArgumentError, 'id is nil' if id.nil?
     raise ArgumentError, "Provided server doesn't have an id" if server.nil? || server.id.nil?
 
@@ -104,6 +103,7 @@ class Meeting < ApplicationRedisRecord
       created, _password_set, hash, _sadd_id = redis.multi do |pipeline|
         pipeline.hsetnx(meeting_key, 'server_id', server.id)
         pipeline.hsetnx(meeting_key, 'moderator_pw', moderator_pw)
+        pipeline.hsetnx(meeting_key, 'tenant_id', tenant_id)
         pipeline.hgetall(meeting_key)
         pipeline.sadd('meetings', id)
       end

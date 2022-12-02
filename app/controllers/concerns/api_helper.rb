@@ -48,10 +48,6 @@ module ApiHelper
     raise ChecksumError
   end
 
-  def get_meeting(meeting_id)
-
-  end
-
   def get_tenant_name_from_url
     base_url = Rails.configuration.x.base_url
     tenant_name_end_position = controller.request.host.index( base_url )
@@ -69,6 +65,11 @@ module ApiHelper
     tenant_name = get_tenant_name_from_url
 
     Tenant.find_by_name(tenant_name)
+  end
+
+  def get_meeting_for_current_tenant(meeting_id)
+    tenant = get_tenant
+    Meeting.find(meeting_id, tenant&.id)
   end
 
   def get_checksum(check_string, checksum_algorithm)
