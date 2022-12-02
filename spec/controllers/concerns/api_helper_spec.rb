@@ -111,6 +111,66 @@ RSpec.describe ApiHelper, type: :helper do
     end
   end
 
+  describe '.get_meeting' do
+    context 'with multitenancy disabled' do
+      it 'fetches meeting normally'
+    end
+
+    context 'with multitenancy enabled' do
+
+    end
+  end
+
+  describe '.get_tenant_name_from_url' do
+    let(:host_name) { 'api.rna1.blindside-dev.com' }
+
+    before do
+      Rails.configuration.x.base_url = host_name
+    end
+
+    context 'with tenant name present' do
+      before do
+        controller.request.host = host
+      end
+
+      let(:subdomain) { 'carleton' }
+      let(:host) { "#{subdomain}.#{host_name}" }
+
+      it 'returns tenant name' do
+        expect( get_tenant_name_from_url ).to eq subdomain
+      end
+    end
+
+    context 'with tenant name absent' do
+      before do
+        controller.request.host = host_name
+      end
+
+      it 'returns empty string' do
+        expect( get_tenant_name_from_url ).to eq ''
+      end
+    end
+
+  end
+
+
+  describe '.get_tenant' do
+    context 'with multitenancy enabled' do
+      context 'with existing tenant' do
+        let(:secret) { Rails.configuration.x.loadbalancer_secrets.first }
+        let!(:tenant) { create :tenant, secret: secret }
+
+        it 'properly sets tenant' do
+          expect( set_tenant )
+        end
+      end
+
+      context 'without tenant' do
+        it 'returns empty string'
+      end
+    end
+  end
+
   describe '.get_checksum'
 
   describe 'encode_bbb_url'

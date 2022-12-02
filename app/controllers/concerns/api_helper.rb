@@ -48,6 +48,22 @@ module ApiHelper
     raise ChecksumError
   end
 
+  def get_meeting(meeting_id)
+
+  end
+
+  def get_tenant_name_from_url
+    base_url = Rails.configuration.x.base_url
+    tenant_name_end_position = controller.request.host.index( base_url )
+
+    return '' if tenant_name_end_position.nil? # happens if base_url was not found in current host name
+    return '' if tenant_name_end_position == 0 # happens if stings are the same, so no subdomain
+
+    tenant_name_end_position -= 1 #to remove dot '.' a the end
+
+    controller.request.host[0...tenant_name_end_position]
+  end
+
   def get_checksum(check_string, checksum_algorithm)
     return Digest::SHA512.hexdigest(check_string) if checksum_algorithm == 'SHA512'
     return Digest::SHA256.hexdigest(check_string) if checksum_algorithm == 'SHA256'
