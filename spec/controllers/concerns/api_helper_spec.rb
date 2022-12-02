@@ -155,18 +155,33 @@ RSpec.describe ApiHelper, type: :helper do
 
 
   describe '.get_tenant' do
+    let(:host_name) { 'api.rna1.blindside-dev.com' }
+    let!(:tenant) { create :tenant }
+
+    before do
+      Rails.configuration.x.base_url = host_name
+    end
+
     context 'with multitenancy enabled' do
-      context 'with existing tenant' do
-        let(:secret) { Rails.configuration.x.loadbalancer_secrets.first }
-        let!(:tenant) { create :tenant, secret: secret }
+      before do
+        controller.request.host = host
+      end
+
+      context 'with tenant in subdomain' do
+        let(:subdomain) { tenant.name }
+        let(:host) { "#{subdomain}.#{host_name}" }
 
         it 'properly sets tenant' do
-          expect( set_tenant )
+          expect( get_tenant ).to eq tenant
         end
       end
 
-      context 'without tenant' do
-        it 'returns empty string'
+      context 'without tenant in subdomain' do
+        let(:host) { host_name }
+
+        it 'returns nil' do
+          expect( get_tenant ).to be_nil
+        end
       end
     end
   end

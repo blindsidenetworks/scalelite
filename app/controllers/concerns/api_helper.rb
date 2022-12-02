@@ -64,6 +64,12 @@ module ApiHelper
     controller.request.host[0...tenant_name_end_position]
   end
 
+  def get_tenant
+    tenant_name = get_tenant_name_from_url
+
+    Tenant.find_by_name(tenant_name)
+  end
+
   def get_checksum(check_string, checksum_algorithm)
     return Digest::SHA512.hexdigest(check_string) if checksum_algorithm == 'SHA512'
     return Digest::SHA256.hexdigest(check_string) if checksum_algorithm == 'SHA256'
