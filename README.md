@@ -172,6 +172,14 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `SCALELITE_API_PORT`: Runs the SCALELITE_API in custom port number. Defaults to 3000.
 * `DEFAULT_LOCALE`: Change the language that user facing pages displays in (currently supports `en`)
 
+#### Multitenancy
+Scalelite fetches tenant for the current request from the subdomain of the request. For example, if current request comes
+to `foobar.api.rna1.blindside-dev.com/bigbluebutton/api/` and `BASE_URL` is set to `api.rna1.blindside-dev.com/bigbluebutton/api/`,
+system will scope all the Meetings to a Tenant with name `foobar`
+* `MULTITENANCY_ENABLED`: Enable/Disable multitenancy feature. Defaults to `false`
+* `BASE_URL`: Url without subdomain.
+
+
 ### Customizing Strings
 
 If you'd like to customize the strings on certain error pages returned by Scalelite (`recording_not_found`), you can do so by duplicating the locale file and changing whatever lines you see fit.
