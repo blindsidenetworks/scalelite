@@ -165,6 +165,7 @@ RSpec.describe ApiHelper, type: :helper do
     context 'with multitenancy enabled' do
       before do
         controller.request.host = host
+        Rails.configuration.x.multitenancy_enabled = true
       end
 
       context 'with tenant in subdomain' do
@@ -178,6 +179,22 @@ RSpec.describe ApiHelper, type: :helper do
 
       context 'without tenant in subdomain' do
         let(:host) { host_name }
+
+        it 'returns nil' do
+          expect( get_tenant ).to be_nil
+        end
+      end
+    end
+
+    context 'with multitenancy disabled' do
+      before do
+        controller.request.host = host
+        Rails.configuration.x.multitenancy_enabled = false
+      end
+
+      context 'with tenant in subdomain' do
+        let(:subdomain) { tenant.name }
+        let(:host) { "#{subdomain}.#{host_name}" }
 
         it 'returns nil' do
           expect( get_tenant ).to be_nil

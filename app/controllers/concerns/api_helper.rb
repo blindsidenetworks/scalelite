@@ -65,6 +65,7 @@ module ApiHelper
   end
 
   def get_tenant
+    return nil unless Rails.configuration.x.multitenancy_enabled
     tenant_name = get_tenant_name_from_url
 
     Tenant.find_by_name(tenant_name)
