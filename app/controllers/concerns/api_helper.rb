@@ -49,7 +49,14 @@ module ApiHelper
   end
 
   def get_secrets
-    Rails.configuration.x.loadbalancer_secrets
+    return Rails.configuration.x.loadbalancer_secrets unless Rails.configuration.x.multitenancy_enabled
+
+    tenant = get_tenant
+    if tenant.present?
+      tenant.secrets_array
+    else
+      Rails.configuration.x.loadbalancer_secrets
+    end
   end
 
   def get_tenant_name_from_url

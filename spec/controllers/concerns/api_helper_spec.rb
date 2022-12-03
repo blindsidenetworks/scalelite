@@ -195,6 +195,68 @@ RSpec.describe ApiHelper, type: :helper do
 
   describe '.get_checksum'
 
+  describe '.get_secrets' do
+    let!(:tenant) { create :tenant }
+    let(:config_secrets) { [Faker::Crypto.sha512, Faker::Crypto.sha256] }
+
+    let(:host_name) { 'api.rna1.blindside-dev.com' }
+    let(:subdomain) { tenant.name }
+
+    before do
+      Rails.configuration.x.loadbalancer_secrets = config_secrets
+      Rails.configuration.x.base_url = host_name
+      controller.request.host = host
+    end
+
+    context 'with multitenancy enabled' do
+      before do
+        Rails.configuration.x.multitenancy_enabled = true
+      end
+
+      context 'with tenant provided' do
+        let(:host) { "#{subdomain}.#{host_name}" }
+
+        it 'returns secrets from Tenant' do
+          expect(get_secrets).to eq tenant.secrets_array
+        end
+      end
+
+      context 'without tenant provided' do
+        let(:host) { host_name }
+
+        it 'returns secrets from config' do
+          expect(get_secrets).to eq config_secrets
+        end
+      end
+    end
+
+    context 'with multitenancy disabled' do
+      before do
+        Rails.configuration.x.multitenancy_enabled = false
+      end
+
+      context 'without tenant provided' do
+        let(:host) { host_name }
+
+        it 'returns secrets from config' do
+          expect(get_secrets).to eq config_secrets
+        end
+      end
+
+      context 'with tenant provided' do
+        let(:host) { "#{subdomain}.#{host_name}" }
+
+        it 'returns secrets from config' do
+          expect(get_secrets).to eq config_secrets
+        end
+
+        it 'does not return secrets from Tenant' do
+          expect(get_secrets).to_not eq tenant.secrets_array
+        end
+      end
+    end
+  end
+
   describe 'encode_bbb_url'
 
   describe '.bbb_req timeout'
