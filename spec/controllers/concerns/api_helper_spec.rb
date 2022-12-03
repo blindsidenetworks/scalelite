@@ -111,7 +111,7 @@ RSpec.describe ApiHelper, type: :helper do
     end
   end
 
-  describe '.get_tenant_name_from_url' do
+  describe '.fetch_tenant_name_from_url' do
     let(:host_name) { 'api.rna1.blindside-dev.com' }
 
     before do
@@ -127,7 +127,7 @@ RSpec.describe ApiHelper, type: :helper do
       let(:host) { "#{subdomain}.#{host_name}" }
 
       it 'returns tenant name' do
-        expect( get_tenant_name_from_url ).to eq subdomain
+        expect(fetch_tenant_name_from_url).to eq subdomain
       end
     end
 
@@ -137,14 +137,12 @@ RSpec.describe ApiHelper, type: :helper do
       end
 
       it 'returns empty string' do
-        expect( get_tenant_name_from_url ).to eq ''
+        expect(fetch_tenant_name_from_url).to eq ''
       end
     end
-
   end
 
-
-  describe '.get_tenant' do
+  describe '.fetch_tenant' do
     let(:host_name) { 'api.rna1.blindside-dev.com' }
     let!(:tenant) { create :tenant }
 
@@ -163,7 +161,7 @@ RSpec.describe ApiHelper, type: :helper do
         let(:host) { "#{subdomain}.#{host_name}" }
 
         it 'properly sets tenant' do
-          expect( get_tenant ).to eq tenant
+          expect(fetch_tenant).to eq tenant
         end
       end
 
@@ -171,7 +169,7 @@ RSpec.describe ApiHelper, type: :helper do
         let(:host) { host_name }
 
         it 'returns nil' do
-          expect( get_tenant ).to be_nil
+          expect(fetch_tenant).to be_nil
         end
       end
     end
@@ -187,7 +185,7 @@ RSpec.describe ApiHelper, type: :helper do
         let(:host) { "#{subdomain}.#{host_name}" }
 
         it 'returns nil' do
-          expect( get_tenant ).to be_nil
+          expect(fetch_tenant).to be_nil
         end
       end
     end
@@ -195,7 +193,7 @@ RSpec.describe ApiHelper, type: :helper do
 
   describe '.get_checksum'
 
-  describe '.get_secrets' do
+  describe '.fetch_secrets' do
     let!(:tenant) { create :tenant }
     let(:config_secrets) { [Faker::Crypto.sha512, Faker::Crypto.sha256] }
 
@@ -217,7 +215,7 @@ RSpec.describe ApiHelper, type: :helper do
         let(:host) { "#{subdomain}.#{host_name}" }
 
         it 'returns secrets from Tenant' do
-          expect(get_secrets).to eq tenant.secrets_array
+          expect(fetch_secrets).to eq tenant.secrets_array
         end
       end
 
@@ -225,7 +223,7 @@ RSpec.describe ApiHelper, type: :helper do
         let(:host) { host_name }
 
         it 'returns secrets from config' do
-          expect(get_secrets).to eq config_secrets
+          expect(fetch_secrets).to eq config_secrets
         end
       end
     end
@@ -239,7 +237,7 @@ RSpec.describe ApiHelper, type: :helper do
         let(:host) { host_name }
 
         it 'returns secrets from config' do
-          expect(get_secrets).to eq config_secrets
+          expect(fetch_secrets).to eq config_secrets
         end
       end
 
@@ -247,11 +245,11 @@ RSpec.describe ApiHelper, type: :helper do
         let(:host) { "#{subdomain}.#{host_name}" }
 
         it 'returns secrets from config' do
-          expect(get_secrets).to eq config_secrets
+          expect(fetch_secrets).to eq config_secrets
         end
 
         it 'does not return secrets from Tenant' do
-          expect(get_secrets).to_not eq tenant.secrets_array
+          expect(fetch_secrets).to_not eq tenant.secrets_array
         end
       end
     end

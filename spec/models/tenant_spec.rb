@@ -40,7 +40,7 @@ RSpec.describe Tenant, redis: true do
   describe '.secrets_array' do
     context 'with single secret' do
       let(:secret) { Faker::Crypto.sha512 }
-      let(:tenant) { build_stubbed :tenant, secrets: secret}
+      let(:tenant) { build_stubbed :tenant, secrets: secret }
 
       it 'returns one element' do
         expect(tenant.secrets_array.class).to eq Array

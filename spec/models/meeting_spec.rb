@@ -77,7 +77,7 @@ RSpec.describe Meeting, redis: true do
         context 'without tenant' do
           let(:tenant1) { create(:tenant) }
           let(:meeting_with_tenant) { Meeting.find 'test-meeting-1', tenant1.id }
-          let(:meeting_without_tenant) { Meeting.find 'test-meeting-1'}
+          let(:meeting_without_tenant) { Meeting.find 'test-meeting-1' }
 
           before do
             RedisStore.with_connection do |redis|
@@ -88,7 +88,7 @@ RSpec.describe Meeting, redis: true do
           end
 
           it 'returns only Meeting with empty tenant_id' do
-            expect( Meeting.find 'test-meeting-1' ).to be_present
+            expect(Meeting.find('test-meeting-1')).to be_present
           end
 
           it 'throws error when trying to fetch existing Meeting providing incorrect Tenant' do
@@ -128,29 +128,28 @@ RSpec.describe Meeting, redis: true do
 
       before do
         RedisStore.with_connection do |redis|
-          #Meetings with no tenant
+          # Meetings with no tenant
           redis.mapped_hmset('meeting:test-meeting-01', server_id: 'test-server-1')
           redis.mapped_hmset('meeting:test-meeting-02', server_id: 'test-server-1')
-          #Meetings with Tenant1
+          # Meetings with Tenant1
           redis.mapped_hmset('meeting:test-meeting-11', server_id: 'test-server-1', tenant_id: tenant1.id)
           redis.mapped_hmset('meeting:test-meeting-12', server_id: 'test-server-1', tenant_id: tenant1.id)
           redis.mapped_hmset('meeting:test-meeting-13', server_id: 'test-server-1', tenant_id: tenant1.id)
-          #Meetings with Tenant2
+          # Meetings with Tenant2
           redis.mapped_hmset('meeting:test-meeting-21', server_id: 'test-server-1', tenant_id: tenant2.id)
           redis.mapped_hmset('meeting:test-meeting-22', server_id: 'test-server-1', tenant_id: tenant2.id)
 
-          #server
+          # server
           redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
 
           redis.sadd('meetings', %w[test-meeting-01 test-meeting-02
                                     test-meeting-11 test-meeting-12 test-meeting-13
-                                    test-meeting-21 test-meeting-22
-                    ])
+                                    test-meeting-21 test-meeting-22])
         end
       end
 
       context 'with tenant_id param' do
-        let(:meetings) {  Meeting.all(tenant1.id) }
+        let(:meetings) { Meeting.all(tenant1.id) }
 
         it 'fetches correct nb of Meetings' do
           expect(meetings.size).to eq 3
@@ -164,7 +163,7 @@ RSpec.describe Meeting, redis: true do
       end
 
       context 'without tenant_id param' do
-        let(:meetings) {  Meeting.all }
+        let(:meetings) { Meeting.all }
 
         it 'fetches correct nb of Meetings' do
           expect(meetings.size).to eq 2

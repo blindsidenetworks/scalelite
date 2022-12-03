@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ChangeTenantSecretToPlural < ActiveRecord::Migration[6.0]
   def change
     rename_column :tenants, :secret, :secrets

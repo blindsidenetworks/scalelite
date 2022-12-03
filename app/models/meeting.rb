@@ -7,7 +7,8 @@ class Meeting < ApplicationRedisRecord
   application_redis_attr :id, :moderator_pw
 
   # ID of the server that the meeting was created on
-  attr_reader :server_id, :tenant_id
+  attr_accessor :tenant_id
+  attr_reader :server_id
 
   def server_id=(value)
     server_id_will_change! unless @server_id == value
@@ -17,15 +18,11 @@ class Meeting < ApplicationRedisRecord
     @server = nil unless @server.id == value
   end
 
-  def tenant_id=(value)
-    @tenant_id = value
-  end
-
   def tenant=(obj)
     if obj.nil?
       @tenant_id = @tenant = nil
     else
-      @tenant= obj
+      @tenant = obj
       @tenant_id = obj.id
     end
   end
@@ -94,7 +91,7 @@ class Meeting < ApplicationRedisRecord
 
   # Atomic operation to either find an existing meeting, or create one assigned to a specific server
   # Intended for use with the BigBlueButton "create" api command.
-  def self.find_or_create_with_server(id, server, moderator_pw, tenant_id=nil)
+  def self.find_or_create_with_server(id, server, moderator_pw, tenant_id = nil)
     raise ArgumentError, 'id is nil' if id.nil?
     raise ArgumentError, "Provided server doesn't have an id" if server.nil? || server.id.nil?
 
@@ -117,7 +114,7 @@ class Meeting < ApplicationRedisRecord
   end
 
   # Find a meeting by ID
-  def self.find(id, tenant_id=nil)
+  def self.find(id, tenant_id = nil)
     with_connection do |redis|
       hash = redis.hgetall(key(id))
 
@@ -133,7 +130,7 @@ class Meeting < ApplicationRedisRecord
   end
 
   # Retrieve all meetings
-  def self.all(tenant_id=nil)
+  def self.all(tenant_id = nil)
     meetings = []
     with_connection do |redis|
       ids = redis.smembers('meetings')
@@ -142,12 +139,12 @@ class Meeting < ApplicationRedisRecord
         next if hash.blank?
 
         if tenant_id.present?
-          #Only fetch meetings for particular Tenant
+          # Only fetch meetings for particular Tenant
           next if tenant_id.to_i != hash['tenant_id'].to_i
-        else
-          #Only fetch meetings without Tenant
-          next if hash['tenant_id'].present?
-        end
+        elsif hash['tenant_id'].present?
+          next
+end
+        # Only fetch meetings without Tenant
 
         hash[:id] = id
         meetings << new.init_with_attributes(hash)

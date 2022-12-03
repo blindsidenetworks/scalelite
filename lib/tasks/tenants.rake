@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 namespace :tenants do
   desc 'List all the Tenants'
-  task showall: :environment do |_t, args|
+  task showall: :environment do |_t, _args|
     tenants = Tenant.all
 
     if tenants.present?
@@ -42,8 +44,8 @@ namespace :tenants do
     name = args[:name]
     secrets = args[:secrets]
 
-    tenant = Tenant.find_by_id id
-    unless tenant.present?
+    tenant = Tenant.find_by id: id
+    if tenant.blank?
       puts("Tenant with id #{id} does not exist in the system. Exiting...")
       exit(1)
     end
@@ -55,15 +57,14 @@ namespace :tenants do
       puts(tenant.errors.messages.to_s)
       exit(1)
     end
-
   end
 
   desc 'Remove existing Tenant'
   task :remove, [:id] => :environment do |_t, args|
     id = args[:id].to_i
 
-    tenant = Tenant.find_by_id id
-    unless tenant.present?
+    tenant = Tenant.find_by id: id
+    if tenant.blank?
       puts("Tenant with id #{id} does not exist in the system. Exiting...")
       exit(1)
     end

@@ -27,7 +27,7 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      meeting = get_meeting_for_current_tenant( params[:meetingID] )
+      meeting = get_meeting_for_current_tenant(params[:meetingID])
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with MeetingNotFoundError if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
@@ -60,7 +60,7 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      meeting = get_meeting_for_current_tenant( params[:meetingID] )
+      meeting = get_meeting_for_current_tenant(params[:meetingID])
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with false if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
@@ -155,7 +155,7 @@ class BigBlueButtonApiController < ApplicationController
     moderator_pwd = params[:moderatorPW].presence || SecureRandom.alphanumeric(8)
     params[:moderatorPW] = moderator_pwd
 
-    meeting = Meeting.find_or_create_with_server(params[:meetingID], server, moderator_pwd, get_tenant&.id)
+    meeting = Meeting.find_or_create_with_server(params[:meetingID], server, moderator_pwd, fetch_tenant&.id)
 
     # Update with old server if meeting already existed in database
     server = meeting.server
@@ -204,7 +204,7 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      meeting = get_meeting_for_current_tenant( params[:meetingID] )
+      meeting = get_meeting_for_current_tenant(params[:meetingID])
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with MeetingNotFoundError if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
@@ -245,7 +245,7 @@ class BigBlueButtonApiController < ApplicationController
   def join
     params.require(:meetingID)
     begin
-      meeting = get_meeting_for_current_tenant( params[:meetingID] )
+      meeting = get_meeting_for_current_tenant(params[:meetingID])
       server = meeting.server
       raise ServerUnavailableError if server.offline? || server.disabled?
     rescue ServerUnavailableError
