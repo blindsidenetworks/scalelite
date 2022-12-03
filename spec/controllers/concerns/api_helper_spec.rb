@@ -111,16 +111,6 @@ RSpec.describe ApiHelper, type: :helper do
     end
   end
 
-  describe '.get_meeting' do
-    context 'with multitenancy disabled' do
-      it 'fetches meeting normally'
-    end
-
-    context 'with multitenancy enabled' do
-
-    end
-  end
-
   describe '.get_tenant_name_from_url' do
     let(:host_name) { 'api.rna1.blindside-dev.com' }
 

@@ -45,7 +45,7 @@ RSpec.describe Tenant, redis: true do
       it 'returns one element' do
         expect(tenant.secrets_array.class).to eq Array
         expect(tenant.secrets_array.size).to eq 1
-        expect(tenant.secrets_array).to include secrets
+        expect(tenant.secrets_array).to include secret
       end
     end
 

@@ -100,12 +100,12 @@ class Meeting < ApplicationRedisRecord
 
     with_connection do |redis|
       meeting_key = key(id)
-      created, _password_set, hash, _sadd_id = redis.multi do |pipeline|
+      created, _password_set, hash, _sadd_id, tenant_id = redis.multi do |pipeline|
         pipeline.hsetnx(meeting_key, 'server_id', server.id)
         pipeline.hsetnx(meeting_key, 'moderator_pw', moderator_pw)
-        pipeline.hsetnx(meeting_key, 'tenant_id', tenant_id)
         pipeline.hgetall(meeting_key)
         pipeline.sadd('meetings', id)
+        pipeline.hsetnx(meeting_key, 'tenant_id', tenant_id)
       end
 
       logger.debug("Meeting find_or_create: created=#{created} on server_id=#{hash['server_id']} (wanted #{server.id})")
