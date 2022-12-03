@@ -16,7 +16,7 @@ class RecordingReadyNotifierService
     end
 
     def encoded_payload(meeting_id, record_id)
-      secret = Rails.configuration.x.loadbalancer_secrets[0]
+      secret = get_secrets[0]
       payload = { meeting_id: meeting_id, record_id: record_id }
       JWT.encode(payload, secret)
     end

@@ -15,7 +15,7 @@ module ApiHelper
 
   # Verify checksum
   def verify_checksum
-    secrets = Rails.configuration.x.loadbalancer_secrets
+    secrets = get_secrets
 
     raise ChecksumError if params[:checksum].blank?
     raise ChecksumError if secrets.empty?
@@ -46,6 +46,10 @@ module ApiHelper
     end
 
     raise ChecksumError
+  end
+
+  def get_secrets
+    Rails.configuration.x.loadbalancer_secrets
   end
 
   def get_tenant_name_from_url
@@ -107,12 +111,12 @@ module ApiHelper
   end
 
   def encoded_token(payload)
-    secret = Rails.configuration.x.loadbalancer_secrets[0]
+    secret = get_secrets[0]
     JWT.encode(payload, secret, 'HS512', typ: 'JWT')
   end
 
   def decoded_token(token)
-    Rails.configuration.x.loadbalancer_secrets.any? do |secret|
+    get_secrets.any? do |secret|
       JWT.decode(token, secret, true, algorithm: 'HS512')
     rescue JWT::DecodeError
       false
