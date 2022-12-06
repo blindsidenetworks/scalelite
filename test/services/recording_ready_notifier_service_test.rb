@@ -1,9 +1,9 @@
 # frozen_string_literal: true
+require 'test_helper'
 
 class RecordingReadyNotifierServiceTest < ActiveSupport::TestCase
-  require 'test_helper'
-
   test 'returns true if recording ready notification succeeds' do
+    skip 'To be reimplemented with RSpec'
     recording = create(:recording)
     url = 'https://test-1.example.com/bigbluebutton/api/'
     create(:callback_data, meeting_id: recording.meeting_id, recording_id: recording.id,
