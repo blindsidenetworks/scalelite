@@ -32,7 +32,7 @@ class Meeting < ApplicationRedisRecord
       if tenant_id.nil?
         nil
       else
-        Tenant.find(tenant_id)
+        Tenant.find_by(id: tenant_id)
       end
   end
 
