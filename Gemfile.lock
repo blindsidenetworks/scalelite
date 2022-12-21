@@ -1,11 +1,3 @@
-GIT
-  remote: https://github.com/guilleiguaran/fakeredis.git
-  revision: 2ebe19229954c7234bed019a0c5d28d5cf5b40f6
-  ref: 2ebe19229954c7234bed019a0c5d28d5cf5b40f6
-  specs:
-    fakeredis (0.7.0)
-      redis (~> 4.1)
-
 GEM
   remote: https://rubygems.org/
   specs:
@@ -89,6 +81,8 @@ GEM
       railties (>= 5.0.0)
     faker (2.22.0)
       i18n (>= 1.8.11, < 2)
+    fakeredis (0.8.0)
+      redis (~> 4.1)
     ffi (1.15.5)
     globalid (1.0.0)
       activesupport (>= 5.0)
@@ -242,7 +236,7 @@ DEPENDENCIES
   dotenv-rails
   factory_bot_rails
   faker
-  fakeredis!
+  fakeredis (~> 0.8)
   jwt (~> 2.5.0)
   listen (>= 3.0.5, < 3.2)
   minitest-stub_any_instance
