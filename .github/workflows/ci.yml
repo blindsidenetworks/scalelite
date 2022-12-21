@@ -63,8 +63,8 @@ jobs:
         run: |
           bundler exec rails test:db
 
-      # - name: Run RSpec
-      #   env:
-      #     DATABASE_URL: postgres://postgres:password@localhost:5432/scalelite_test
-      #   run: |
-      #     bundle exec rspec
+      - name: Run RSpec
+        env:
+          DATABASE_URL: postgres://postgres:password@localhost:5432/scalelite_test
+        run: |
+          bundle exec rspec
