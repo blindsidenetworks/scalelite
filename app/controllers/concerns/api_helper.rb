@@ -61,14 +61,14 @@ module ApiHelper
 
   def fetch_tenant_name_from_url
     base_url = Rails.configuration.x.base_url
-    tenant_name_end_position = controller.request.host.index(base_url)
+    tenant_name_end_position = request.host.index(base_url)
 
     return '' if tenant_name_end_position.nil? # happens if base_url was not found in current host name
     return '' if tenant_name_end_position.zero? # happens if stings are the same, so no subdomain
 
     tenant_name_end_position -= 1 # to remove dot '.' a the end
 
-    controller.request.host[0...tenant_name_end_position]
+    request.host[0...tenant_name_end_position]
   end
 
   def fetch_tenant
