@@ -1,8 +1,14 @@
 # frozen_string_literal: true
+def check_multitenancy
+  unless ENV['MULTITENANCY_ENABLED']
+    abort 'Multitenancy is disabled, task can not be completed'
+  end
+end
 
 namespace :tenants do
   desc 'List all the Tenants'
   task showall: :environment do |_t, _args|
+    check_multitenancy
     tenants = Tenant.all
 
     if tenants.present?
@@ -17,6 +23,7 @@ namespace :tenants do
 
   desc 'Add a new Tenant'
   task :add, [:name, :secrets] => :environment do |_t, args|
+    check_multitenancy
     name = args[:name]
     secrets = args[:secrets]
 
@@ -40,6 +47,7 @@ namespace :tenants do
 
   desc 'Update existing Tenant'
   task :update, [:id, :name, :secrets] => :environment do |_t, args|
+    check_multitenancy
     id = args[:id].to_i
     name = args[:name]
     secrets = args[:secrets]
@@ -61,6 +69,7 @@ namespace :tenants do
 
   desc 'Remove existing Tenant'
   task :remove, [:id] => :environment do |_t, args|
+    check_multitenancy
     id = args[:id].to_i
 
     tenant = Tenant.find_by id: id
