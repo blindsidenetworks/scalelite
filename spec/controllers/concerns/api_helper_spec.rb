@@ -18,6 +18,8 @@ end
 RSpec.describe ApiHelper, type: :helper do
   include ApiHelper
 
+  let(:request) { controller.request }
+
   describe 'checksum length' do
     context 'with correct length' do
       context 'with sha1' do
