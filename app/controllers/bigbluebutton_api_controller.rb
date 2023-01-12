@@ -117,6 +117,20 @@ class BigBlueButtonApiController < ApplicationController
         # Send a GET request to the server
         response = get_post_req(uri)
 
+        #filter to only show messages for current Tennant
+        current_tenant = fetch_tenant
+        if current_tenant.present?
+          doc.xpath('/response/meetings/meeting').each do |m|
+            meeting_tenant_id = m.xpath('metadata/tenant-id').text.to_i
+            m.remove if meeting_tenant_id != current_tenant.id
+          end
+        else
+          doc.xpath('/response/meetings/meeting').each do |m|
+            meeting_tenant_id = m.xpath('metadata/tenant-id').text.to_i
+            m.remove if meeting_tenant_id != ''
+          end
+        end
+
         # Skip over if no meetings on this server
         server_meetings = response.xpath('/response/meetings/meeting')
         next if server_meetings.empty?
