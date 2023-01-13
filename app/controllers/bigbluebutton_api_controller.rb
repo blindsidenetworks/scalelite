@@ -312,6 +312,13 @@ class BigBlueButtonApiController < ApplicationController
     end
     query = query.with_recording_id_prefixes(params[:recordID].split(',')) if params[:recordID].present?
     query = query.where(meeting_id: params[:meetingID].split(',')) if params[:meetingID].present?
+    
+    tenant = fetch_tenant
+    if tenant.present?
+      #fetch tenant's meetings. only return recordings of tenant's meetings
+      allowed_meetings = Meeting.all(tenant.id).map(&:id)
+      query = query.where(meeting_id: allowed_meetings)
+    end
 
     @recordings = query.order(starttime: :desc).all
     @url_prefix = "#{request.protocol}#{request.host_with_port}"
