@@ -169,7 +169,13 @@ class BigBlueButtonApiController < ApplicationController
     moderator_pwd = params[:moderatorPW].presence || SecureRandom.alphanumeric(8)
     params[:moderatorPW] = moderator_pwd
 
-    meeting = Meeting.find_or_create_with_server!(params[:meetingID], server, moderator_pwd, params[:voiceBridge], fetch_tenant&.id)
+    meeting = Meeting.find_or_create_with_server!(
+      params[:meetingID],
+      server,
+      moderator_pwd,
+      params[:voiceBridge],
+      fetch_tenant&.id
+    )
 
     # Update with old server if meeting already existed in database
     server = meeting.server
