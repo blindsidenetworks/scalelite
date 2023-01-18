@@ -26,6 +26,10 @@
 # Ignore master key for decrypting credentials and more.
 /config/master.key
 
+# YARD Documentation
+.yardoc
+/doc
+
 # IDEs
 .idea
 .idea/**

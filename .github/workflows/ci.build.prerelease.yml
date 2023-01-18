@@ -16,15 +16,15 @@ jobs:
     steps:
       - name: Checkout
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
 
       - name: Cache Docker layers
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -33,7 +33,7 @@ jobs:
 
       - name: Login to DockerHub
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -52,7 +52,7 @@ jobs:
 
       - name: Build and Push nginx
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           push: true
           target: nginx
@@ -63,7 +63,7 @@ jobs:
 
       - name: Build and Push api
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           push: true
           target: api
@@ -76,7 +76,7 @@ jobs:
 
       - name: Build and Push poller
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           push: true
           target: poller
@@ -87,7 +87,7 @@ jobs:
 
       - name: Build and Push recording-importer
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           push: true
           target: recording-importer
@@ -99,7 +99,7 @@ jobs:
       # Alternate Images for bbb-bionic-240 with alpine
       - name: Alternate Alpine Build and Push nginx
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: dockerfiles/v1/bionic240-alpine
           push: true
@@ -111,7 +111,7 @@ jobs:
 
       - name: Alternate Alpine Build and Push api
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: dockerfiles/v1/bionic240-alpine
           push: true
@@ -125,7 +125,7 @@ jobs:
 
       - name: Alternate Alpine Build and Push poller
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: dockerfiles/v1/bionic240-alpine
           push: true
@@ -137,7 +137,7 @@ jobs:
 
       - name: Alternate Alpine Build and Push recording-importer
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: dockerfiles/v1/bionic240-alpine
           push: true
@@ -150,7 +150,7 @@ jobs:
       # Alternate Images for bbb-bionic-240 with amazonlinux
       - name: Alternate Amazon Linux Build and Push nginx
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: dockerfiles/v1/bionic240-amazonlinux
           push: true
@@ -162,7 +162,7 @@ jobs:
 
       - name: Alternate Amazon Linux Build and Push api
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: dockerfiles/v1/bionic240-amazonlinux
           push: true
@@ -176,7 +176,7 @@ jobs:
 
       - name: Alternate Amazon Linux Build and Push poller
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: dockerfiles/v1/bionic240-amazonlinux
           push: true
@@ -188,7 +188,7 @@ jobs:
 
       - name: Alternate Amazon Linux Build and Push recording-importer
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: dockerfiles/v1/bionic240-amazonlinux
           push: true
@@ -201,7 +201,7 @@ jobs:
       # Alternate Images for bbb-bionic-240 with amazonlinux
       - name: Alternate Amazon Linux Build and Push nginx
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: dockerfiles/v1/bionic240-amazonlinux
           push: true
@@ -213,7 +213,7 @@ jobs:
 
       - name: Alternate Amazon Linux Build and Push api
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: dockerfiles/v1/bionic240-amazonlinux
           push: true
@@ -227,7 +227,7 @@ jobs:
 
       - name: Alternate Amazon Linux Build and Push poller
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: dockerfiles/v1/bionic240-amazonlinux
           push: true
@@ -239,7 +239,7 @@ jobs:
 
       - name: Alternate Amazon Linux Build and Push recording-importer
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: dockerfiles/v1/bionic240-amazonlinux
           push: true
