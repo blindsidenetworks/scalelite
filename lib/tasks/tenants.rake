@@ -1,8 +1,7 @@
 # frozen_string_literal: true
+
 def check_multitenancy
-  unless ENV['MULTITENANCY_ENABLED']
-    abort 'Multitenancy is disabled, task can not be completed'
-  end
+  abort 'Multitenancy is disabled, task can not be completed' unless ENV['MULTITENANCY_ENABLED']
 end
 
 namespace :tenants do

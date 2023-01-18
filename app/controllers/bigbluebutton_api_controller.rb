@@ -117,7 +117,7 @@ class BigBlueButtonApiController < ApplicationController
         # Send a GET request to the server
         response = get_post_req(uri)
 
-        #filter to only show messages for current Tennant
+        # filter to only show messages for current Tennant
         current_tenant = fetch_tenant
         if current_tenant.present?
           response.xpath('/response/meetings/meeting').each do |m|
@@ -180,9 +180,7 @@ class BigBlueButtonApiController < ApplicationController
     duration = params[:duration].to_i
 
     tenant = fetch_tenant
-    if tenant.present?
-      params[:'meta_tenant-id'] = tenant.id
-    end
+    params[:'meta_tenant-id'] = tenant.id if tenant.present?
 
     # Set/Overite duration if MAX_MEETING_DURATION is set and it's greater than params[:duration] (if passed)
     if !Rails.configuration.x.max_meeting_duration.zero? &&
@@ -312,10 +310,10 @@ class BigBlueButtonApiController < ApplicationController
     end
     query = query.with_recording_id_prefixes(params[:recordID].split(',')) if params[:recordID].present?
     query = query.where(meeting_id: params[:meetingID].split(',')) if params[:meetingID].present?
-    
+
     tenant = fetch_tenant
     if tenant.present?
-      #fetch tenant's meetings. only return recordings of tenant's meetings
+      # fetch tenant's meetings. only return recordings of tenant's meetings
       allowed_meetings = Meeting.all(tenant.id).map(&:id)
       query = query.where(meeting_id: allowed_meetings)
     end
