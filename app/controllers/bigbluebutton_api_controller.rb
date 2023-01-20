@@ -154,7 +154,7 @@ class BigBlueButtonApiController < ApplicationController
 
     moderator_pwd = params[:moderatorPW].presence || SecureRandom.alphanumeric(8)
     params[:moderatorPW] = moderator_pwd
-    meeting = Meeting.find_or_create_with_server(params[:meetingID], server, moderator_pwd)
+    meeting = Meeting.find_or_create_with_server!(params[:meetingID], server, moderator_pwd, params[:voiceBridge])
 
     # Update with old server if meeting already existed in database
     server = meeting.server
@@ -170,6 +170,8 @@ class BigBlueButtonApiController < ApplicationController
       logger.debug("Setting duration to #{Rails.configuration.x.max_meeting_duration}")
       params[:duration] = Rails.configuration.x.max_meeting_duration
     end
+
+    params[:voiceBridge] = meeting.voice_bridge
 
     logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
     params_hash = params
@@ -192,6 +194,7 @@ class BigBlueButtonApiController < ApplicationController
       raise
     rescue StandardError => e
       logger.warn("Error #{e} creating meeting #{params[:meetingID]} on server #{server.id}.")
+      logger.debug { e.full_message }
       raise InternalError, 'Unable to create meeting on server.'
     end
 
@@ -419,7 +422,7 @@ class BigBlueButtonApiController < ApplicationController
   end
 
   def analytics_callback
-    token = request.headers['HTTP_AUTHORIZATION'].gsub!('Bearer ', '')
+    token = request.headers['HTTP_AUTHORIZATION'].gsub('Bearer ', '')
     raise 'Token Invalid' unless valid_token?(token)
 
     meeting_id = params['meeting_id']
