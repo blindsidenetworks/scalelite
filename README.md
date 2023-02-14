@@ -176,6 +176,31 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `FSAPI_PASSWORD`: Password (for "Basic" authentication) to access the freeswitch dialplan API. Default is to use the first `LOADBALANCER_SECRET` as the password. You can set this to the empty string to disable authentication.
 * `FSAPI_MAX_DURATION`: Maximum duration for voice calls handled by the freeswitch dialplan integration in minutes. Defaults to `MAX_MEETING_DURATION` if that is set, otherwise no limit. You probably want to set a limit here to ensure you do not have excess expenses due to people not hanging up calls.
 
+### Multitenancy
+Scalelite supports multitenancy using subdomains. For example, for two tenants, t1 and t2, it is required to setup DNS entries t1.example.com and t2.example.com pointing to the scalelite server (sl.example.com). The scalelite-api docker container needs to be updated with the following environment variables:
+`MULTITENANCY_ENABLED` : true to enable multitenancy; defaults to `false` when variable is absent.  
+`BASE_URL` : base domain.  `example.com` in our example
+Register the tenants using:
+```sh
+docker exec -it scalelite-api /bin/bash
+bin/rake tenants:add[t1,secret1]
+bin/rake tenants:add[t2,secret2]
+bin/rake tenants:showall #confirm tenants
+```
+In your LMS BigBlueButton module configuration settings, update the url and secret fields:
+`https://sl.example.com/bigbluebutton/api => https://t1.example.com/bigbluebutton/api`
+`secret => secret1`
+#### Add Tenant
+`bin/rake tenants:add[id,secrets]`
+Add multiple secret if required by providing a comma separated list.
+#### Remove Tenant
+`bin/rake tenants:remove[id]`
+#### Update Tenant
+`bin/rake tenants:update[id,id2,secrets] #change from subdomain id1 to id2`
+#### Show Tenants
+`bin/rake tenants:showall`
+
+
 ### Customizing Strings
 
 If you'd like to customize the strings on certain error pages returned by Scalelite (`recording_not_found`), you can do so by duplicating the locale file and changing whatever lines you see fit.
