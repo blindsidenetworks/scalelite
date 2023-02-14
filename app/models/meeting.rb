@@ -70,7 +70,7 @@ class Meeting < ApplicationRedisRecord
   def server
     @server ||= \
       if server_id.nil?
-                        nil
+        nil
       else
         Server.find(server_id)
       end
