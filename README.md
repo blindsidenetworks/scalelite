@@ -177,7 +177,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `FSAPI_MAX_DURATION`: Maximum duration for voice calls handled by the freeswitch dialplan integration in minutes. Defaults to `MAX_MEETING_DURATION` if that is set, otherwise no limit. You probably want to set a limit here to ensure you do not have excess expenses due to people not hanging up calls.
 
 ### Multitenancy
-Scalelite supports multitenancy by way of using subdomains. For example, if you have two tenants, t1 and t2, setup DNS entries t1.example.com and t2.example.com pointing your scalelite server (sl.example.com). Update the scalelite-api docker container with the following environmental variables:  
+Scalelite supports multitenancy using subdomains. For example, for two tenants, t1 and t2, it is required to setup DNS entries t1.example.com and t2.example.com pointing to the scalelite server (sl.example.com). The scalelite-api docker container needs to be updated with the following environment variables:
 `MULTITENANCY_ENABLED` : true to enable multitenancy; defaults to `false` when variable is absent.  
 `BASE_URL` : base domain.  `example.com` in our example
 Register the tenants using:
