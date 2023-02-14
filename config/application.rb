@@ -108,6 +108,10 @@ module Scalelite
     # Scalelite Host name
     config.x.url_host = ENV['URL_HOST']
 
+    config.x.base_url = ENV['BASE_URL']
+
+    config.x.multitenancy_enabled = ENV['MULTITENANCY_ENABLED']
+
     # DB connection retry attempt counts
     config.x.db_connection_retry_count = ENV.fetch('DB_CONNECTION_RETRY_COUNT', '3').to_i
 
