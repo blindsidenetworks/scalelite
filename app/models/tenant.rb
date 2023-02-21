@@ -9,6 +9,8 @@ class Tenant < ApplicationRecord
   validates :name, uniqueness: true
   validates :secrets, uniqueness: true
 
+  has_many :custom_settings, dependent: :destroy, class_name: 'TenantSettings'
+
   def secrets_array
     secrets.split(SECRETS_SEPARATOR)
   end
