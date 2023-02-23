@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   factory :tenant_settings do
-    name { Faker::Creature::Animal.name }
-    value { Faker::Creature::Animal.name }
+    name { TenantSettings::ALLOWED_SETTINGS.to_a.sample[0]  }
+    value { 1..10 }
   end
 end

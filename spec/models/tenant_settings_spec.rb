@@ -22,5 +22,15 @@ RSpec.describe TenantSettings, redis: true do
         expect(ts).to_not be_valid
       end
     end
+
+    describe '#validate_name' do
+      context 'without whitelisted setting name' do
+        let(:ts) { build :tenant_settings, tenant: tenant, name: 'unsupported_name' }
+
+        it 'throws an error' do
+          expect(ts).to_not be_valid
+        end
+      end
+    end
   end
 end
