@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   factory :tenant_settings do
-    name { TenantSettings::ALLOWED_SETTINGS.to_a.sample[0]  }
-    value { 1..10 }
+    name { 'setting_name'  }
+    value { Faker::Internet.device_token }
   end
 end
