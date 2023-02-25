@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   factory :tenant_settings do
-    name { Faker::Creature::Animal.unique.name  }
-    value { Faker::Quote.yoda}
+    name { Faker::Creature::Animal.unique.name }
+    value { Faker::Quote.yoda }
   end
 end

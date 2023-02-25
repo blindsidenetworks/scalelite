@@ -59,6 +59,7 @@ ActiveRecord::Schema.define(version: 2023_01_25_235717) do
     t.bigint "tenant_id"
     t.string "name"
     t.string "value"
+    t.index ["name"], name: "index_tenant_settings_on_name", unique: true
     t.index ["tenant_id"], name: "index_tenant_settings_on_tenant_id"
   end
 

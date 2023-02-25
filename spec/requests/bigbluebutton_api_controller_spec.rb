@@ -118,8 +118,10 @@ RSpec.describe BigBlueButtonApiController, type: :request do
   end
 
   describe '#create' do
-    let!(:server1) { Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
-                                 secret: 'test-1-secret', enabled: true, load: 0) }
+    let!(:server1) {
+      Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                                 secret: 'test-1-secret', enabled: true, load: 0)
+    }
 
     before do
       Rails.configuration.x.multitenancy_enabled = true
@@ -127,16 +129,18 @@ RSpec.describe BigBlueButtonApiController, type: :request do
     end
 
     context 'without Tenant' do
-      let(:params) {{
-        meetingID: 'test-meeting-1',
+      let(:params) {
+         {
+           meetingID: 'test-meeting-1',
         moderatorPW: 'test-password',
-      } }
+         }
+      }
 
       it 'creates properly' do
         bbb_create = \
-        stub_request(:get, "#{server1.url}create")
-                             .with(query: hash_including(params.merge(duration: '3600')))
-                             .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
+          stub_request(:get, "#{server1.url}create")
+          .with(query: hash_including(params.merge(duration: '3600')))
+          .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
 
         BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
           get bigbluebutton_api_create_url, params: params
@@ -153,16 +157,18 @@ RSpec.describe BigBlueButtonApiController, type: :request do
     context 'with Tenant' do
       let(:tenant) { create :tenant }
 
-      let(:params) {{
-        meetingID: 'test-meeting-1',
+      let(:params) {
+         {
+           meetingID: 'test-meeting-1',
         moderatorPW: 'test-password',
-      } }
+         }
+      }
 
       it 'creates properly' do
         bbb_create = \
-      stub_request(:get, "#{server1.url}create")
-                               .with(query: hash_including(params.merge(duration: '3600')))
-                               .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
+          stub_request(:get, "#{server1.url}create")
+          .with(query: hash_including(params.merge(duration: '3600')))
+          .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
 
         BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
           get bigbluebutton_api_create_url, params: params
