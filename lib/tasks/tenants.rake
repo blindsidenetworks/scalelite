@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 def check_multitenancy
-  #abort 'Multitenancy is disabled, task can not be completed' unless ENV['MULTITENANCY_ENABLED']
+  # abort 'Multitenancy is disabled, task can not be completed' unless ENV['MULTITENANCY_ENABLED']
 end
 
 def fetch_tenant(id)
@@ -95,7 +95,7 @@ namespace :tenants do
 
       puts "Tenant has #{custom_settings.size} custom settings"
 
-      puts"Name - Value"
+      puts "Name - Value"
 
       custom_settings.each do |cs|
         puts "#{cs.name} - #{cs.value}"
@@ -104,7 +104,7 @@ namespace :tenants do
 
     desc 'Add Custom Parameter for Tenant'
     task :set, [:tenant_id, :param_name, :param_value] => :environment do |_t, args|
-      #check_multitenancy
+      check_multitenancy
       id = args[:tenant_id].to_i
       param_name = args[:param_name]
       param_value = args[:param_value]
@@ -128,7 +128,7 @@ namespace :tenants do
 
       tenant = fetch_tenant(id)
 
-      custom_setting = tenant.custom_settings.find_by_name(param_name)
+      custom_setting = tenant.custom_settings.find_by(name: param_name)
       if custom_setting.present?
         custom_setting.destroy
         puts "Custom setting with name #{param_name} was successfully deleted"
