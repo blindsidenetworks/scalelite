@@ -75,4 +75,20 @@ RSpec.describe Tenant, redis: true do
       end
     end
   end
+
+  describe '#custom_settings_hash' do
+    let(:tenant) { build :tenant }
+    let(:nb_of_settings) { rand(1..10) }
+    let!(:custom_settings) { create_list(:tenant_settings, nb_of_settings, tenant: tenant ) }
+    let!(:custom_settings_hash) { tenant.custom_settings_hash }
+
+
+    it 'returns all the values' do
+      expect(custom_settings_hash.count).to eq nb_of_settings
+
+      custom_settings.each do |cs|
+        expect(custom_settings_hash).to include( { cs.name => cs.value })
+      end
+    end
+  end
 end

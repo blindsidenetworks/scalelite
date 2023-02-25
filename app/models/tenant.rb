@@ -14,4 +14,15 @@ class Tenant < ApplicationRecord
   def secrets_array
     secrets.split(SECRETS_SEPARATOR)
   end
+
+  def custom_settings_hash
+    return {} if custom_settings.empty?
+
+    hash = {}
+    custom_settings.each do |cs|
+      hash.store(cs.name, cs.value)
+    end
+
+    hash
+  end
 end
