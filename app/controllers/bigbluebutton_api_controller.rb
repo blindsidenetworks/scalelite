@@ -186,8 +186,13 @@ class BigBlueButtonApiController < ApplicationController
     duration = params[:duration].to_i
 
     tenant = fetch_tenant
-    params[:'meta_tenant-id'] = tenant.id if tenant.present?
+    if tenant.present?
+      params[:'meta_tenant-id'] = tenant.id
 
+      params.merge! tenant.custom_settings_hash
+    end
+
+    params
     # Set/Overite duration if MAX_MEETING_DURATION is set and it's greater than params[:duration] (if passed)
     if !Rails.configuration.x.max_meeting_duration.zero? &&
        (duration.zero? || duration > Rails.configuration.x.max_meeting_duration)
