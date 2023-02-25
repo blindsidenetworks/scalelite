@@ -83,4 +83,71 @@ namespace :tenants do
       puts("Error! Tenant has not been deleted")
     end
   end
+
+  namespace :params do
+    desc 'List Custom Parameters for Tenant'
+    task :showall, [:id] => :environment do |_t, args|
+      check_multitenancy
+      id = args[:id].to_i
+
+      tenant = Tenant.find_by(id: id)
+      if tenant.blank?
+        puts("Tenant with id #{id} does not exist in the system. Exiting...")
+        exit(1)
+      end
+
+      custom_settings = tenant.custom_settings
+
+      puts "Tenant has #{custom_settings.size} custom settings"
+
+      puts"Name - Value"
+
+      custom_settings.each do |cs|
+        puts "#{cs.name} - #{cs.value}"
+      end
+    end
+
+    desc 'Add Custom Parameter for Tenant'
+    task :set, [:tenant_id, :param_name, :param_value] => :environment do |_t, args|
+      #check_multitenancy
+      id = args[:tenant_id].to_i
+      param_name = args[:param_name]
+      param_value = args[:param_value]
+
+      tenant = Tenant.find_by(id: id)
+      if tenant.blank?
+        puts("Tenant with id #{id} does not exist in the system. Exiting...")
+        exit(1)
+      end
+
+      custom_settings = tenant.custom_settings
+      setting = custom_settings.find_or_create_by(name: param_name)
+      setting.value = param_value
+
+      setting.save!
+
+      puts "Attribute #{setting.name} was successfully set to #{setting.value}."
+    end
+
+    desc 'Delete Custom Parameter for Tenant'
+    task :remove, [:tenant_id, :param_name] => :environment do |_t, args|
+      check_multitenancy
+      id = args[:tenant_id].to_i
+      param_name = args[:param_name]
+
+      tenant = Tenant.find_by(id: id)
+      if tenant.blank?
+        puts("Tenant with id #{id} does not exist in the system. Exiting...")
+        exit(1)
+      end
+
+      custom_setting = tenant.custom_settings.find_by_name(param_name)
+      if custom_setting.present?
+        custom_setting.destroy
+        puts "Custom setting with name #{param_name} was successfully deleted"
+      else
+        puts "Custom setting with name #{param_name} was not found in the database."
+      end
+    end
+  end
 end
