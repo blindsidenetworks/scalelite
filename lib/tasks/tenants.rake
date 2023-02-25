@@ -1,7 +1,15 @@
 # frozen_string_literal: true
 
 def check_multitenancy
-  abort 'Multitenancy is disabled, task can not be completed' unless ENV['MULTITENANCY_ENABLED']
+  #abort 'Multitenancy is disabled, task can not be completed' unless ENV['MULTITENANCY_ENABLED']
+end
+
+def fetch_tenant(id)
+  tenant = Tenant.find_by id: id
+  if tenant.blank?
+    puts("Tenant with id #{id} does not exist in the system. Exiting...")
+    exit(1)
+  end
 end
 
 namespace :tenants do
@@ -51,11 +59,7 @@ namespace :tenants do
     name = args[:name]
     secrets = args[:secrets]
 
-    tenant = Tenant.find_by id: id
-    if tenant.blank?
-      puts("Tenant with id #{id} does not exist in the system. Exiting...")
-      exit(1)
-    end
+    tenant = fetch_tenant(id)
 
     if tenant.update(name: name, secrets: secrets)
       puts("Tenant was updated successfully")
@@ -71,11 +75,7 @@ namespace :tenants do
     check_multitenancy
     id = args[:id].to_i
 
-    tenant = Tenant.find_by id: id
-    if tenant.blank?
-      puts("Tenant with id #{id} does not exist in the system. Exiting...")
-      exit(1)
-    end
+    tenant = fetch_tenant(id)
 
     if tenant.delete
       puts("Tenant was successfully deleted.")
@@ -90,12 +90,7 @@ namespace :tenants do
       check_multitenancy
       id = args[:id].to_i
 
-      tenant = Tenant.find_by(id: id)
-      if tenant.blank?
-        puts("Tenant with id #{id} does not exist in the system. Exiting...")
-        exit(1)
-      end
-
+      tenant = fetch_tenant(id)
       custom_settings = tenant.custom_settings
 
       puts "Tenant has #{custom_settings.size} custom settings"
@@ -114,11 +109,7 @@ namespace :tenants do
       param_name = args[:param_name]
       param_value = args[:param_value]
 
-      tenant = Tenant.find_by(id: id)
-      if tenant.blank?
-        puts("Tenant with id #{id} does not exist in the system. Exiting...")
-        exit(1)
-      end
+      tenant = fetch_tenant(id)
 
       custom_settings = tenant.custom_settings
       setting = custom_settings.find_or_create_by(name: param_name)
@@ -135,11 +126,7 @@ namespace :tenants do
       id = args[:tenant_id].to_i
       param_name = args[:param_name]
 
-      tenant = Tenant.find_by(id: id)
-      if tenant.blank?
-        puts("Tenant with id #{id} does not exist in the system. Exiting...")
-        exit(1)
-      end
+      tenant = fetch_tenant(id)
 
       custom_setting = tenant.custom_settings.find_by_name(param_name)
       if custom_setting.present?
