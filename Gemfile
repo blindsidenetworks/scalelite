@@ -6,7 +6,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '>= 2.6.5'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 6.0.6'
+gem 'rails', '~> 6.1', '>= 6.1.7.3'
 # Use Puma as the app server
 gem 'puma', '~> 5.6'
 
@@ -48,8 +48,8 @@ group :development, :test do
 
   gem 'rspec-rails', '~> 5.1.2'
 
-  gem 'rubocop', '~> 1.10.0', require: false
-  gem 'rubocop-rails', '~> 2.10.0', require: false
+  gem 'rubocop', '~> 1.50', require: false
+  gem 'rubocop-rails', '~> 2.19', require: false
 end
 
 group :development do
