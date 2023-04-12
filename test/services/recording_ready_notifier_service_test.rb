@@ -12,7 +12,7 @@ class RecordingReadyNotifierServiceTest < ActiveSupport::TestCase
     stub_request(:post, url)
       .to_return(status: 200, body: '', headers: {})
 
-    return_val = JWT.stub(:encode, 'eyJhbGciOiJIUzI1NiJ9.eyJtZWV0aW5nX2lkIjoibWVldGluZzE5In0.Jlw1ND63QJ3j9TT0mgp_5fpmPA82FhMT_-mPU25PEFY') do # rubocop:disable Layout/LineLength
+    return_val = JWT.stub(:encode, 'eyJhbGciOiJIUzI1NiJ9.eyJtZWV0aW5nX2lkIjoibWVldGluZzE5In0.Jlw1ND63QJ3j9TT0mgp_5fpmPA82FhMT_-mPU25PEFY') do
       RecordingReadyNotifierService.execute(recording.id)
     end
 
@@ -27,7 +27,7 @@ class RecordingReadyNotifierServiceTest < ActiveSupport::TestCase
 
     stub_request(:post, url).to_timeout
 
-    return_val = JWT.stub(:encode, 'eyJhbGciOiJIUzI1NiJ9.eyJtZWV0aW5nX2lkIjoibWVldGluZzE5In0.Jlw1ND63QJ3j9TT0mgp_5fpmPA82FhMT_-mPU25PEFY') do # rubocop:disable Layout/LineLength
+    return_val = JWT.stub(:encode, 'eyJhbGciOiJIUzI1NiJ9.eyJtZWV0aW5nX2lkIjoibWVldGluZzE5In0.Jlw1ND63QJ3j9TT0mgp_5fpmPA82FhMT_-mPU25PEFY') do
       RecordingReadyNotifierService.execute(recording.id)
     end
 

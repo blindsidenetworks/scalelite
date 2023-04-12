@@ -25,7 +25,7 @@ class RecordingImporter
         Dir.glob('*/*/metadata.xml').each do |metadata_xml|
           Recording.transaction do
             logger.info("Found metadata file: #{metadata_xml}")
-            metadata = IO.read(metadata_xml)
+            metadata = File.read(metadata_xml)
             recording, playback_format = Recording.create_from_metadata_xml(metadata)
             next if recording.nil?
 

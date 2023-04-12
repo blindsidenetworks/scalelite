@@ -39,7 +39,7 @@ namespace :tenants do
       puts("New Tenant id: #{tenant.id}")
     else
       puts('Error! Tenant has not been created. Please fix the following errors:')
-      puts(tenant.errors.messages.to_s)
+      puts(tenant.errors.messages)
       exit(1)
     end
   end
@@ -61,7 +61,7 @@ namespace :tenants do
       puts("Tenant was updated successfully")
     else
       puts('Error! Tenant was not updated. Please fix the following errors:')
-      puts(tenant.errors.messages.to_s)
+      puts(tenant.errors.messages)
       exit(1)
     end
   end

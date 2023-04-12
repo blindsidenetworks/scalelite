@@ -5,6 +5,7 @@ AllCops:
   Exclude:
   - 'bin/**/*'
   - 'db/schema.rb'
+  - 'db/migrate/*'
   - 'vendor/**/*'
   - 'vendor/bundle/**/*'
   DisabledByDefault: false
@@ -138,7 +139,7 @@ Metrics/ClassLength:
 
 # Limit lines to 80 characters.
 Layout/LineLength:
-  Max: 130
+  Max: 150
 
 # Avoid methods longer than 10 lines of code.
 Metrics/MethodLength:
