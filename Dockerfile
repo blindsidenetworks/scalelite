@@ -15,8 +15,8 @@ RUN curl -sL https://ubuntu.bigbluebutton.org/repo/bigbluebutton.asc | apt-key a
     && echo "deb https://ubuntu.bigbluebutton.org/focal-260 bigbluebutton-focal main" >/etc/apt/sources.list.d/bigbluebutton.list
 RUN useradd --system --user-group --home-dir /var/bigbluebutton bigbluebutton
 RUN touch /.dockerenv
-RUN apt-get update
-RUN apt-get download bbb-playback bbb-playback-presentation bbb-playback-screenshare bbb-playback-video bbb-playback-podcast \
+RUN apt-get update \
+    && download bbb-playback bbb-playback-presentation bbb-playback-podcast bbb-playback-screenshare bbb-playback-video \
     && dpkg -i --force-depends ./*.deb
 
 FROM alpine AS nginx
