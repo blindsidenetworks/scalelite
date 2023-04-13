@@ -8,7 +8,7 @@ ruby '>= 3.1.4'
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 6.1', '>= 6.1.7.3'
 # Use Puma as the app server
-gem 'puma', '~> 5.6'
+gem 'puma', '~> 6.2', '>= 6.2.1'
 
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
 # gem 'jbuilder', '~> 2.7'
@@ -16,7 +16,7 @@ gem 'puma', '~> 5.6'
 # gem 'bcrypt', '~> 3.1.7'
 
 # Redis connection setup for live session (server and meeting) tracking
-gem 'connection_pool', '~> 2.3.0'
+gem 'connection_pool', '~> 2.4.0'
 gem 'redis', '~> 4.8.0'
 gem 'redis-namespace', '~> 1.9.0'
 
@@ -24,7 +24,7 @@ gem 'redis-namespace', '~> 1.9.0'
 gem 'pg', '~> 1.4.4'
 
 # Reduces boot times through caching; required in config/boot.rb
-gem 'bootsnap', '>= 1.13.0', require: false
+gem 'bootsnap', '>= 1.16.0', require: false
 
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
 # gem 'rack-cors'
@@ -33,9 +33,9 @@ gem 'bootsnap', '>= 1.13.0', require: false
 gem 'tabulo', '~> 2.8.1'
 
 # Used by recording watch task. Version limit is for compat with rails auto-reloader.
-gem 'listen', '>= 3.0.5', '< 3.2'
+gem 'listen', '~> 3.8.0'
 
-gem 'jwt', '~> 2.5.0'
+gem 'jwt', '~> 2.7.0'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
@@ -48,8 +48,8 @@ group :development, :test do
 
   gem 'rspec-rails', '~> 5.1.2'
 
-  gem 'rubocop', '~> 1.50', require: false
-  gem 'rubocop-rails', '~> 2.19', require: false
+  gem 'rubocop', '~> 1.50.0', require: false
+  gem 'rubocop-rails', '~> 2.19.0', require: false
 end
 
 group :development do
