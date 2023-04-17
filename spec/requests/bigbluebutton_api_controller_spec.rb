@@ -5,6 +5,7 @@ require 'requests/shared_examples'
 
 RSpec.describe BigBlueButtonApiController, type: :request do
   include BBBErrors
+  include ApiHelper
 
   before do
     allow_any_instance_of(BigBlueButtonApiController).to receive(:verify_checksum).and_return(nil)
@@ -48,7 +49,7 @@ RSpec.describe BigBlueButtonApiController, type: :request do
     end
   end
 
-  xdescribe '#getMeetingInfo' do
+  describe '#getMeetingInfo' do
     let(:server) { Server.create!(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1') }
     let!(:meeting) { Meeting.create!(id: 'test-meeting-1', server: server) }
     let(:url) {
@@ -56,8 +57,8 @@ RSpec.describe BigBlueButtonApiController, type: :request do
     }
 
     before do
-      WebMock.stub_request(:get, url)
-             .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID></response>')
+      stub_request(:get, url)
+        .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID></response>')
 
       post bigbluebutton_api_get_meeting_info_url, params: { meetingID: 'test-meeting-1' }
     end
@@ -114,6 +115,125 @@ RSpec.describe BigBlueButtonApiController, type: :request do
 
     context 'with meeting not found in database' do
       it 'responds with false'
+    end
+  end
+
+  # get_meetings
+  describe '#get_meetings' do
+    let(:server1) { create(:server) }
+    let(:server2) { create(:server) }
+    let(:server3) { create(:server) }
+    let(:server4) { create(:server) }
+
+    context 'GET request' do
+      it 'responds with the correct meetings' do
+        stub_request(:get, encode_bbb_uri("getMeetings", server1.url, server1.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-1<meeting></meetings></response>")
+        stub_request(:get, encode_bbb_uri("getMeetings", server2.url, server2.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-2<meeting></meetings></response>")
+        stub_request(:get, encode_bbb_uri("getMeetings", server3.url, server3.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-3<meeting></meetings></response>")
+
+        get bigbluebutton_api_get_meetings_url
+
+        response_xml = Nokogiri.XML(@response.body)
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.xpath("//meeting[text()=\"test-meeting-1\"]")).to be_present
+        expect(response_xml.xpath("//meeting[text()=\"test-meeting-2\"]")).to be_present
+        expect(response_xml.xpath("//meeting[text()=\"test-meeting-3\"]")).to be_present
+      end
+
+      it 'responds with the appropriate error on timeout' do
+        stub_request(:get, encode_bbb_uri("getMeetings", server1.url, server1.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-1<meeting></meetings></response>")
+        stub_request(:get, encode_bbb_uri("getMeetings", server2.url, server2.secret))
+          .to_timeout
+        stub_request(:get, encode_bbb_uri("getMeetings", server3.url, server3.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-3<meeting></meetings></response>")
+
+        get bigbluebutton_api_get_meetings_url
+
+        response_xml = Nokogiri.XML(@response.body)
+        expect(response_xml.at_xpath("/response/returncode").content).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").content).to(eq("internalError"))
+        expect(response_xml.at_xpath("/response/message").content).to(eq("Unable to access server."))
+      end
+
+      it 'responds with noMeetings if there are no meetings on any server' do
+        get bigbluebutton_api_get_meetings_url
+
+        response_xml = Nokogiri.XML(@response.body)
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq("noMeetings"))
+        expect(response_xml.at_xpath("/response/message").text).to(eq("no meetings were found on this server"))
+        expect(response_xml.at_xpath("/response/meetings").text).to(eq(""))
+      end
+
+      it 'only makes a request to online and enabled servers' do
+        server3.online = false
+        server3.enabled = false
+        server3.save
+
+        stub_request(:get, encode_bbb_uri("getMeetings", server1.url, server1.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-1<meeting></meetings></response>")
+        stub_request(:get, encode_bbb_uri("getMeetings", server2.url, server2.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-2<meeting></meetings></response>")
+        stub_request(:get, encode_bbb_uri("getMeetings", server3.url, server3.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-3<meeting></meetings></response>")
+
+        get bigbluebutton_api_get_meetings_url
+
+        response_xml = Nokogiri.XML(@response.body)
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.xpath("//meeting[text()=\"test-meeting-1\"]")).to be_present
+        expect(response_xml.xpath("//meeting[text()=\"test-meeting-2\"]")).to be_present
+        expect(response_xml.xpath("//meeting[text()=\"test-meeting-3\"]")).not_to be_present
+      end
+
+      it 'only makes a request to online servers in state cordoned/enabled' do
+        server1.state = "cordoned"
+        server1.save
+        server2.state = "enabled"
+        server2.save
+        server3.online = "false"
+        server3.save
+        server4.state = "disabled"
+        server4.save
+
+        stub_request(:get, encode_bbb_uri("getMeetings", server1.url, server1.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-1<meeting></meetings></response>")
+        stub_request(:get, encode_bbb_uri("getMeetings", server2.url, server2.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-2<meeting></meetings></response>")
+        # stub_request(:get, encode_bbb_uri("getMeetings", server3.url, server3.secret))
+        #   .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-3<meeting></meetings></response>")
+        # stub_request(:get, encode_bbb_uri("getMeetings", server4.url, server4.secret))
+        #   .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-4<meeting></meetings></response>")
+
+        get bigbluebutton_api_get_meetings_url
+
+        response_xml = Nokogiri.XML(@response.body)
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.xpath("//meeting[text()=\"test-meeting-1\"]")).to be_present
+        expect(response_xml.xpath("//meeting[text()=\"test-meeting-2\"]")).to be_present
+        expect(response_xml.xpath("//meeting[text()=\"test-meeting-3\"]")).not_to be_present
+        expect(response_xml.xpath("//meeting[text()=\"test-meeting-4\"]")).not_to be_present
+      end
+    end
+
+    context 'POST request' do
+      it 'responds with the correct meetings' do
+        stub_request(:get, encode_bbb_uri("getMeetings", server1.url, server1.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-1<meeting></meetings></response>")
+        stub_request(:get, encode_bbb_uri("getMeetings", server2.url, server2.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-2<meeting></meetings></response>")
+
+        post bigbluebutton_api_get_meetings_url
+
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.xpath('//meeting[text()="test-meeting-1"]')).to be_present
+        expect(response_xml.xpath('//meeting[text()="test-meeting-2"]')).to be_present
+      end
     end
   end
 end

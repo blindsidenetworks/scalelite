@@ -179,7 +179,6 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   end
 
   # isMeetingRunning
-
   test 'isMeetingRunning responds with the correct meeting status for a get request' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret', load: 0)
     meeting1 = Meeting.find_or_create_with_server('Demo Meeting', server1, 'mp')

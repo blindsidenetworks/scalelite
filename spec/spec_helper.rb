@@ -15,6 +15,13 @@
 # it.
 #
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
+
+# Webmock is used to prevent real HTTP requests from being made during tests
+require 'webmock/rspec'
+WebMock.disable_net_connect!(allow_localhost: true)
+
+require 'redis'
+
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate
   # assertion/expectation library such as wrong or the stdlib/minitest
@@ -91,4 +98,9 @@ RSpec.configure do |config|
   #   # test failures related to randomization by passing the same `--seed` value
   #   # as the one that triggered the failure.
   #   Kernel.srand config.seed
+
+  # Clear Redis data between tests
+  config.before(:each) do
+    Redis.new.flushdb
+  end
 end
