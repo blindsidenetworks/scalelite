@@ -108,8 +108,8 @@ module ApiHelper
       # Use values that are 1/10 the normal values, but clamp to a minimum.
       # If the original configured timeout value is below the minimum, then use that instead.
       return {
-        open_timeout: [[0.2, Rails.configuration.x.open_timeout].min, Rails.configuration.x.open_timeout / 10].max,
-        read_timeout: [[0.5, Rails.configuration.x.read_timeout].min, Rails.configuration.x.read_timeout / 10].max,
+        open_timeout: 0.2.clamp(Rails.configuration.x.read_timeout / 10, Rails.configuration.x.read_timeout),
+        read_timeout: 0.5.clamp(Rails.configuration.x.read_timeout / 10, Rails.configuration.x.read_timeout),
       }
     end
 
@@ -171,9 +171,7 @@ module ApiHelper
       doc = Nokogiri::XML(res.body)
       returncode = doc.at_xpath('/response/returncode')
       raise InternalError, 'Response did not include returncode' if returncode.nil?
-      if returncode.content != 'SUCCESS'
-        raise BBBError.new(doc.at_xpath('/response/messageKey').content, doc.at_xpath('/response/message').content)
-      end
+      raise BBBError.new(doc.at_xpath('/response/messageKey').content, doc.at_xpath('/response/message').content) if returncode.content != 'SUCCESS'
 
       doc
     end

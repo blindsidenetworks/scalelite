@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'active_support/core_ext/integer/time'
 
 Rails.application.configure do
@@ -17,7 +18,7 @@ Rails.application.configure do
 
   # Enable/disable caching. By default caching is disabled.
   # Run rails dev:cache to toggle caching.
-  if Rails.root.join('tmp', 'caching-dev.txt').exist?
+  if Rails.root.join('tmp/caching-dev.txt').exist?
     config.action_controller.perform_caching = true
     config.action_controller.enable_fragment_cache_logging = true
 

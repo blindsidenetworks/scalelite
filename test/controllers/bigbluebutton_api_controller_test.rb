@@ -364,7 +364,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
                        '<meeting>test-meeting-2<meeting></meetings></response>')
     stub_request(:get, encode_bbb_uri('getMeetings', server3.url, server3.secret))
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetings>' \
-                    '<meeting>test-meeting-3<meeting></meetings></response>')
+                       '<meeting>test-meeting-3<meeting></meetings></response>')
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_get_meetings_url
@@ -945,8 +945,8 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, encode_bbb_uri('end', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>FAILED</returncode><messageKey>notFound</messageKey>' \
-        '<message>We could not find a meeting with that meeting ID - perhaps the meeting is not yet' \
-        ' running?</message></response>')
+                       '<message>We could not find a meeting with that meeting ID - perhaps the meeting is not yet ' \
+                       'running?</message></response>')
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_end_url, params: params
@@ -972,8 +972,8 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, encode_bbb_uri('end', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><messageKey>sentEndMeetingRequest</messageKey>' \
-        '<message>A request to end the meeting was sent. Please wait a few seconds, and then use the getMeetingInfo' \
-        ' or isMeetingRunning API calls to verify that it was ended.</message></response>')
+                       '<message>A request to end the meeting was sent. Please wait a few seconds, and then use the getMeetingInfo ' \
+                       'or isMeetingRunning API calls to verify that it was ended.</message></response>')
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       get bigbluebutton_api_end_url, params: params
@@ -1000,8 +1000,8 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, encode_bbb_uri('end', server1.url, server1.secret, params))
       .to_return(body: '<response><returncode>SUCCESS</returncode><messageKey>sentEndMeetingRequest</messageKey>' \
-        '<message>A request to end the meeting was sent. Please wait a few seconds, and then use the getMeetingInfo' \
-        ' or isMeetingRunning API calls to verify that it was ended.</message></response>')
+                       '<message>A request to end the meeting was sent. Please wait a few seconds, and then use the getMeetingInfo ' \
+                       'or isMeetingRunning API calls to verify that it was ended.</message></response>')
 
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       post bigbluebutton_api_end_url, params: params

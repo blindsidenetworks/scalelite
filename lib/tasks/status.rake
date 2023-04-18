@@ -12,17 +12,13 @@ task status: :environment do
     enabled = server.enabled
     state = server.state.present? ? status_with_state(state) : status_without_state(enabled)
 
+    ServerInfo = Struct.new(:hostname, :state, :status, :meetings, :users, :largest, :videos, :load)
+    info = ServerInfo.new(URI.parse(server.url).host, state, server.online ? 'online' : 'offline', server.meetings, server.users,
+server.largest_meeting, server.videos, server.load)
+
     # Convert to openstruct to allow dot syntax usage
-    servers_info.push(OpenStruct.new(
-                        hostname: URI.parse(server.url).host,
-                        state: state,
-                        status: server.online ? 'online' : 'offline',
-                        meetings: server.meetings,
-                        users: server.users,
-                        largest: server.largest_meeting,
-                        videos: server.videos,
-                        load: server.load
-                      ))
+    servers_info.push(info)
+
     # Sort list of servers
     servers_info = servers_info.sort_by(&:hostname)
   end

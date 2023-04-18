@@ -48,7 +48,7 @@ Rails.application.configure do
 
   # Annotate rendered view with file names.
   # config.action_view.annotate_rendered_view_with_filenames = true
- 
+
   # Ensure some dummy configuration is set for testing
   config.x.url_host = 'scalelite.example.com'
   config.x.loadbalancer_secrets = [ENV.fetch('LOADBALANCER_SECRET', 'f830c18ee29c8531e0115c3da85db89b')]
