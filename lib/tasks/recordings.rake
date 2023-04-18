@@ -3,7 +3,7 @@
 namespace :recordings do
   desc 'Watch for new recordings in the spool directory and import them'
   task :watch, [:force_polling, :latency] => :environment do |_t, args|
-    args.with_defaults(latency: 10, force_polling: false)
+    args.with_defaults(latency: 30, force_polling: false)
     dir = Rails.configuration.x.recording_spool_dir
     FileUtils.mkdir_p(dir)
 
