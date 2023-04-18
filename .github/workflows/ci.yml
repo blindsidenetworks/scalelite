@@ -1,5 +1,5 @@
 env:
-  RUBY_VERSION: 2.7.7
+  RUBY_VERSION: 3.1.4
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
 
 name: CI
@@ -10,6 +10,8 @@ on:
       - v1.0-stable
       - v1.1-stable
       - v1.2-stable
+      - v1.3-stable
+      - v1.4-stable
   pull_request:
     branches: "*"
 
@@ -20,7 +22,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:11
+        image: postgres:13
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
