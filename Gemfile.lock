@@ -174,7 +174,7 @@ GEM
     rb-inotify (0.10.1)
       ffi (~> 1.0)
     redis (4.8.1)
-    redis-namespace (1.9.0)
+    redis-namespace (1.10.0)
       redis (>= 4)
     regexp_parser (2.7.0)
     rexml (3.2.5)
@@ -262,7 +262,7 @@ DEPENDENCIES
   rails (~> 6.1, >= 6.1.7.3)
   rails-controller-testing
   redis (~> 4.8.0)
-  redis-namespace (~> 1.9.0)
+  redis-namespace (~> 1.10.0)
   rspec-rails (~> 5.1.2)
   rubocop (~> 1.50.0)
   rubocop-rails (~> 2.19.0)
