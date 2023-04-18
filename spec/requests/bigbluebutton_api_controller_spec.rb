@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
+require 'redis_helper'
+require 'test_helper'
 require 'requests/shared_examples'
 
 RSpec.describe BigBlueButtonApiController, type: :request do
   include BBBErrors
   include ApiHelper
+  include TestHelper
 
   before do
     allow_any_instance_of(BigBlueButtonApiController).to receive(:verify_checksum).and_return(nil)
@@ -120,11 +123,6 @@ RSpec.describe BigBlueButtonApiController, type: :request do
 
   # get_meetings
   describe '#get_meetings' do
-    # let(:server1) { create(:server) }
-    # let(:server2) { create(:server) }
-    # let(:server3) { create(:server) }
-    # let(:server4) { create(:server) }
-
     context 'GET request' do
       it 'responds with the correct meetings' do
         server1 = create(:server)
@@ -176,10 +174,6 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         server2 = create(:server)
         server3 = create(:server, online: false)
 
-        # server3.online = false
-        # server3.enabled = false
-        # server3.save
-
         stub_request(:get, encode_bbb_uri("getMeetings", server1.url, server1.secret))
           .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-1<meeting></meetings></response>")
         stub_request(:get, encode_bbb_uri("getMeetings", server2.url, server2.secret))
@@ -200,15 +194,7 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         server1 = create(:server, state: "cordoned")
         server2 = create(:server, state: "enabled")
         server3 = create(:server, online: false)
-
-        # server1.state = "cordoned"
-        # server1.save
-        # server2.state = "enabled"
-        # server2.save
-        # server3.online = "false"
-        # server3.save
-        # server4.state = "disabled"
-        # server4.save
+        server4 = create(:server, state: "disabled")
 
         stub_request(:get, encode_bbb_uri("getMeetings", server1.url, server1.secret))
           .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-1<meeting></meetings></response>")
@@ -216,8 +202,8 @@ RSpec.describe BigBlueButtonApiController, type: :request do
           .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-2<meeting></meetings></response>")
         stub_request(:get, encode_bbb_uri("getMeetings", server3.url, server3.secret))
           .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-3<meeting></meetings></response>")
-        # stub_request(:get, encode_bbb_uri("getMeetings", server4.url, server4.secret))
-        #   .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-4<meeting></meetings></response>")
+        stub_request(:get, encode_bbb_uri("getMeetings", server4.url, server4.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-4<meeting></meetings></response>")
 
         get bigbluebutton_api_get_meetings_url
 
@@ -226,11 +212,25 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         expect(response_xml.xpath("//meeting[text()=\"test-meeting-1\"]")).to be_present
         expect(response_xml.xpath("//meeting[text()=\"test-meeting-2\"]")).to be_present
         expect(response_xml.xpath("//meeting[text()=\"test-meeting-3\"]")).not_to be_present
-        # expect(response_xml.xpath("//meeting[text()=\"test-meeting-4\"]")).not_to be_present
+        expect(response_xml.xpath("//meeting[text()=\"test-meeting-4\"]")).not_to be_present
+      end
+
+      it 'returns no meetings if GET_MEETINGS_API_DISABLED flag is set to true for a get request' do
+        mock_env("GET_MEETINGS_API_DISABLED" => "TRUE") do
+          reload_routes!
+          get bigbluebutton_api_get_meetings_url
+        end
+
+        response_xml = Nokogiri::XML(response.body)
+        expect(response).to have_http_status(:success)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('noMeetings')
+        expect(response_xml.at_xpath('/response/message').text).to eq('no meetings were found on this server')
+        expect(response_xml.at_xpath('/response/meetings').text).to eq('')
       end
     end
 
-    context 'POST request' do
+    context 'POST requests' do
       it 'responds with the correct meetings' do
         server1 = create(:server)
         server2 = create(:server)
@@ -247,6 +247,132 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         expect(response_xml.xpath('//meeting[text()="test-meeting-1"]')).to be_present
         expect(response_xml.xpath('//meeting[text()="test-meeting-2"]')).to be_present
       end
+
+      it 'returns no meetings if GET_MEETINGS_API_DISABLED flag is set to true for a post request' do
+        mock_env("GET_MEETINGS_API_DISABLED" => "TRUE") do
+          reload_routes!
+          post bigbluebutton_api_get_meetings_url
+        end
+
+        response_xml = Nokogiri::XML(response.body)
+        expect(response).to have_http_status(:success)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('noMeetings')
+        expect(response_xml.at_xpath('/response/message').text).to eq('no meetings were found on this server')
+        expect(response_xml.at_xpath('/response/meetings').text).to eq('')
+      end
+    end
+  end
+
+  describe '#get_meeting_info' do
+    context 'GET request' do
+      it 'responds with the correct meeting info for a get request' do
+        server = create(:server)
+        meeting = create(:meeting, server: server)
+
+        stub_request(:get, encode_bbb_uri("getMeetingInfo", server.url, server.secret, meetingID: meeting.id))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID></response>")
+
+        get bigbluebutton_api_get_meeting_info_url, params: { meetingID: meeting.id }
+
+        response_xml = Nokogiri.XML(response.body)
+        expect(response_xml.at_xpath("/response/returncode").content).to(eq("SUCCESS"))
+        expect(response_xml.at_xpath("/response/meetingID").content).to(eq("test-meeting-1"))
+      end
+
+      it 'responds with appropriate error on timeout' do
+        server = create(:server)
+        meeting = create(:meeting, server: server)
+
+        stub_request(:get, encode_bbb_uri("getMeetingInfo", server.url, server.secret, meetingID: meeting.id))
+          .to_timeout
+
+        get bigbluebutton_api_get_meeting_info_url, params: { meetingID: meeting.id }
+
+        response_xml = Nokogiri.XML(response.body)
+
+        expect(response_xml.at_xpath("/response/returncode").content).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").content).to(eq("internalError"))
+        expect(response_xml.at_xpath("/response/message").content).to(eq("Unable to access meeting on server."))
+      end
+
+      it 'responds with MissingMeetingIDError if meeting ID is not passed' do
+        get bigbluebutton_api_get_meeting_info_url
+
+        response_xml = Nokogiri.XML(response.body)
+        expected_error = BBBErrors::MissingMeetingIDError.new
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
+        expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
+      end
+
+      it 'responds with MeetingNotFoundError if meeting is not found in database' do
+        get bigbluebutton_api_get_meeting_info_url, params: { meetingID: "test" }
+
+        response_xml = Nokogiri.XML(response.body)
+        expected_error = BBBErrors::MeetingNotFoundError.new
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
+        expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
+      end
+    end
+
+    context 'POST request' do
+      it 'responds with the correct meeting info for a post request' do
+        server = create(:server)
+        meeting = create(:meeting, server: server)
+
+        stub_request(:get, encode_bbb_uri("getMeetingInfo", server.url, server.secret, meetingID: meeting.id))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID></response>")
+
+        post bigbluebutton_api_get_meeting_info_url, params: { meetingID: meeting.id }
+
+        response_xml = Nokogiri.XML(response.body)
+        expect(response_xml.at_xpath("/response/returncode").content).to(eq("SUCCESS"))
+        expect(response_xml.at_xpath("/response/meetingID").content).to(eq("test-meeting-1"))
+      end
+
+      it 'responds with the correct meeting info for a post request with checksum value computed using SHA1' do
+        server = create(:server)
+        meeting = create(:meeting, id: "SHA1_meeting", server: server)
+
+        stub_request(:get, encode_bbb_uri("getMeetingInfo", server.url, server.secret, meetingID: meeting.id))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>SHA1_meeting</meetingID></response>")
+
+        allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(["test-2"]) # TODO this does not seem to do anything
+
+        post bigbluebutton_api_get_meeting_info_url, params: { meetingID: meeting.id, checksum: "cbf00ea96fae6ff06c2cb311bbde8b26ad66d765" }
+
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/meetingID').text).to eq('SHA1_meeting')
+      end
+
+      it 'responds with the correct meeting info for a post request with checksum value computed using SHA256' do
+        server = create(:server)
+        meeting = create(:meeting, id: "SHA256_meeting", server: server)
+
+        stub_request(:get, encode_bbb_uri("getMeetingInfo", server.url, server.secret, meetingID: meeting.id))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>SHA256_meeting</meetingID></response>")
+
+        allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(["test-1"]) # TODO this does not seem to do anything
+
+        post bigbluebutton_api_get_meeting_info_url, params: { meetingID: "SHA256_meeting", checksum: "217da05b692320353e17a1b11c24e9e715caeee51ab5af35231ee5becc350d1e" }
+
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/meetingID').text).to eq('SHA256_meeting')
+      end
+    end
+  end
+
+  describe '#is_meeting_running' do
+    context '#GET is_meeting_running' do
+
+    end
+
+    context '#POST is_meeting_running' do
+
     end
   end
 end

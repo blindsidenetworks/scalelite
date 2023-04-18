@@ -22,6 +22,8 @@ WebMock.disable_net_connect!(allow_localhost: true)
 
 require 'redis'
 
+# require 'support/test_helper'
+
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate
   # assertion/expectation library such as wrong or the stdlib/minitest
@@ -99,8 +101,12 @@ RSpec.configure do |config|
   #   # as the one that triggered the failure.
   #   Kernel.srand config.seed
 
-  # Clear Redis data between tests
   config.before(:each) do
+    FactoryBot.rewind_sequences # Needed for sequences in Meeting, Server factory
+    Redis.new.flushdb
+  end
+
+  config.after(:each) do
     Redis.new.flushdb
   end
 end
