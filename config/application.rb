@@ -16,6 +16,7 @@ require 'action_view/railtie'
 # require 'action_cable/engine'
 # require 'sprockets/railtie'
 require 'rails/test_unit/railtie'
+require 'active_support/time'
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
@@ -24,7 +25,7 @@ Bundler.require(*Rails.groups)
 module Scalelite
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults(6.0)
+    config.load_defaults 6.0
 
     config.eager_load_paths << Rails.root.join('lib')
 
@@ -37,7 +38,7 @@ module Scalelite
     config.x.redis_store = config_for(:redis_store)
 
     # Build number returned in the /bigbluebutton/api response
-    config.x.build_number = ENV['BUILD_NUMBER']
+    config.x.build_number = ENV.fetch('BUILD_NUMBER', nil)
 
     # Secrets used to verify /bigbluebutton/api requests
     config.x.loadbalancer_secrets = []
@@ -106,11 +107,11 @@ module Scalelite
     config.x.recording_import_unpublished = ENV.fetch('RECORDING_IMPORT_UNPUBLISHED', 'false').casecmp?('true')
 
     # Scalelite Host name
-    config.x.url_host = ENV['URL_HOST']
+    config.x.url_host = ENV.fetch('URL_HOST', nil)
 
-    config.x.base_url = ENV['BASE_URL']
+    config.x.base_url = ENV.fetch('BASE_URL', nil)
 
-    config.x.multitenancy_enabled = ENV['MULTITENANCY_ENABLED']
+    config.x.multitenancy_enabled = ENV.fetch('MULTITENANCY_ENABLED', nil)
 
     # DB connection retry attempt counts
     config.x.db_connection_retry_count = ENV.fetch('DB_CONNECTION_RETRY_COUNT', '3').to_i
@@ -140,16 +141,16 @@ module Scalelite
 
     # Comma separated list of create params that can be overridden by the client
     config.x.default_create_params = ENV.fetch('DEFAULT_CREATE_PARAMS', '')
-                                        .split(',').map { |param| param.split('=', 2) }.to_h.symbolize_keys
+                                        .split(',').to_h { |param| param.split('=', 2) }.symbolize_keys
     # Comma separated list of create params that CANT be overridden by the client
     config.x.override_create_params = ENV.fetch('OVERRIDE_CREATE_PARAMS', '')
-                                         .split(',').map { |param| param.split('=', 2) }.to_h.symbolize_keys
+                                         .split(',').to_h { |param| param.split('=', 2) }.symbolize_keys
     # Comma separated list of join params that can be overridden by the client
     config.x.default_join_params = ENV.fetch('DEFAULT_JOIN_PARAMS', '')
-                                      .split(',').map { |param| param.split('=', 2) }.to_h.symbolize_keys
+                                      .split(',').to_h { |param| param.split('=', 2) }.symbolize_keys
     # Comma separated list of join params that CANT be overridden by the client
     config.x.override_join_params = ENV.fetch('OVERRIDE_JOIN_PARAMS', '')
-                                       .split(',').map { |param| param.split('=', 2) }.to_h.symbolize_keys
+                                       .split(',').to_h { |param| param.split('=', 2) }.symbolize_keys
 
     # The length (number of digits) of voice bridge numbers to allocate
     config.x.voice_bridge_len = ENV.fetch('VOICE_BRIDGE_LEN', 9).to_i

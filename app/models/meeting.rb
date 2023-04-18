@@ -57,7 +57,7 @@ class Meeting < ApplicationRedisRecord
   # Get the linked tenant
   # @return [Tenant]
   def tenant
-    @tenant ||= \
+    @tenant ||=
       if tenant_id.nil?
                         nil
       else
@@ -68,7 +68,7 @@ class Meeting < ApplicationRedisRecord
   # Get the linked server.
   # @return [Server]
   def server
-    @server ||= \
+    @server ||=
       if server_id.nil?
         nil
       else
@@ -206,7 +206,7 @@ class Meeting < ApplicationRedisRecord
 
     # In order to make consistent random pin numbers, use the provided meeting as the seed. Ruby's 'Random' PRNG takes a 128bit
     # integer as seed. Create one from a truncated hash of the meeting id.
-    seed = Digest::SHA256.digest(meeting_id).unpack('QQ').inject { |val, n| val << 64 | n }
+    seed = Digest::SHA256.digest(meeting_id).unpack('QQ').inject { |val, n| (val << 64) | n }
     prng = Random.new(seed)
     tries = 0
     with_connection do |redis|
@@ -246,9 +246,7 @@ class Meeting < ApplicationRedisRecord
 
       raise RecordNotFound.new("Couldn't find Meeting with id=#{id}", name, id) if hash.blank?
 
-      if tenant_id.to_i != hash['tenant_id'].to_i
-        raise RecordNotFound.new("Couldn't find Meeting with id=#{id} and tenant_id=#{tenant_id}", name, id)
-      end
+      raise RecordNotFound.new("Couldn't find Meeting with id=#{id} and tenant_id=#{tenant_id}", name, id) if tenant_id.to_i != hash['tenant_id'].to_i
 
       hash[:id] = id
       new.init_with_attributes(hash)
