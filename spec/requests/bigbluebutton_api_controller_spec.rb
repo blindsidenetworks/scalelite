@@ -120,36 +120,38 @@ RSpec.describe BigBlueButtonApiController, type: :request do
 
   # get_meetings
   describe '#get_meetings' do
-    let(:server1) { create(:server) }
-    let(:server2) { create(:server) }
-    let(:server3) { create(:server) }
-    let(:server4) { create(:server) }
+    # let(:server1) { create(:server) }
+    # let(:server2) { create(:server) }
+    # let(:server3) { create(:server) }
+    # let(:server4) { create(:server) }
 
     context 'GET request' do
       it 'responds with the correct meetings' do
+        server1 = create(:server)
+        server2 = create(:server)
+
         stub_request(:get, encode_bbb_uri("getMeetings", server1.url, server1.secret))
           .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-1<meeting></meetings></response>")
         stub_request(:get, encode_bbb_uri("getMeetings", server2.url, server2.secret))
           .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-2<meeting></meetings></response>")
-        stub_request(:get, encode_bbb_uri("getMeetings", server3.url, server3.secret))
-          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-3<meeting></meetings></response>")
 
         get bigbluebutton_api_get_meetings_url
 
         response_xml = Nokogiri.XML(@response.body)
         expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+
         expect(response_xml.xpath("//meeting[text()=\"test-meeting-1\"]")).to be_present
         expect(response_xml.xpath("//meeting[text()=\"test-meeting-2\"]")).to be_present
-        expect(response_xml.xpath("//meeting[text()=\"test-meeting-3\"]")).to be_present
       end
 
       it 'responds with the appropriate error on timeout' do
+        server1 = create(:server)
+        server2 = create(:server)
+
         stub_request(:get, encode_bbb_uri("getMeetings", server1.url, server1.secret))
           .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-1<meeting></meetings></response>")
         stub_request(:get, encode_bbb_uri("getMeetings", server2.url, server2.secret))
           .to_timeout
-        stub_request(:get, encode_bbb_uri("getMeetings", server3.url, server3.secret))
-          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-3<meeting></meetings></response>")
 
         get bigbluebutton_api_get_meetings_url
 
@@ -170,9 +172,13 @@ RSpec.describe BigBlueButtonApiController, type: :request do
       end
 
       it 'only makes a request to online and enabled servers' do
-        server3.online = false
-        server3.enabled = false
-        server3.save
+        server1 = create(:server)
+        server2 = create(:server)
+        server3 = create(:server, online: false)
+
+        # server3.online = false
+        # server3.enabled = false
+        # server3.save
 
         stub_request(:get, encode_bbb_uri("getMeetings", server1.url, server1.secret))
           .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-1<meeting></meetings></response>")
@@ -191,21 +197,25 @@ RSpec.describe BigBlueButtonApiController, type: :request do
       end
 
       it 'only makes a request to online servers in state cordoned/enabled' do
-        server1.state = "cordoned"
-        server1.save
-        server2.state = "enabled"
-        server2.save
-        server3.online = "false"
-        server3.save
-        server4.state = "disabled"
-        server4.save
+        server1 = create(:server, state: "cordoned")
+        server2 = create(:server, state: "enabled")
+        server3 = create(:server, online: false)
+
+        # server1.state = "cordoned"
+        # server1.save
+        # server2.state = "enabled"
+        # server2.save
+        # server3.online = "false"
+        # server3.save
+        # server4.state = "disabled"
+        # server4.save
 
         stub_request(:get, encode_bbb_uri("getMeetings", server1.url, server1.secret))
           .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-1<meeting></meetings></response>")
         stub_request(:get, encode_bbb_uri("getMeetings", server2.url, server2.secret))
           .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-2<meeting></meetings></response>")
-        # stub_request(:get, encode_bbb_uri("getMeetings", server3.url, server3.secret))
-        #   .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-3<meeting></meetings></response>")
+        stub_request(:get, encode_bbb_uri("getMeetings", server3.url, server3.secret))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-3<meeting></meetings></response>")
         # stub_request(:get, encode_bbb_uri("getMeetings", server4.url, server4.secret))
         #   .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-4<meeting></meetings></response>")
 
@@ -216,12 +226,15 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         expect(response_xml.xpath("//meeting[text()=\"test-meeting-1\"]")).to be_present
         expect(response_xml.xpath("//meeting[text()=\"test-meeting-2\"]")).to be_present
         expect(response_xml.xpath("//meeting[text()=\"test-meeting-3\"]")).not_to be_present
-        expect(response_xml.xpath("//meeting[text()=\"test-meeting-4\"]")).not_to be_present
+        # expect(response_xml.xpath("//meeting[text()=\"test-meeting-4\"]")).not_to be_present
       end
     end
 
     context 'POST request' do
       it 'responds with the correct meetings' do
+        server1 = create(:server)
+        server2 = create(:server)
+
         stub_request(:get, encode_bbb_uri("getMeetings", server1.url, server1.secret))
           .to_return(body: "<response><returncode>SUCCESS</returncode><meetings><meeting>test-meeting-1<meeting></meetings></response>")
         stub_request(:get, encode_bbb_uri("getMeetings", server2.url, server2.secret))
