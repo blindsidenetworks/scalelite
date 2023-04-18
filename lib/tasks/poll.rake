@@ -34,7 +34,7 @@ namespace :poll do
     pool = Concurrent::FixedThreadPool.new(Rails.configuration.x.poller_threads.to_i - 1, name: 'sync-server-data')
     tasks = Server.all.map do |server|
       Concurrent::Promises.future_on(pool) do
-        Rails.logger.debug("Polling Server id=#{server.id}")
+        Rails.logger.debug { "Polling Server id=#{server.id}" }
         resp = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
         meetings = resp.xpath('/response/meetings/meeting')
 
@@ -130,7 +130,7 @@ namespace :poll do
     tasks = Meeting.all.map do |meeting|
       Concurrent::Promises.future_on(pool) do
         server = meeting.server
-        Rails.logger.debug("Polling Meeting id=#{meeting.id} on Server id=#{server.id}")
+        Rails.logger.debug { "Polling Meeting id=#{meeting.id} on Server id=#{server.id}" }
         get_post_req(encode_bbb_uri('getMeetingInfo', server.url, server.secret, meetingID: meeting.id))
       rescue BBBErrors::BBBError => e
         unless e.message_key == 'notFound'

@@ -25,18 +25,18 @@ namespace :recordings do
   desc 'Search through the recordings and move unpublished recordings to the correct folder'
   task update: :environment do
     Recording.where(published: false).each do |recording|
-      Rails.logger.debug("Checking location of recording #{recording.record_id}")
+      Rails.logger.debug { "Checking location of recording #{recording.record_id}" }
       # Check to make sure recording files are not already in the unpublished folder
       next unless Dir.glob(File.join(Rails.configuration.x.recording_unpublish_dir, '/*/', recording.record_id)).empty?
 
-      Rails.logger.debug("Starting move for recording #{recording.record_id}")
+      Rails.logger.debug { "Starting move for recording #{recording.record_id}" }
       # Move recording files to correct directory
       recording.playback_formats.each do |playback|
         format_dir = File.join(Rails.configuration.x.recording_unpublish_dir, playback.format)
         FileUtils.mkdir_p(format_dir)
         FileUtils.mv(File.join(Rails.configuration.x.recording_publish_dir, playback.format, recording.record_id), format_dir)
 
-        Rails.logger.debug("Successfully moved format #{playback.format} for recording #{recording.record_id}")
+        Rails.logger.debug { "Successfully moved format #{playback.format} for recording #{recording.record_id}" }
       rescue StandardError => e
         Rails.logger.error("Failed to move recording #{recording.record_id}: #{e}")
       end

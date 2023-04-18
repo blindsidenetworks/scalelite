@@ -1,4 +1,4 @@
-FROM amazonlinux:2.0.20221004.0 AS amazonlinux
+FROM amazonlinux:2.0.20221210.0 AS amazonlinux
 
 FROM ubuntu:18.04 AS bbb-playback
 ENV DEBIAN_FRONTEND=noninteractive
@@ -69,7 +69,8 @@ USER scalelite:scalelite
 COPY --chown=scalelite:scalelite Gemfile* ./
 RUN bundle --version
 RUN bundle config build.nokogiri --use-system-libraries
-RUN bundle config set --local deployment 'true' without 'development:test'
+RUN bundle config set --local deployment 'true'
+RUN bundle config set --local without 'development:test'
 RUN bundle install -j4
 RUN rm -rf vendor/bundle/ruby/*/cache
 RUN find vendor/bundle/ruby/*/gems/ \( -name '*.c' -o -name '*.o' \) -delete

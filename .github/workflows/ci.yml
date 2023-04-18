@@ -1,5 +1,5 @@
 env:
-  RUBY_VERSION: 2.7.x
+  RUBY_VERSION: 3.1.0
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
 
 name: CI
@@ -10,17 +10,19 @@ on:
       - v1.0-stable
       - v1.1-stable
       - v1.2-stable
+      - v1.3-stable
+      - v1.4-stable
   pull_request:
     branches: "*"
 
 jobs:
   test:
     name: Rubocop + Rails Test
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     services:
       postgres:
-        image: postgres:11
+        image: postgres:13
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
@@ -34,15 +36,15 @@ jobs:
           --health-retries 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install Ruby ${{ env.RUBY_VERSION }}
-        uses: actions/setup-ruby@v1
+        uses: ruby/setup-ruby@v1.126.0
         with:
           ruby-version: ${{ env.RUBY_VERSION }}
 
       - name: Bundle cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: vendor/bundle
           key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
@@ -60,10 +62,11 @@ jobs:
       - name: Run Rails Test
         env:
           DATABASE_URL: postgres://postgres:password@localhost:5432/scalelite_test
-        run:  |
+        run: |
           bundler exec rails test:db
 
       - name: Run RSpec
         env:
           DATABASE_URL: postgres://postgres:password@localhost:5432/scalelite_test
-        run: bundle exec rspec
+        run: |
+          bundle exec rspec

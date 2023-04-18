@@ -9,7 +9,7 @@ jobs:
       CODECOMMIT_MIRROR_ENABLED: ${{ secrets.CODECOMMIT_MIRROR_ENABLED }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -23,4 +23,3 @@ jobs:
             ${{ secrets.CODECOMMIT_SSH_PRIVATE_KEY }}
           ssh_username:
             ${{ secrets.CODECOMMIT_SSH_PRIVATE_KEY_ID }}
-
