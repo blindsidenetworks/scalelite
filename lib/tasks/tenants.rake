@@ -30,18 +30,10 @@ namespace :tenants do
       puts('Error: both name and secrets are required to create a Tenant')
       exit(1)
     end
-
-    tenant = Tenant.new(name: name, secrets: secrets)
-
-    if tenant.valid?
-      tenant.save!
-      puts('OK')
-      puts("New Tenant id: #{tenant.id}")
-    else
-      puts('Error! Tenant has not been created. Please fix the following errors:')
-      puts(tenant.errors.messages)
-      exit(1)
-    end
+    byebug
+    tenant = Tenant.create!(name: name, secrets: secrets)
+    puts('OK')
+    puts("New Tenant id: #{tenant.id}")
   end
 
   desc 'Update existing Tenant'
