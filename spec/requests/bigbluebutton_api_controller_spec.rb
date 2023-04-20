@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
-require 'redis_helper'
-require 'test_helper'
-require 'requests/shared_examples'
 
 RSpec.describe BigBlueButtonApiController, type: :request do
   include BBBErrors

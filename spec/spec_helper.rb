@@ -20,7 +20,8 @@
 require 'webmock/rspec'
 WebMock.disable_net_connect!(allow_localhost: true)
 
-require 'redis'
+require_relative './support/redis_helper'
+require 'requests/shared_examples'
 
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate
