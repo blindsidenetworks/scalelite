@@ -547,3 +547,4 @@ For commercial help with setup and deployment of Scalelite, contact us at [Blind
 ## Trademarks
 
 This project uses BigBlueButton and is not endorsed or certified by BigBlueButton Inc.  BigBlueButton and the BigBlueButton Logo are trademarks of [BigBlueButton Inc](https://bigbluebutton.org).
+
