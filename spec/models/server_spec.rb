@@ -17,9 +17,9 @@ RSpec.describe Server, redis: true do
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
-          redis.sadd('servers', 'test-1')
+          redis.sadd?('servers', 'test-1')
           redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
-          redis.sadd('servers', 'test-2')
+          redis.sadd?('servers', 'test-2')
         end
       end
 
@@ -38,13 +38,13 @@ RSpec.describe Server, redis: true do
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
-          redis.sadd('servers', 'test-1')
-          redis.sadd('server_enabled', 'test-1')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
           redis.zadd('server_load', 1, 'test-1')
           redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
                              online: 'true')
-          redis.sadd('servers', 'test-2')
-          redis.sadd('server_enabled', 'test-2')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
           redis.zadd('server_load', 2, 'test-2')
         end
       end
@@ -67,13 +67,13 @@ RSpec.describe Server, redis: true do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                              state: 'enabled')
-          redis.sadd('servers', 'test-1')
-          redis.sadd('server_enabled', 'test-1')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
           redis.zadd('server_load', 1, 'test-1')
           redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
                              online: 'true', state: 'enabled')
-          redis.sadd('servers', 'test-2')
-          redis.sadd('server_enabled', 'test-2')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
           redis.zadd('server_load', 2, 'test-2')
         end
       end
@@ -96,11 +96,11 @@ RSpec.describe Server, redis: true do
         before do
           RedisStore.with_connection do |redis|
             redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
-            redis.sadd('servers', 'test-1')
-            redis.sadd('server_enabled', 'test-1')
+            redis.sadd?('servers', 'test-1')
+            redis.sadd?('server_enabled', 'test-1')
             redis.zadd('server_load', 1, 'test-1')
             redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
-            redis.sadd('servers', 'test-2')
+            redis.sadd?('servers', 'test-2')
           end
         end
 
@@ -121,12 +121,12 @@ RSpec.describe Server, redis: true do
           RedisStore.with_connection do |redis|
             redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                                state: 'enabled')
-            redis.sadd('servers', 'test-1')
-            redis.sadd('server_enabled', 'test-1')
+            redis.sadd?('servers', 'test-1')
+            redis.sadd?('server_enabled', 'test-1')
             redis.zadd('server_load', 1, 'test-1')
             redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
                                state: 'disabled')
-            redis.sadd('servers', 'test-2')
+            redis.sadd?('servers', 'test-2')
           end
         end
 
@@ -176,13 +176,13 @@ RSpec.describe Server, redis: true do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                              enabled: 'true')
-          redis.sadd('servers', 'test-1')
-          redis.sadd('server_enabled', 'test-1')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
           redis.zadd('server_load', 1, 'test-1')
           redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
                              enabled: 'false')
-          redis.sadd('servers', 'test-2')
-          redis.sadd('server_enabled', 'test-2')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
           redis.zadd('server_load', 2, 'test-2')
         end
       end
@@ -202,13 +202,13 @@ RSpec.describe Server, redis: true do
             redis.flushall
             redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                                state: 'enabled')
-            redis.sadd('servers', 'test-1')
-            redis.sadd('server_enabled', 'test-1')
+            redis.sadd?('servers', 'test-1')
+            redis.sadd?('server_enabled', 'test-1')
             redis.zadd('server_load', 1, 'test-1')
             redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
                                state: 'cordoned')
-            redis.sadd('servers', 'test-2')
-            redis.sadd('server_enabled', 'test-2')
+            redis.sadd?('servers', 'test-2')
+            redis.sadd?('server_enabled', 'test-2')
             redis.zadd('server_load', 2, 'test-2')
           end
         end
@@ -228,13 +228,13 @@ RSpec.describe Server, redis: true do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                              state: 'enabled')
-          redis.sadd('servers', 'test-1')
-          redis.sadd('server_enabled', 'test-1')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
           redis.zadd('server_load', 1, 'test-1')
           redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
                              state: 'enabled')
-          redis.sadd('servers', 'test-2')
-          redis.sadd('server_enabled', 'test-2')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
           redis.zadd('server_load', 1, 'test-2')
         end
 
@@ -256,13 +256,13 @@ RSpec.describe Server, redis: true do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                              enabled: 'false')
-          redis.sadd('servers', 'test-1')
-          redis.sadd('server_enabled', 'test-1')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
           redis.zadd('server_load', 1, 'test-1')
           redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
                              enabled: 'false')
-          redis.sadd('servers', 'test-2')
-          redis.sadd('server_enabled', 'test-2')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
           redis.zadd('server_load', 1, 'test-1')
         end
 
@@ -286,13 +286,13 @@ RSpec.describe Server, redis: true do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                              state: 'enabled')
-          redis.sadd('servers', 'test-1')
-          redis.sadd('server_enabled', 'test-1')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
           redis.zadd('server_load', 5, 'test-1')
           redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
                              state: 'enabled')
-          redis.sadd('servers', 'test-2')
-          redis.sadd('server_enabled', 'test-2')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
           redis.zadd('server_load', 5, 'test-2')
         end
 
@@ -315,13 +315,13 @@ RSpec.describe Server, redis: true do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                              enabled: 'true')
-          redis.sadd('servers', 'test-1')
-          redis.sadd('server_enabled', 'test-1')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
           redis.zadd('server_load', 5, 'test-1')
           redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
                              enabled: 'true')
-          redis.sadd('servers', 'test-2')
-          redis.sadd('server_enabled', 'test-2')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
           redis.zadd('server_load', 5, 'test-2')
         end
 
@@ -347,11 +347,11 @@ RSpec.describe Server, redis: true do
       RedisStore.with_connection do |redis|
         redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                            state: 'enabled')
-        redis.sadd('servers', 'test-1')
+        redis.sadd?('servers', 'test-1')
         redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
                            state: 'cordoned')
-        redis.sadd('servers', 'test-2')
-        redis.sadd('server_enabled', 'test-2')
+        redis.sadd?('servers', 'test-2')
+        redis.sadd?('server_enabled', 'test-2')
         redis.zadd('cordoned_server_load', 2, 'test-2')
         redis.mapped_hmset('server:test-3', url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret',
                            enabled: true)
@@ -397,16 +397,16 @@ RSpec.describe Server, redis: true do
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
-          redis.sadd('servers', 'test-1')
-          redis.sadd('server_enabled', 'test-1')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
           redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
                              state: 'cordoned')
-          redis.sadd('servers', 'test-2')
-          redis.sadd('server_enabled', 'test-2')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
           redis.zadd('server_load', 2, 'test-2')
           redis.mapped_hmset('server:test-3', url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret',
                              state: 'cordoned')
-          redis.sadd('servers', 'test-3')
+          redis.sadd?('servers', 'test-3')
         end
       end
 
@@ -431,16 +431,16 @@ RSpec.describe Server, redis: true do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                              enabled: 'false')
-          redis.sadd('servers', 'test-1')
-          redis.sadd('server_enabled', 'test-1')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
           redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
                              enabled: 'true')
-          redis.sadd('servers', 'test-2')
-          redis.sadd('server_enabled', 'test-2')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
           redis.zadd('server_load', 2, 'test-2')
           redis.mapped_hmset('server:test-3', url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret',
                              enabled: 'false')
-          redis.sadd('servers', 'test-3')
+          redis.sadd?('servers', 'test-3')
         end
       end
 
@@ -466,8 +466,8 @@ RSpec.describe Server, redis: true do
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
-          redis.sadd('servers', 'test-2')
-          redis.sadd('server_enabled', 'test-2')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
         end
         server.increment_load(2)
       end
@@ -490,8 +490,8 @@ RSpec.describe Server, redis: true do
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret')
-          redis.sadd('servers', 'test-2')
-          redis.sadd('server_enabled', 'test-2')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
           redis.zadd('server_load', 2, 'test-2')
         end
         server.increment_load(2)
@@ -638,7 +638,7 @@ RSpec.describe Server, redis: true do
     before do
       RedisStore.with_connection do |redis|
         redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
-        redis.sadd('servers', 'test-1')
+        redis.sadd?('servers', 'test-1')
       end
     end
 
@@ -694,8 +694,8 @@ RSpec.describe Server, redis: true do
           RedisStore.with_connection do |redis|
             redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                                state: 'enabled')
-            redis.sadd('servers', 'test-1')
-            redis.sadd('server_enabled', 'test-1')
+            redis.sadd?('servers', 'test-1')
+            redis.sadd?('server_enabled', 'test-1')
           end
 
           server.load = 1
@@ -715,8 +715,8 @@ RSpec.describe Server, redis: true do
           RedisStore.with_connection do |redis|
             redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                                state: 'enabled')
-            redis.sadd('servers', 'test-1')
-            redis.sadd('server_enabled', 'test-1')
+            redis.sadd?('servers', 'test-1')
+            redis.sadd?('server_enabled', 'test-1')
             redis.zadd('server_load', 1, 'test-1')
           end
 
@@ -737,8 +737,8 @@ RSpec.describe Server, redis: true do
           RedisStore.with_connection do |redis|
             redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                                state: 'enabled')
-            redis.sadd('servers', 'test-1')
-            redis.sadd('server_enabled', 'test-1')
+            redis.sadd?('servers', 'test-1')
+            redis.sadd?('server_enabled', 'test-1')
             redis.zadd('server_load', 1, 'test-1')
           end
 
@@ -759,7 +759,7 @@ RSpec.describe Server, redis: true do
           RedisStore.with_connection do |redis|
             redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                                state: 'disabled')
-            redis.sadd('servers', 'test-1')
+            redis.sadd?('servers', 'test-1')
 
             server.load = 2
             server.save!
@@ -780,7 +780,7 @@ RSpec.describe Server, redis: true do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                              online: 'false', state: 'enabled')
-          redis.sadd('servers', 'test-1')
+          redis.sadd?('servers', 'test-1')
         end
       end
 
@@ -802,8 +802,8 @@ RSpec.describe Server, redis: true do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                              state: 'enabled')
-          redis.sadd('servers', 'test-1')
-          redis.sadd('server_enabled', 'test-1')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
           redis.zadd('server_load', 1, 'test-1')
 
           server.state = 'disabled'
@@ -832,7 +832,7 @@ RSpec.describe Server, redis: true do
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
-          redis.sadd('servers', 'test-1')
+          redis.sadd?('servers', 'test-1')
         end
 
         server.state = 'enabled'
@@ -869,8 +869,8 @@ RSpec.describe Server, redis: true do
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
-          redis.sadd('servers', 'test-1')
-          redis.sadd('server_enabled', 'test-1')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
           redis.zadd('server_load', 1, 'test-1')
         end
 
@@ -891,8 +891,8 @@ RSpec.describe Server, redis: true do
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
-          redis.sadd('servers', 'test-1')
-          redis.sadd('server_enabled', 'test-1')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
         end
 
         server.destroy!
@@ -912,7 +912,7 @@ RSpec.describe Server, redis: true do
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
-          redis.sadd('servers', 'test-1')
+          redis.sadd?('servers', 'test-1')
         end
 
         server.destroy!
@@ -932,7 +932,7 @@ RSpec.describe Server, redis: true do
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret')
-          redis.sadd('servers', 'test-1')
+          redis.sadd?('servers', 'test-1')
           redis.zadd('server_load', 1, 'test-1')
         end
 
