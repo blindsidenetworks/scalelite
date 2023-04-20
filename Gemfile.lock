@@ -255,7 +255,6 @@ DEPENDENCIES
   faker
   fakeredis (~> 0.8)
   jwt (~> 2.7.0)
-  listen (~> 3.8.0)
   minitest-stub_any_instance
   pg (~> 1.4.4)
   puma (~> 6.2, >= 6.2.1)
