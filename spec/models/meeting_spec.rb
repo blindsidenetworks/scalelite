@@ -109,7 +109,7 @@ RSpec.describe Meeting, redis: true do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
           redis.mapped_hmset('meeting:test-meeting-2', server_id: 'test-server-2')
-          redis.sadd('meetings', %w[test-meeting-1 test-meeting-2])
+          redis.sadd?('meetings', %w[test-meeting-1 test-meeting-2])
         end
       end
 
@@ -142,9 +142,9 @@ RSpec.describe Meeting, redis: true do
           # server
           redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
 
-          redis.sadd('meetings', %w[test-meeting-01 test-meeting-02
-                                    test-meeting-11 test-meeting-12 test-meeting-13
-                                    test-meeting-21 test-meeting-22])
+          redis.sadd?('meetings', %w[test-meeting-01 test-meeting-02
+                                     test-meeting-11 test-meeting-12 test-meeting-13
+                                     test-meeting-21 test-meeting-22])
         end
       end
 
@@ -184,7 +184,7 @@ RSpec.describe Meeting, redis: true do
     before do
       RedisStore.with_connection do |redis|
         redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-        redis.sadd('servers', 'test-server-1')
+        redis.sadd?('servers', 'test-server-1')
       end
     end
 
@@ -206,11 +206,11 @@ RSpec.describe Meeting, redis: true do
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-          redis.sadd('servers', 'test-server-1')
+          redis.sadd?('servers', 'test-server-1')
           redis.mapped_hmset('server:test-server-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2')
-          redis.sadd('servers', 'test-server-2')
+          redis.sadd?('servers', 'test-server-2')
           redis.mapped_hmset('meeting:Demo Meeting', server_id: 'test-server-1')
-          redis.sadd('meetings', 'Demo Meeting')
+          redis.sadd?('meetings', 'Demo Meeting')
         end
       end
 
@@ -241,11 +241,11 @@ RSpec.describe Meeting, redis: true do
     before do
       RedisStore.with_connection do |redis|
         redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-        redis.sadd('servers', 'test-server-1')
+        redis.sadd?('servers', 'test-server-1')
         redis.mapped_hmset('server:test-server-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2')
-        redis.sadd('servers', 'test-server-2')
+        redis.sadd?('servers', 'test-server-2')
         redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
-        redis.sadd('meetings', 'test-meeting-1')
+        redis.sadd?('meetings', 'test-meeting-1')
       end
     end
 
@@ -280,9 +280,9 @@ RSpec.describe Meeting, redis: true do
     before do
       RedisStore.with_connection do |redis|
         redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-        redis.sadd('servers', 'test-server-1')
+        redis.sadd?('servers', 'test-server-1')
         redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
-        redis.sadd('meetings', 'test-meeting-1')
+        redis.sadd?('meetings', 'test-meeting-1')
       end
     end
 
@@ -316,7 +316,7 @@ RSpec.describe Meeting, redis: true do
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-          redis.sadd('servers', 'test-server-1')
+          redis.sadd?('servers', 'test-server-1')
         end
 
         meeting.server = server

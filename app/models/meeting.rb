@@ -101,7 +101,7 @@ class Meeting < ApplicationRedisRecord
       meeting_key = key
       redis.multi do |transaction|
         transaction.hset(meeting_key, 'server_id', server_id) if server_id_changed?
-        transaction.sadd('meetings', id) if id_changed?
+        transaction.sadd?('meetings', id) if id_changed?
       end
     end
 
@@ -161,7 +161,7 @@ class Meeting < ApplicationRedisRecord
           transaction.hsetnx(meeting_key, 'moderator_pw', moderator_pw)
           transaction.hsetnx(meeting_key, 'voice_bridge', voice_bridge)
           transaction.hgetall(meeting_key)
-          transaction.sadd('meetings', id)
+          transaction.sadd?('meetings', id)
           transaction.hsetnx(meeting_key, 'tenant_id', tenant_id)
         end
 
