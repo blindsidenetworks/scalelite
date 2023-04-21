@@ -8,117 +8,54 @@ RSpec.describe BigBlueButtonApiController, type: :request do
   include TestHelper
 
   before do
+    # Disabling the checksum for the specs and re-enable it only when testing specifically the checksum
     allow_any_instance_of(BigBlueButtonApiController).to receive(:verify_checksum).and_return(nil)
   end
 
   describe '#index' do
-    context 'GET request' do
-      before { get bigbluebutton_api_url }
+    context "GET request" do
+      it "responds with success and version only" do
+        allow(Rails.configuration.x).to receive(:build_number).and_return(nil)
 
-      include_examples 'returns success XML response'
-
-      it 'does not return build' do
-        response_xml = Nokogiri::XML(response.body)
-        expect(response_xml.at_xpath('/response/build')).to_not be_present
-      end
-    end
-
-    context 'POST request' do
-      before { post bigbluebutton_api_url }
-
-      include_examples 'returns success XML response'
-
-      it 'does not return build' do
-        response_xml = Nokogiri::XML(response.body)
-        expect(response_xml.at_xpath('/response/build')).to_not be_present
-      end
-    end
-
-    context 'with env variable is set' do
-      before do
-        Rails.configuration.x.build_number = 'alpha-1'
         get bigbluebutton_api_url
+
+        response_xml = Nokogiri.XML(response.body)
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.at_xpath("/response/version").text).to(eq("2.0"))
+        expect(response_xml.at_xpath("/response/build")).to be_nil
+        expect(response).to have_http_status(:success)
       end
+    end
 
-      include_examples 'returns success XML response'
+    context "when env variable is set" do
+      it "includes build in response" do
+        allow(Rails.configuration.x).to receive(:build_number).and_return("alpha-1")
 
-      it 'includes build in response' do
-        response_xml = Nokogiri::XML(response.body)
-        expect(response_xml.at_xpath('/response/build')).to be_present
+        get bigbluebutton_api_url
+
+        response_xml = Nokogiri.XML(response.body)
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.at_xpath("/response/version").text).to(eq("2.0"))
+        expect(response_xml.at_xpath("/response/build").text).to(eq("alpha-1"))
+        expect(response).to have_http_status(:success)
+      end
+    end
+
+    context "POST request" do
+      it "responds with success and version only" do
+        allow(Rails.configuration.x).to receive(:build_number).and_return(nil)
+
+        post bigbluebutton_api_url
+
+        response_xml = Nokogiri.XML(response.body)
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.at_xpath("/response/version").text).to(eq("2.0"))
+        expect(response_xml.at_xpath("/response/build")).to be_nil
+        expect(response).to have_http_status(:success)
       end
     end
   end
 
-  describe '#getMeetingInfo' do
-    let(:server) { Server.create!(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'test-1') }
-    let!(:meeting) { Meeting.create!(id: 'test-meeting-1', server: server) }
-    let(:url) {
- 'https://test-1.example.com/bigbluebutton/api/getMeetingInfo?meetingID=test-meeting-1&checksum=7901d9cf0f7e63a7e5eacabfd75fabfb223259d6c045ac5b4d86fb774c371945'
-    }
-
-    before do
-      stub_request(:get, url)
-        .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID></response>')
-
-      post bigbluebutton_api_get_meeting_info_url, params: { meetingID: 'test-meeting-1' }
-    end
-
-    context 'with POST request' do
-      it 'responds with the correct meeting info' do
-        response_xml = Nokogiri::XML(response.body)
-        expect(response_xml.at_xpath('/response/returncode').text).to eq 'SUCCESS'
-      end
-    end
-    context 'with POST request with checksum value' do
-      context 'computed with SHA1' do
-      end
-
-      context 'computed with SHA256' do
-      end
-    end
-
-    context 'with timeout' do
-      it 'responds with appropriate error'
-    end
-
-    context 'with meeting ID not provided' do
-      it 'responds with MissingMeetingIDError'
-    end
-
-    context 'with meeting ID not in database' do
-      it 'resonds with MeetingNotFoundError'
-    end
-  end
-
-  describe '#isMeetingRunning' do
-    context 'with GET request' do
-      it 'responds with correct meeting status'
-
-      # line 262
-      it 'responds with the correct meetings'
-    end
-
-    context 'with POST request' do
-      it 'responds with correct meeting status'
-
-      # line 286
-      it 'responds with correct meetings'
-    end
-
-    context 'on timeout' do
-      it 'responds with appropriate error'
-    end
-
-    context 'with meeting ID not passed' do
-      it 'responds with MissingMeetingIDError'
-    end
-
-    context 'with meeting not found in database' do
-      it 'responds with false'
-    end
-  end
-
-  # get_meetings
   describe '#get_meetings' do
     context 'GET request' do
       it 'responds with the correct meetings' do
@@ -151,9 +88,9 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         get bigbluebutton_api_get_meetings_url
 
         response_xml = Nokogiri.XML(response.body)
-        expect(response_xml.at_xpath("/response/returncode").content).to(eq("FAILED"))
-        expect(response_xml.at_xpath("/response/messageKey").content).to(eq("internalError"))
-        expect(response_xml.at_xpath("/response/message").content).to(eq("Unable to access server."))
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq("internalError"))
+        expect(response_xml.at_xpath("/response/message").text).to(eq("Unable to access server."))
       end
 
       it 'responds with noMeetings if there are no meetings on any server' do
@@ -269,8 +206,8 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         get bigbluebutton_api_get_meeting_info_url, params: { meetingID: meeting.id }
 
         response_xml = Nokogiri.XML(response.body)
-        expect(response_xml.at_xpath("/response/returncode").content).to(eq("SUCCESS"))
-        expect(response_xml.at_xpath("/response/meetingID").content).to(eq("test-meeting-1"))
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.at_xpath("/response/meetingID").text).to(eq("test-meeting-1"))
       end
 
       it 'responds with appropriate error on timeout' do
@@ -284,9 +221,9 @@ RSpec.describe BigBlueButtonApiController, type: :request do
 
         response_xml = Nokogiri.XML(response.body)
 
-        expect(response_xml.at_xpath("/response/returncode").content).to(eq("FAILED"))
-        expect(response_xml.at_xpath("/response/messageKey").content).to(eq("internalError"))
-        expect(response_xml.at_xpath("/response/message").content).to(eq("Unable to access meeting on server."))
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq("internalError"))
+        expect(response_xml.at_xpath("/response/message").text).to(eq("Unable to access meeting on server."))
       end
 
       it 'responds with MissingMeetingIDError if meeting ID is not passed' do
@@ -321,8 +258,8 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         post bigbluebutton_api_get_meeting_info_url, params: { meetingID: meeting.id }
 
         response_xml = Nokogiri.XML(response.body)
-        expect(response_xml.at_xpath("/response/returncode").content).to(eq("SUCCESS"))
-        expect(response_xml.at_xpath("/response/meetingID").content).to(eq("test-meeting-1"))
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.at_xpath("/response/meetingID").text).to(eq("test-meeting-1"))
       end
 
       # TODO those two specs are not working
@@ -375,8 +312,8 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         get bigbluebutton_api_is_meeting_running_url, params: { meetingID: meeting.id }
 
         response_xml = Nokogiri.XML(response.body)
-        expect(response_xml.at_xpath("/response/returncode").content).to(eq("SUCCESS"))
-        expect(response_xml.at_xpath("/response/running").content).to be_present
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.at_xpath("/response/running").text).to be_present
       end
 
       it "responds with appropriate error on timeout" do
@@ -389,9 +326,9 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         get bigbluebutton_api_is_meeting_running_url, params: { meetingID: meeting.id }
 
         response_xml = Nokogiri.XML(response.body)
-        expect(response_xml.at_xpath("/response/returncode").content).to(eq("FAILED"))
-        expect(response_xml.at_xpath("/response/messageKey").content).to(eq("internalError"))
-        expect(response_xml.at_xpath("/response/message").content).to(eq("Unable to access meeting on server."))
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq("internalError"))
+        expect(response_xml.at_xpath("/response/message").text).to(eq("Unable to access meeting on server."))
       end
 
       it "responds with MissingMeetingIDError if meeting ID is not passed to isMeetingRunning" do
@@ -648,9 +585,9 @@ RSpec.describe BigBlueButtonApiController, type: :request do
           expect(bbb_create).to have_been_requested
 
           response_xml = Nokogiri::XML(response.body)
-          expect(response_xml.at_xpath('/response/returncode').content).to eq('FAILED')
-          expect(response_xml.at_xpath('/response/messageKey').content).to eq('internalError')
-          expect(response_xml.at_xpath('/response/message').content).to eq('Unable to create meeting on server.')
+          expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+          expect(response_xml.at_xpath('/response/messageKey').text).to eq('internalError')
+          expect(response_xml.at_xpath('/response/message').text).to eq('Unable to create meeting on server.')
         end
 
         it "increments the server load by the value of load_multiplier" do
@@ -1353,20 +1290,20 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         parsed_response = Nokogiri::XML(response.body)
         rec_el = parsed_response.at_css("response>recordings>recording")
 
-        expect(rec_el.at_css("recordID").content).to eq(r.record_id)
-        expect(rec_el.at_css("meetingID").content).to eq(r.meeting_id)
-        expect(rec_el.at_css("internalMeetingID").content).to eq(r.record_id)
-        expect(rec_el.at_css("name").content).to eq(r.name)
-        expect(rec_el.at_css("published").content).to eq("true")
-        expect(rec_el.at_css("state").content).to eq("published")
-        expect(rec_el.at_css("startTime").content).to eq((r.starttime.to_r * 1000).to_i.to_s)
-        expect(rec_el.at_css("endTime").content).to eq((r.endtime.to_r * 1000).to_i.to_s)
-        expect(rec_el.at_css("participants").content).to eq("3")
+        expect(rec_el.at_css("recordID").text).to eq(r.record_id)
+        expect(rec_el.at_css("meetingID").text).to eq(r.meeting_id)
+        expect(rec_el.at_css("internalMeetingID").text).to eq(r.record_id)
+        expect(rec_el.at_css("name").text).to eq(r.name)
+        expect(rec_el.at_css("published").text).to eq("true")
+        expect(rec_el.at_css("state").text).to eq("published")
+        expect(rec_el.at_css("startTime").text).to eq((r.starttime.to_r * 1000).to_i.to_s)
+        expect(rec_el.at_css("endTime").text).to eq((r.endtime.to_r * 1000).to_i.to_s)
+        expect(rec_el.at_css("participants").text).to eq("3")
         expect(rec_el.css("playback>format").size).to eq(r.playback_formats.count)
 
         format_els = rec_el.css("playback>format")
         format_els.each do |format_el|
-          format_type = format_el.at_css("type").content
+          format_type = format_el.at_css("type").text
           pf = nil
           case format_type
           when "podcast"
@@ -1376,10 +1313,10 @@ RSpec.describe BigBlueButtonApiController, type: :request do
           else
             raise "Unexpected playback format: #{format_type}"
           end
-          expect(format_el.at_css("type").content).to eq(pf.format)
-          expect(format_el.at_css("url").content).to eq("#{url_prefix}#{pf.url}")
-          expect(format_el.at_css("length").content).to eq(pf.length.to_s)
-          expect(format_el.at_css("processingTime").content).to eq(pf.processing_time.to_s)
+          expect(format_el.at_css("type").text).to eq(pf.format)
+          expect(format_el.at_css("url").text).to eq("#{url_prefix}#{pf.url}")
+          expect(format_el.at_css("length").text).to eq(pf.length.to_s)
+          expect(format_el.at_css("processingTime").text).to eq(pf.processing_time.to_s)
 
           imgs = format_el.css("preview>images>image")
           expect(pf.thumbnails.count).to eq(imgs.size)
@@ -1388,7 +1325,7 @@ RSpec.describe BigBlueButtonApiController, type: :request do
             expect(img['alt']).to eq(t.alt)
             expect(img['height']).to eq(t.height.to_s)
             expect(img['width']).to eq(t.width.to_s)
-            expect("#{url_prefix}#{t.url}").to eq(img.content)
+            expect("#{url_prefix}#{t.url}").to eq(img.text)
           end
         end
       end
@@ -1415,20 +1352,20 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         parsed_response = Nokogiri::XML(response.body)
         rec_el = parsed_response.at_css("response>recordings>recording")
 
-        expect(rec_el.at_css("recordID").content).to eq(r.record_id)
-        expect(rec_el.at_css("meetingID").content).to eq(r.meeting_id)
-        expect(rec_el.at_css("internalMeetingID").content).to eq(r.record_id)
-        expect(rec_el.at_css("name").content).to eq(r.name)
-        expect(rec_el.at_css("published").content).to eq("true")
-        expect(rec_el.at_css("state").content).to eq("published")
-        expect(rec_el.at_css("startTime").content).to eq((r.starttime.to_r * 1000).to_i.to_s)
-        expect(rec_el.at_css("endTime").content).to eq((r.endtime.to_r * 1000).to_i.to_s)
-        expect(rec_el.at_css("participants").content).to eq("3")
+        expect(rec_el.at_css("recordID").text).to eq(r.record_id)
+        expect(rec_el.at_css("meetingID").text).to eq(r.meeting_id)
+        expect(rec_el.at_css("internalMeetingID").text).to eq(r.record_id)
+        expect(rec_el.at_css("name").text).to eq(r.name)
+        expect(rec_el.at_css("published").text).to eq("true")
+        expect(rec_el.at_css("state").text).to eq("published")
+        expect(rec_el.at_css("startTime").text).to eq((r.starttime.to_r * 1000).to_i.to_s)
+        expect(rec_el.at_css("endTime").text).to eq((r.endtime.to_r * 1000).to_i.to_s)
+        expect(rec_el.at_css("participants").text).to eq("3")
         expect(rec_el.css("playback>format").size).to eq(r.playback_formats.count)
 
         format_els = rec_el.css("playback>format")
         format_els.each do |format_el|
-          format_type = format_el.at_css("type").content
+          format_type = format_el.at_css("type").text
           pf = nil
           case format_type
           when "podcast"
@@ -1438,10 +1375,10 @@ RSpec.describe BigBlueButtonApiController, type: :request do
           else
             raise "Unexpected playback format: #{format_type}"
           end
-          expect(format_el.at_css("type").content).to eq(pf.format)
-          expect(format_el.at_css("url").content).to eq("#{url_prefix}#{pf.url}")
-          expect(format_el.at_css("length").content).to eq(pf.length.to_s)
-          expect(format_el.at_css("processingTime").content).to eq(pf.processing_time.to_s)
+          expect(format_el.at_css("type").text).to eq(pf.format)
+          expect(format_el.at_css("url").text).to eq("#{url_prefix}#{pf.url}")
+          expect(format_el.at_css("length").text).to eq(pf.length.to_s)
+          expect(format_el.at_css("processingTime").text).to eq(pf.processing_time.to_s)
 
           imgs = format_el.css("preview>images>image")
           expect(pf.thumbnails.count).to eq(imgs.size)
@@ -1450,7 +1387,7 @@ RSpec.describe BigBlueButtonApiController, type: :request do
             expect(img['alt']).to eq(t.alt)
             expect(img['height']).to eq(t.height.to_s)
             expect(img['width']).to eq(t.width.to_s)
-            expect("#{url_prefix}#{t.url}").to eq(img.content)
+            expect("#{url_prefix}#{t.url}").to eq(img.text)
           end
         end
       end
@@ -1642,23 +1579,203 @@ RSpec.describe BigBlueButtonApiController, type: :request do
     end
 
     context 'POST request' do
-      #this is where I am at
+      it "with only checksum returns all recordings for a post request" do
+        create_list(:recording, 3, state: "published")
+        params = encode_bbb_params("getRecordings", "")
+
+        post bigbluebutton_api_get_recordings_url, params: params
+
+        expect(response).to have_http_status(:success)
+        xml_response = Nokogiri::XML(response.body)
+        expect(xml_response.at_xpath("//response/returncode").text).to eq("SUCCESS")
+        expect(xml_response.xpath("//response/recordings/recording").count).to eq(3)
+      end
     end
   end
 
   describe '#publish_recordings' do
     context 'GET request' do
+      # TODO REMOVE CHECKSUM BEFORE ACTION
+      xit "with no parameters returns checksum error" do
+        get bigbluebutton_api_publish_recordings_url
+
+        expect(response).to have_http_status(:success)
+        xml_response = Nokogiri::XML(response.body)
+        expect(xml_response.at_xpath("//response/returncode").text).to eq("FAILED")
+        expect(xml_response.at_xpath("//response/messageKey").text).to eq("checksumError")
+      end
+
+      # TODO REMOVE CHECKSUM BEFORE ACTION
+      xit "with invalid checksum returns checksum error" do
+        get bigbluebutton_api_publish_recordings_url, params: "checksum=#{'x' * 40}"
+
+        expect(response).to have_http_status(:success)
+        xml_response = Nokogiri::XML(response.body)
+        expect(xml_response.at_xpath("//response/returncode").text).to eq("FAILED")
+        expect(xml_response.at_xpath("//response/messageKey").text).to eq("checksumError")
+      end
+
+      it "requires recordID parameter" do
+        params = encode_bbb_params("publishRecordings", { publish: "true" }.to_query)
+
+        get bigbluebutton_api_publish_recordings_url, params: params
+
+        expect(response).to have_http_status(:success)
+        xml_response = Nokogiri::XML(response.body)
+        expect(xml_response.at_xpath("//response/returncode").text).to eq("FAILED")
+        expect(xml_response.at_xpath("//response/messageKey").text).to eq("missingParamRecordID")
+      end
+
+      it "requires publish parameter" do
+        r = create(:recording)
+        params = encode_bbb_params("publishRecordings", { recordID: r.record_id }.to_query)
+
+        get bigbluebutton_api_publish_recordings_url, params: params
+
+        expect(response).to have_http_status(:success)
+        xml_response = Nokogiri::XML(response.body)
+        expect(xml_response.at_xpath("//response/returncode").text).to eq("FAILED")
+        expect(xml_response.at_xpath("//response/messageKey").text).to eq("missingParamPublish")
+      end
+
+      it 'updates published property to false' do
+        r = create(:recording, :published)
+        expect(r.published).to eq(true)
+        params = encode_bbb_params("publishRecordings", { recordID: r.record_id, publish: "false" }.to_query)
+
+        get bigbluebutton_api_publish_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/published').text).to eq('false')
+
+        r.reload
+        expect(r.published).to eq(false)
+      end
+
+      it 'updates published property to true for a get request' do
+        r = create(:recording, :unpublished)
+        expect(r.published).to eq(false)
+        params = encode_bbb_params("publishRecordings", { recordID: r.record_id, publish: "true" }.to_query)
+
+        get bigbluebutton_api_publish_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/published').text).to eq('true')
+
+        r.reload
+        expect(r.published).to eq(true)
+      end
+
+      it 'returns error if no recording found' do
+        create(:recording)
+        params = encode_bbb_params("publishRecordings", { recordID: "not-a-real-record-id", publish: "true" }.to_query)
+
+        get bigbluebutton_api_publish_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('notFound')
+      end
+
+      it 'returns notFound if RECORDING_DISABLED flag is set to true for a get request' do
+        params = encode_bbb_params("publishRecordings", { publish: "true" }.to_query)
+
+        allow(Rails.configuration.x).to receive(:recording_disabled).and_return(true)
+        reload_routes!
+
+        get 'http://www.example.com/bigbluebutton/api/publishRecordings', params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('notFound')
+        expect(response_xml.at_xpath('/response/message').text).to eq('We could not find recordings')
+
+        allow(Rails.configuration.x).to receive(:recording_disabled).and_return(false)
+        reload_routes!
+      end
+
     end
     context 'POST request' do
+      it "updates published property to true for a post request" do
+        r = create(:recording, :unpublished)
+
+        params = encode_bbb_params("publishRecordings", { recordID: r.record_id, publish: "true" }.to_query)
+
+        post bigbluebutton_api_publish_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/published').text).to eq('true')
+
+        r.reload
+        expect(r.published).to eq(true)
+      end
+
+      it "returns notFound if RECORDING_DISABLED flag is set to true for a post request" do
+        params = encode_bbb_params("publishRecordings", { publish: "true" }.to_query)
+
+        allow(Rails.configuration.x).to receive(:recording_disabled).and_return(true)
+        reload_routes!
+
+        post "http://www.example.com/bigbluebutton/api/publishRecordings", params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('notFound')
+        expect(response_xml.at_xpath('/response/message').text).to eq('We could not find recordings')
+
+        allow(Rails.configuration.x).to receive(:recording_disabled).and_return(false)
+        reload_routes!
+      end
     end
   end
 
   describe '#update_recordings' do
     context 'GET request' do
+      # TODO checksum
+      xit "with no parameters returns checksum error" do
+        get bigbluebutton_api_update_recordings_url
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('checksumError')
+      end
+
+      # TODO checksum
+      xit "with invalid checksum returns checksum error" do
+        get bigbluebutton_api_update_recordings_url, params: "checksum=#{'x' * 40}"
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('checksumError')
+      end
+
+      it "requires recordID parameter" do
+        params = encode_bbb_params("updateRecordings", "")
+
+        get bigbluebutton_api_update_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('missingParamRecordID')
+      end
+
       it "returns notFound if RECORDING_DISABLED flag is set to true for a get request" do
         params = encode_bbb_params("updateRecordings", "")
 
         # TODO confirm why reload_routes is used only here after changing a config
+        # TODO this is dangerous - needs to reset the config and reload_routes
         allow(Rails.configuration.x).to receive(:recording_disabled).and_return(true)
         reload_routes!
 
@@ -1669,9 +1786,119 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         expect(xml_response.xpath("//response/returncode").text).to eq("FAILED")
         expect(xml_response.xpath("//response/messageKey").text).to eq("notFound")
         expect(xml_response.xpath("//response/message").text).to eq("We could not find recordings")
+
+        allow(Rails.configuration.x).to receive(:recording_disabled).and_return(false)
+        reload_routes!
+      end
+
+      it 'adds a new meta parameter' do
+        r = create(:recording)
+
+        meta_params = { 'newparam' => 'newvalue' }
+        params = encode_bbb_params('updateRecordings', {
+          recordID: r.record_id,
+        }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+        expect { get bigbluebutton_api_update_recordings_url, params: params }.to change { Metadatum.count }.by(1)
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/updated').text).to eq('true')
+
+        meta_params.each do |k, v|
+          m = r.metadata.find_by(key: k)
+          expect(m).not_to be_nil
+          expect(m.value).to eq(v)
+        end
+      end
+
+      it 'updates an existing meta parameter for a get request' do
+        r = create(:recording_with_metadata, meta_params: { 'gl-listed' => 'true' })
+
+        meta_params = { 'gl-listed' => 'false' }
+        params = encode_bbb_params('updateRecordings', {
+          recordID: r.record_id,
+        }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+        expect { get bigbluebutton_api_update_recordings_url, params: params }.not_to change { Metadatum.count }
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/updated').text).to eq('true')
+
+        m = r.metadata.find_by(key: 'gl-listed')
+        expect(m.value).to eq(meta_params['gl-listed'])
+      end
+
+      it 'deletes an existing meta parameter' do
+        r = create(:recording_with_metadata, meta_params: { 'gl-listed' => 'true' })
+
+        meta_params = { 'gl-listed' => '' }
+        params = encode_bbb_params('updateRecordings', {
+          recordID: r.record_id,
+        }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+        expect { get bigbluebutton_api_update_recordings_url, params: params }.to change { Metadatum.count }.by(-1)
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/updated').text).to eq('true')
+
+        expect { r.metadata.find_by!(key: 'gl-listed') }.to raise_error(ActiveRecord::RecordNotFound)
+      end
+
+      it 'updates metadata on multiple recordings' do
+        r1 = create(
+          :recording_with_metadata,
+          meta_params: { 'isBreakout' => 'false', 'meetingName' => "Fred's Room", 'gl-listed' => 'false' }
+        )
+        r2 = create(:recording)
+
+        meta_params = { 'newkey' => 'newvalue', 'gl-listed' => '' }
+        params = encode_bbb_params('updateRecordings', {
+          recordID: "#{r1.record_id},#{r2.record_id}",
+        }.merge(meta_params.transform_keys { |k| "meta#{k}" }).to_query)
+
+        expect { get bigbluebutton_api_update_recordings_url, params: params }
+          .to change { r1.metadata.count }.by(0)
+                                          .and change { r2.metadata.count }.by(1)
+                                                                           .and change { Metadatum.count }.by(1)
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/updated').text).to eq('true')
+
+        expect(r1.metadata.find_by(key: 'gl-listed')).to be_nil
+        expect(r2.metadata.find_by(key: 'gl-listed')).to be_nil
+        expect(r1.metadata.find_by(key: 'newkey').value).to eq('newvalue')
+        expect(r2.metadata.find_by(key: 'newkey').value).to eq('newvalue')
       end
     end
+
     context 'POST request' do
+      it 'updates an existing meta parameter for a post request' do
+        r = create(:recording_with_metadata, meta_params: { 'gl-listed' => 'true' })
+
+        meta_params = { 'gl-listed' => 'true' }
+        params = encode_bbb_params('updateRecordings', {
+          recordID: r.record_id,
+        }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+        expect { post bigbluebutton_api_update_recordings_url, params: params }.not_to change { Metadatum.count }
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/updated').text).to eq('true')
+
+        m = r.metadata.find_by(key: 'gl-listed')
+        expect(m.value).to eq(meta_params['gl-listed'])
+      end
+
       it "returns notFound if RECORDING_DISABLED flag is set to true for a post request" do
         params = encode_bbb_params("updateRecordings", "")
 
@@ -1686,21 +1913,104 @@ RSpec.describe BigBlueButtonApiController, type: :request do
         expect(xml_response.xpath("//response/returncode").text).to eq("FAILED")
         expect(xml_response.xpath("//response/messageKey").text).to eq("notFound")
         expect(xml_response.xpath("//response/message").text).to eq("We could not find recordings")
+
+        allow(Rails.configuration.x).to receive(:recording_disabled).and_return(false)
+        reload_routes!
       end
     end
   end
 
   describe '#delete_recordings' do
     context 'GET request' do
-    end
-    context 'POST request' do
-    end
-  end
+      # TODO checksum
+      xit 'with no parameters returns checksum error' do
+        get bigbluebutton_api_delete_recordings_url
 
-  describe '#get_recordings' do #this is doubled
-    context 'GET request' do
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('checksumError')
+      end
+
+      # TODO checksum
+      xit 'with invalid checksum returns checksum error' do
+        get bigbluebutton_api_delete_recordings_url, params: "checksum=#{'x' * 40}"
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('checksumError')
+      end
+
+      it 'requires recordID parameter' do
+        params = encode_bbb_params('deleteRecordings', '')
+
+        get bigbluebutton_api_delete_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('missingParamRecordID')
+      end
+
+      it 'responds with notFound if passed invalid recordIDs' do
+        params = encode_bbb_params('deleteRecordings', 'recordID=123')
+
+        get bigbluebutton_api_delete_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('notFound')
+      end
+
+      it 'deletes the recording from the database if passed recordID' do
+        r = create(:recording, record_id: 'test123')
+        params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
+
+        get bigbluebutton_api_delete_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/deleted').text).to eq('true')
+
+        expect(r.reload.state).to eq('deleted')
+      end
+
+      it 'handles multiple recording IDs passed' do
+        r = create(:recording)
+        r1 = create(:recording)
+        r2 = create(:recording)
+        params = encode_bbb_params('deleteRecordings', { recordID: [r.record_id, r1.record_id, r2.record_id].join(',') }.to_query)
+
+        get bigbluebutton_api_delete_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/deleted').text).to eq('true')
+
+        expect(r.reload.state).to eq('deleted')
+        expect(r1.reload.state).to eq('deleted')
+        expect(r2.reload.state).to eq('deleted')
+      end
     end
+
     context 'POST request' do
+      it 'deletes the recording from the database if passed recordID for a post request' do
+        r = create(:recording)
+        params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
+
+        post bigbluebutton_api_delete_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/deleted').text).to eq('true')
+
+        expect(r.reload.state).to eq('deleted')
+      end
     end
   end
 end

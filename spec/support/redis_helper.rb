@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# TODO - is this needed? can be put directly in spec configs?
+
 module RSpec
   module RedisHelper
     # When this module is included into the rspec config,
