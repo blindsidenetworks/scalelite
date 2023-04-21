@@ -1,0 +1,41 @@
+# frozen_string_literal: true
+
+module TestHelper
+  # Add more helper methods to be used by all tests here...
+  def encode_bbb_params(api_method, query_string)
+    checksum = ::Digest::SHA256.hexdigest("#{api_method}#{query_string}#{Rails.configuration.x.loadbalancer_secrets[0]}")
+    if query_string.blank?
+      "checksum=#{checksum}"
+    else
+      "#{query_string}&checksum=#{checksum}"
+    end
+  end
+
+  def reload_routes!
+    Rails.application.reload_routes!
+  end
+
+  def mock_env(partial_env_hash)
+    old = ENV.to_hash
+    ENV.update(partial_env_hash)
+    begin
+      yield
+    ensure
+      ENV.replace(old)
+      reload_routes!
+    end
+  end
+
+  def meeting_create_response(meeting_id, moderator_pw = 'mp', attendee_pw = 'ap')
+    Nokogiri::XML::Builder.new do |xml|
+      xml.response {
+        xml.returncode 'SUCCESS'
+        xml.meetingID meeting_id
+        xml.attendeePW attendee_pw
+        xml.moderatorPW moderator_pw
+        xml.messageKey
+        xml.message
+      }
+    end.to_xml
+  end
+end
