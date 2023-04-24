@@ -18,7 +18,22 @@ location /playback/presentation/2.0/playback.html {
   return 301 /playback/presentation/2.3/$arg_meetingId?$query_string;
 }
 
-location /playback {
+location /playback/presentation {
   root /var/bigbluebutton;
-  try_files $uri /playback/presentation/2.3/index.html;
+  index index.html index.htm;
+}
+
+location /playback/video {
+  alias /var/bigbluebutton/published/video;
+  index index.html index.htm;
+}
+
+location /presentation {
+  root /var/bigbluebutton/published;
+  index index.html index.htm;
+}
+
+location /recording/screenshare {
+  alias /var/bigbluebutton/published/screenshare;
+  index index.html index.htm;
 }
