@@ -9,6 +9,7 @@ ENV LANG=en_US.UTF-8
 RUN apt-get update \
     && apt-get install -y software-properties-common curl net-tools nginx
 RUN add-apt-repository -y ppa:bigbluebutton/support
+
 RUN apt-get update \
     && apt-get install -y yq
 RUN curl -sL https://ubuntu.bigbluebutton.org/repo/bigbluebutton.asc | apt-key add - \
@@ -35,7 +36,7 @@ RUN yum install yum-utils -y
 RUN yum install nginx -y
 RUN ln -sf /dev/stdout /var/log/nginx/access.log
 RUN ln -sf /dev/stderr /var/log/nginx/error.log
-COPY --from=bbb-playback /usr/share/bigbluebutton/nginx/ /usr/share/bigbluebutton/nginx/
+COPY --from=bbb-playback /usr/share/bigbluebutton/nginx/ /etc/bigbluebutton/nginx/
 COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback/
 COPY nginx/start /etc/nginx/start
 COPY nginx/dhparam.pem /etc/nginx/dhparam.pem
@@ -52,7 +53,7 @@ RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash -
 RUN yum -y install nodejs
 # Install Ruby & Rails
 RUN curl -sL -o /etc/yum.repos.d/yarn.repo https://dl.yarnpkg.com/rpm/yarn.repo
-RUN amazon-linux-extras enable ruby2.6 postgresql14 \
+RUN amazon-linux-extras enable ruby3.0 postgresql14 \
     && yum -y install git tar gzip yarn shared-mime-info libxslt zlib-devel sqlite-devel mariadb-devel libpq-devel ruby-devel rubygems-devel rubygem-bundler rubygem-io-console rubygem-irb rubygem-json rubygem-minitest rubygem-power_assert rubygem-rake rubygem-test-unit rubygem-bigdecimal
 RUN yum -y install python3 python3-pip shadow-utils
 RUN gem install bundler -v '2.1.4'
