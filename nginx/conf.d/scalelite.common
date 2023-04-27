@@ -23,13 +23,18 @@ location /playback/presentation {
   index index.html index.htm;
 }
 
-location /playback/video {
-  alias /var/bigbluebutton/published/video;
+location /presentation {
+  root /var/bigbluebutton/published;
   index index.html index.htm;
 }
 
-location /presentation {
-  root /var/bigbluebutton/published;
+location /playback/presentation/2.3 {
+  root /var/bigbluebutton;
+  try_files $uri /playback/presentation/2.3/index.html;
+}
+
+location /playback/video {
+  alias /var/bigbluebutton/published/video;
   index index.html index.htm;
 }
 
