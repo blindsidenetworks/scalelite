@@ -30,7 +30,6 @@ COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback
 COPY nginx/start /etc/nginx/start
 COPY nginx/dhparam.pem /etc/nginx/dhparam.pem
 COPY nginx/conf.d /etc/nginx/http.d/
-RUN ln -s /etc/nginx/http.d/ /etc/nginx/conf.d
 EXPOSE 80
 EXPOSE 443
 ENV NGINX_HOSTNAME=localhost
