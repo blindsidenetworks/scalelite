@@ -306,7 +306,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
   describe '#is_meeting_running' do
     context 'GET request' do
       it "responds with the correct meeting status for a get request" do
-        server = create(:server, load: 0)
+        server = create(:server)
         meeting = create(:meeting, server: server)
 
         stub_request(:get, encode_bbb_uri("isMeetingRunning", server.url, server.secret, meetingID: meeting.id))
@@ -320,7 +320,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "responds with appropriate error on timeout" do
-        server = create(:server, load: 0)
+        server = create(:server)
         meeting = create(:meeting, server: server)
 
         stub_request(:get, encode_bbb_uri("isMeetingRunning", server.url, server.secret, meetingID: meeting.id))
@@ -397,9 +397,9 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
       end
 
-      it "creates the room successfully for a get request" do
-        server = create(:server, load: 0)
-        params = { meetingID: "test-meeting-1", moderatorPW: "mp", voiceBridge: "123" }
+      it "creates the meeting successfully for a get request" do
+        server = create(:server)
+        params = { meetingID: "test-meeting-1", moderatorPW: "mp", voiceBridge: "1234567" }
 
         stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, params))
                       .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
@@ -420,8 +420,8 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "returns an appropriate error on timeout" do
-        server = create(:server, load: 0)
-        params = { meetingID: "test-meeting-1", moderatorPW: "mp", voiceBridge: "123" }
+        server = create(:server)
+        params = { meetingID: "test-meeting-1", moderatorPW: "mp", voiceBridge: "1234567" }
 
         stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, params))
                       .to_timeout
@@ -436,8 +436,8 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "increments the server load by the value of load_multiplier" do
-        server = create(:server, load: 0, load_multiplier: 7.0)
-        params = { meetingID: "test-meeting-1", moderatorPW: "mp", voiceBridge: "123" }
+        server = create(:server, load_multiplier: 7.0)
+        params = { meetingID: "test-meeting-1", moderatorPW: "mp", voiceBridge: "1234567" }
 
         stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, params))
                       .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
@@ -453,9 +453,9 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "sets the duration param to MAX_MEETING_DURATION if set" do
-        server = create(:server, load: 0)
-        create_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "123" }
-        stub_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "123", duration: 3600 }
+        server = create(:server)
+        create_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
+        stub_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567", duration: 3600 }
 
         stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, stub_params))
                       .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
@@ -471,9 +471,9 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "sets the duration param to MAX_MEETING_DURATION if passed duration is greater than MAX_MEETING_DURATION" do
-        server = create(:server, load: 0)
-        create_params = { duration: 5000, meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "123" }
-        stub_params = { duration: 3600, meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "123" }
+        server = create(:server)
+        create_params = { duration: 5000, meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
+        stub_params = { duration: 3600, meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
 
         stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, stub_params))
                       .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
@@ -489,9 +489,9 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "sets the duration param to MAX_MEETING_DURATION if passed duration is 0" do
-        server = create(:server, load: 0)
-        create_params = { duration: 0, meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "123" }
-        stub_params = { duration: 3600, meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "123" }
+        server = create(:server)
+        create_params = { duration: 0, meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
+        stub_params = { duration: 3600, meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
 
         stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, stub_params))
                       .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
@@ -507,9 +507,9 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "does not set the duration param to MAX_MEETING_DURATION if passed duration is less than MAX_MEETING_DURATION" do
-        server = create(:server, load: 0)
-        create_params = { duration: 1200, meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "123" }
-        stub_params = { duration: 1200, meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "123" }
+        server = create(:server)
+        create_params = { duration: 1200, meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
+        stub_params = { duration: 1200, meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
 
         stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, stub_params))
                       .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
@@ -525,9 +525,9 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "creates the room successfully with only permitted params for create" do
-        server = create(:server, load: 0)
-        params = { meetingID: "test-meeting-1", test4: "", test2: "", moderatorPW: "test-password", voiceBridge: "123" }
-        filtered_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "123" }
+        server = create(:server)
+        params = { meetingID: "test-meeting-1", test4: "", test2: "", moderatorPW: "test-password", voiceBridge: "1234567" }
+        filtered_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
 
         stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, filtered_params))
                       .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
@@ -550,9 +550,9 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it 'creates the room successfully with given params if excluded params list is empty' do
-        server = create(:server, load: 0)
-        params = { meetingID: "test-meeting-1", test4: "", test2: "", moderatorPW: "test-password", voiceBridge: "123" }
-        filtered_params = { meetingID: "test-meeting-1", test4: "", test2: "", moderatorPW: "test-password", voiceBridge: "123" }
+        server = create(:server)
+        params = { meetingID: "test-meeting-1", test4: "", test2: "", moderatorPW: "test-password", voiceBridge: "1234567" }
+        filtered_params = { meetingID: "test-meeting-1", test4: "", test2: "", moderatorPW: "test-password", voiceBridge: "1234567" }
 
         stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, filtered_params))
                       .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
@@ -575,7 +575,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it 'creates a record in callback_data if params["meta_bn-recording-ready-url"] is present in request' do
-        server = create(:server, load: 0)
+        server = create(:server)
         params = {
           meetingID: "test-meeting-1",
           test4: "",
@@ -606,7 +606,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it 'creates a record in callback_data if params["meta_analytics-callback-url"] is present in request' do
-        server = create(:server, load: 0)
+        server = create(:server)
         params = {
           meetingID: "test-meeting-66",
           test4: "",
@@ -632,7 +632,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it 'sets default params if they are not already set' do
-        server = create(:server, load: 0)
+        server = create(:server)
         params = {
           meetingID: 'test-meeting-1',
           voiceBridge: "123",
@@ -663,7 +663,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it 'sets override params even if they are set' do
-        server = create(:server, load: 0)
+        server = create(:server)
         params = {
           meetingID: 'test-meeting-1',
           voiceBridge: "123",
@@ -697,7 +697,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
     context 'POST request' do
       it 'creates the meeting successfully for a post request' do
         skip('scalelite does not correctly handle request params in post requests')
-        server = create(:server, load: 0)
+        server = create(:server)
 
         params = {
           meetingID: 'test-meeting-1',
@@ -727,14 +727,13 @@ RSpec.describe BigBlueButtonApiController, redis: true do
 
   describe '#analytics_callback' do
     it "analytics_callback makes a callback to the specific meetings analytics_callback_url stored in callback_attributes table" do
-      server1 = create(:server, url: 'https://test-1.example.com/bigbluebutton/api/',
-                       secret: 'test-1-secret', enabled: true, load: 0)
+      server = create(:server)
       params = {
         meetingID: 'test-meeting-1111', test4: '', test2: '', moderatorPW: 'test-password',
         'meta_analytics-callback-url' => 'https://callback.example.com/analytics_callback',
       }
 
-      stub_request(:get, "#{server1.url}create")
+      stub_request(:get, "#{server.url}create")
         .with(query: hash_including({}))
         .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
 
@@ -747,7 +746,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       get bigbluebutton_api_create_url, params: params
       post bigbluebutton_api_analytics_callback_url, params: { meeting_id: 'test-meeting-1111' }, headers: { 'HTTP_AUTHORIZATION' => 'Bearer ABCD' }
 
-      expect(@response.status).to eq(204)
+      expect(response.status).to eq(204)
       expect(callback).to have_been_requested
       callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
       expect(callback_data.callback_attributes).to eq({ analytics_callback_url: params['meta_analytics-callback-url'] })
@@ -777,7 +776,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "responds with MeetingNotFoundError if meetingID && password are passed but meeting doesnt exist" do
-        server = create(:server, load: 0)
+        server = create(:server)
         params = { meetingID: "test-meeting-1", password: "test-password" }
 
         stub_request(:get, encode_bbb_uri("end", server.url, server.secret, params))
@@ -794,8 +793,8 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "responds with sentEndMeetingRequest if meeting exists and password is correct for a get request" do
-        server = create(:server, load: 0)
-        create(:meeting, server: server, moderator_pw: "mp")
+        server = create(:server)
+        create(:meeting, server: server)
         params = { meetingID: "test-meeting-1", password: "test-password" }
 
         stub_request(:get, encode_bbb_uri("end", server.url, server.secret, params))
@@ -812,9 +811,9 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         expect { Meeting.find("test-meeting-1") }.to(raise_error(ApplicationRedisRecord::RecordNotFound))
       end
 
-      it("end returns error on timeout but still deletes meeting") do
-        server = create(:server, load: 0)
-        create(:meeting, server: server, moderator_pw: "mp")
+      it "end returns error on timeout but still deletes meeting" do
+        server = create(:server)
+        create(:meeting, server: server)
         params = { meetingID: "test-meeting-1", password: "test-password" }
 
         stub_request(:get, encode_bbb_uri("end", server.url, server.secret, params))
@@ -832,8 +831,8 @@ RSpec.describe BigBlueButtonApiController, redis: true do
 
     context 'POST request' do
       it "responds with sentEndMeetingRequest if meeting exists and password is correct for a post request" do
-        server = create(:server, load: 0)
-        create(:meeting, server: server, moderator_pw: "mp")
+        server = create(:server)
+        create(:meeting, server: server)
         params = { meetingID: "test-meeting-1", password: "test-password" }
 
         stub_request(:get, encode_bbb_uri("end", server.url, server.secret, params))
@@ -875,8 +874,8 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "redirects user to the correct join url for a get request" do
-        server = create(:server, load: 0)
-        meeting = create(:meeting, server: server, moderator_pw: "mp")
+        server = create(:server)
+        meeting = create(:meeting, server: server)
         params = { meetingID: meeting.id, password: "test-password", fullName: "test-name" }
 
         get bigbluebutton_api_join_url, params: params
@@ -884,8 +883,8 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "redirects user to the current join url with only permitted params for join" do
-        server = create(:server, load: 0)
-        meeting = create(:meeting, server: server, moderator_pw: "mp")
+        server = create(:server)
+        meeting = create(:meeting, server: server)
         params = { meetingID: meeting.id, password: "test-password", fullName: "test-name", test1: "", test2: "" }
 
         allow(Rails.configuration.x).to receive(:join_exclude_params).and_return(%w[test1 test2])
@@ -897,7 +896,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "redirects user to the current join url with given params if excluded params list is empty" do
-        server = create(:server, load: 0, online: true)
+        server = create(:server, online: true)
         meeting = create(:meeting, server: server)
         params = { meetingID: meeting.id, password: "test-password", fullName: "test-name", test1: "", test2: "" }
 
@@ -909,7 +908,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it 'redirects user to the current join url without given params if params are in excluded list' do
-        server = create(:server, load: 0, online: true)
+        server = create(:server, online: true)
         meeting = create(:meeting, server: server)
         params = { meetingID: meeting.id, password: "test-password", fullName: "test-name", test1: "", test2: "" }
         filtered_params = { meetingID: meeting.id, password: "test-password", fullName: "test-name" }
@@ -922,8 +921,8 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "responds with ServerUnavailableError if server is disabled" do
-        server = create(:server, load: 0, enabled: false)
-        create(:meeting, server: server, moderator_pw: "mp")
+        server = create(:server, enabled: false)
+        create(:meeting, server: server)
 
         get bigbluebutton_api_join_url, params: { meetingID: "test-meeting-1" }
 
@@ -935,8 +934,8 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "responds with ServerUnavailableError if server is offline" do
-        server = create(:server, load: 0, online: false)
-        create(:meeting, server: server, moderator_pw: "mp")
+        server = create(:server, online: false)
+        create(:meeting, server: server)
 
         get bigbluebutton_api_join_url, params: { meetingID: "test-meeting-1" }
 
@@ -948,8 +947,8 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "sets default params if they are not already set" do
-        server = create(:server, load: 0)
-        meeting = create(:meeting, server: server, moderator_pw: "mp")
+        server = create(:server)
+        meeting = create(:meeting, server: server)
         params = {
           meetingID: meeting.id,
           moderatorPW: 'mp',
@@ -973,8 +972,8 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       it "sets override params even if they are set" do
-        server = create(:server, load: 0)
-        meeting = create(:meeting, server: server, moderator_pw: "mp")
+        server = create(:server)
+        meeting = create(:meeting, server: server)
         params = {
           meetingID: meeting.id,
           moderatorPW: 'mp',
@@ -1000,8 +999,8 @@ RSpec.describe BigBlueButtonApiController, redis: true do
 
     context 'POST request' do
       it "redirects user to the correct join url for a post request" do
-        server = create(:server, load: 0)
-        meeting = create(:meeting, server: server, moderator_pw: "mp")
+        server = create(:server)
+        meeting = create(:meeting, server: server)
         params = { meetingID: meeting.id, password: "test-password", fullName: "test-name" }
 
         post bigbluebutton_api_join_url, params: params

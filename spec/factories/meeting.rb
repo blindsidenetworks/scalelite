@@ -2,10 +2,10 @@
 
 FactoryBot.define do
   factory :meeting do
+    initialize_with { Meeting.find_or_create_with_server(id, server, moderator_pw) }
+
     sequence(:id) { |n| "test-meeting-#{n}" }
-    server
-    moderator_pw { nil }
-    voice_bridge { nil }
-    tenant { nil }
+    association :server
+    moderator_pw { 'pw' }
   end
 end
