@@ -5,10 +5,9 @@ name: CI Build Push
 on:
   push:
     branches:
-      - master
-      - v1.0-stable
-      - v1.1-stable
-      - v1.2-stable
+      - 'master'
+      - '**stable'
+
 
 jobs:
   main:
@@ -24,10 +23,10 @@ jobs:
         shell: bash
         run: |
           if [ "${{ env.DOCKER_BUILD_ENABLED }}" == "true" ]; then
-            echo ::set-output name=build::true
+            echo "build=true" >> $GITHUB_OUTPUT
           fi
           if [ "${{ env.DOCKER_BUILD_ALTERNATE_ENABLED }}" == "true" ]; then
-            echo ::set-output name=build_alternate::true
+            echo "build_alternate=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Build main
@@ -68,19 +67,19 @@ jobs:
         id: ci_docker_repository
         if: ${{ steps.preconditions.outputs.build }}
         shell: bash
-        run: echo "##[set-output name=repository;]$(echo ${DOCKER_REPOSITORY:-$GITHUB_REPOSITORY})"
+        run: echo "repository=$(echo ${DOCKER_REPOSITORY:-$GITHUB_REPOSITORY})" >> $GITHUB_OUTPUT
 
       - name: Extract Branch Name
         id: ci_branch_name
         if: ${{ steps.preconditions.outputs.build }}
         shell: bash
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        run: echo "branch=$(echo ${{github.ref_name}})" >> $GITHUB_OUTPUT
 
       - name: Extract Commit Short SHA
         id: ci_commit_short_sha
         if: ${{ steps.preconditions.outputs.build }}
         shell: bash
-        run: echo "##[set-output name=short_sha;]$(echo ${GITHUB_SHA} | cut -c1-7)"
+        run: echo "short_sha=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_OUTPUT
 
       - name: Build and Push nginx
         if: ${{ steps.preconditions.outputs.build }}

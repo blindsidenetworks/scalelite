@@ -6,6 +6,9 @@ on:
   release:
     types: [released]
 
+
+
+
 jobs:
   main:
     name: Build Docker Image
@@ -42,25 +45,25 @@ jobs:
         id: ci_docker_repository
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         shell: bash
-        run: echo "##[set-output name=repository;]$(echo ${DOCKER_REPOSITORY:-$GITHUB_REPOSITORY})"
+        run: echo "repository=$(echo ${DOCKER_REPOSITORY:-$GITHUB_REPOSITORY})" >> $GITHUB_OUTPUT
 
       - name: Extract Tag Release Major
         id: ci_tag_release_major
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         shell: bash
-        run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/} | cut -f1-1 -d'.')"
+        run: echo "tag=$(echo ${GITHUB_REF#refs/tags/} | cut -f1-1 -d'.')" >> $GITHUB_OUTPUT
 
       - name: Extract Tag Release Minor
         id: ci_tag_release_minor
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         shell: bash
-        run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/} | cut -f1-2 -d'.')"
+        run: echo "tag=$(echo ${GITHUB_REF#refs/tags/} | cut -f1-2 -d'.')" >> $GITHUB_OUTPUT
 
       - name: Extract Tag Release Revision
         id: ci_tag_release_revision
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
         shell: bash
-        run: echo "##[set-output name=tag;]$(echo ${GITHUB_REF#refs/tags/})"
+        run: echo "tag=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_OUTPUT
 
       - name: Build and Push nginx
         if: contains(env.DOCKER_BUILD_ENABLED, 'true')
