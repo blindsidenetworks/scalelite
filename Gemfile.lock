@@ -207,10 +207,18 @@ GEM
       unicode-display_width (>= 2.4.0, < 3.0)
     rubocop-ast (1.28.0)
       parser (>= 3.2.1.0)
+    rubocop-capybara (2.18.0)
+      rubocop (~> 1.41)
+    rubocop-performance (1.17.1)
+      rubocop (>= 1.7.0, < 2.0)
+      rubocop-ast (>= 0.4.0)
     rubocop-rails (2.19.0)
       activesupport (>= 4.2.0)
       rack (>= 1.1)
       rubocop (>= 1.33.0, < 2.0)
+    rubocop-rspec (2.20.0)
+      rubocop (~> 1.33)
+      rubocop-capybara (~> 2.17)
     ruby-progressbar (1.13.0)
     spring (2.1.1)
     spring-watcher-listen (2.0.1)
@@ -264,7 +272,9 @@ DEPENDENCIES
   redis-namespace (~> 1.10.0)
   rspec-rails (~> 5.1.2)
   rubocop (~> 1.50.0)
+  rubocop-performance
   rubocop-rails (~> 2.19.0)
+  rubocop-rspec (~> 2.20)
   spring
   spring-watcher-listen (~> 2.0.1)
   sqlite3

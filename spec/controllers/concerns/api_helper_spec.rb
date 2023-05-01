@@ -11,12 +11,12 @@ RSpec.shared_examples 'proper verify_checksum behavior' do |_parameter|
   end
 
   it 'verifies checksum' do
-    expect(verify_checksum).to eq true
+    expect(verify_checksum).to be true
   end
 end
 
 RSpec.describe ApiHelper, type: :helper do
-  include ApiHelper
+  include described_class
 
   let(:request) { controller.request }
 
@@ -24,6 +24,7 @@ RSpec.describe ApiHelper, type: :helper do
     context 'with correct length' do
       context 'with sha1' do
         let(:sha1) { Faker::Crypto.sha1 }
+
         it 'has correct length' do
           expect(ApiHelper::CHECKSUM_LENGTH_SHA1).to eq sha1.length
         end
@@ -31,6 +32,7 @@ RSpec.describe ApiHelper, type: :helper do
 
       context 'with sha256' do
         let(:sha256) { Faker::Crypto.sha256 }
+
         it 'has correct length' do
           expect(ApiHelper::CHECKSUM_LENGTH_SHA256).to eq sha256.length
         end
@@ -38,6 +40,7 @@ RSpec.describe ApiHelper, type: :helper do
 
       context 'with sha512' do
         let(:sha512) { Faker::Crypto.sha512 }
+
         it 'has correct length' do
           expect(ApiHelper::CHECKSUM_LENGTH_SHA512).to eq sha512.length
         end
@@ -100,6 +103,7 @@ RSpec.describe ApiHelper, type: :helper do
 
       context 'with incorrect checksum' do
         let(:checksum_algo) { 'MD5' }
+
         before do
           params[:checksum] = 'totallyNotAHash'
         end
@@ -146,7 +150,7 @@ RSpec.describe ApiHelper, type: :helper do
 
   describe '.fetch_tenant' do
     let(:host_name) { 'api.rna1.blindside-dev.com' }
-    let!(:tenant) { create :tenant }
+    let!(:tenant) { create(:tenant) }
 
     before do
       Rails.configuration.x.base_url = host_name
@@ -196,7 +200,7 @@ RSpec.describe ApiHelper, type: :helper do
   describe '.get_checksum'
 
   describe '.fetch_secrets' do
-    let!(:tenant) { create :tenant }
+    let!(:tenant) { create(:tenant) }
     let(:config_secrets) { [Faker::Crypto.sha512, Faker::Crypto.sha256] }
 
     let(:host_name) { 'api.rna1.blindside-dev.com' }
@@ -251,7 +255,7 @@ RSpec.describe ApiHelper, type: :helper do
         end
 
         it 'does not return secrets from Tenant' do
-          expect(fetch_secrets).to_not eq tenant.secrets_array
+          expect(fetch_secrets).not_to eq tenant.secrets_array
         end
       end
     end

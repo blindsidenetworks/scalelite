@@ -7,13 +7,14 @@ RSpec.describe Meeting, redis: true do
     context 'with non-existent ID' do
       it 'raises proper exception' do
         expect {
-          Meeting.find('non-existent-id')
+          described_class.find('non-existent-id')
         }.to raise_error(ApplicationRedisRecord::RecordNotFound)
       end
     end
 
     context 'with no server' do
-      let(:meeting) { Meeting.find('test-meeting-1') }
+      let(:meeting) { described_class.find('test-meeting-1') }
+
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
@@ -32,7 +33,8 @@ RSpec.describe Meeting, redis: true do
     end
 
     context 'with server' do
-      let(:meeting) { Meeting.find('test-meeting-1') }
+      let(:meeting) { described_class.find('test-meeting-1') }
+
       before do
         RedisStore.with_connection do |redis|
           redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
@@ -52,8 +54,8 @@ RSpec.describe Meeting, redis: true do
           let(:tenant1) { create(:tenant) }
           let(:tenant2) { create(:tenant) }
 
-          let(:meeting1) { Meeting.find 'test-meeting-1', tenant1.id }
-          let(:fetching_wrong_meeting) { Meeting.find 'test-meeting-1', tenant2.id }
+          let(:meeting1) { described_class.find 'test-meeting-1', tenant1.id }
+          let(:fetching_wrong_meeting) { described_class.find 'test-meeting-1', tenant2.id }
 
           before do
             RedisStore.with_connection do |redis|
@@ -76,8 +78,8 @@ RSpec.describe Meeting, redis: true do
 
         context 'without tenant' do
           let(:tenant1) { create(:tenant) }
-          let(:meeting_with_tenant) { Meeting.find 'test-meeting-1', tenant1.id }
-          let(:meeting_without_tenant) { Meeting.find 'test-meeting-1' }
+          let(:meeting_with_tenant) { described_class.find 'test-meeting-1', tenant1.id }
+          let(:meeting_without_tenant) { described_class.find 'test-meeting-1' }
 
           before do
             RedisStore.with_connection do |redis|
@@ -88,12 +90,12 @@ RSpec.describe Meeting, redis: true do
           end
 
           it 'returns only Meeting with empty tenant_id' do
-            expect(Meeting.find('test-meeting-1')).to be_present
+            expect(described_class.find('test-meeting-1')).to be_present
           end
 
           it 'throws error when trying to fetch existing Meeting providing incorrect Tenant' do
             expect {
-              Meeting.find 'test-meeting-1', tenant1.id
+              described_class.find 'test-meeting-1', tenant1.id
             }.to raise_error(ApplicationRedisRecord::RecordNotFound)
           end
         end
@@ -103,7 +105,7 @@ RSpec.describe Meeting, redis: true do
 
   describe '.all' do
     context 'with multiple meetings' do
-      let(:all_meetings) { Meeting.all }
+      let(:all_meetings) { described_class.all }
 
       before do
         RedisStore.with_connection do |redis|
@@ -118,7 +120,7 @@ RSpec.describe Meeting, redis: true do
       end
 
       it 'creates different meetings' do
-        expect(all_meetings[0].id).to_not eq all_meetings[1].id
+        expect(all_meetings[0].id).not_to eq all_meetings[1].id
       end
     end
 
@@ -149,7 +151,7 @@ RSpec.describe Meeting, redis: true do
       end
 
       context 'with tenant_id param' do
-        let(:meetings) { Meeting.all(tenant1.id) }
+        let(:meetings) { described_class.all(tenant1.id) }
 
         it 'fetches correct nb of Meetings' do
           expect(meetings.size).to eq 3
@@ -163,7 +165,7 @@ RSpec.describe Meeting, redis: true do
       end
 
       context 'without tenant_id param' do
-        let(:meetings) { Meeting.all }
+        let(:meetings) { described_class.all }
 
         it 'fetches correct nb of Meetings' do
           expect(meetings.size).to eq 2
@@ -189,7 +191,7 @@ RSpec.describe Meeting, redis: true do
     end
 
     it 'creates meeting' do
-      meeting = Meeting.new
+      meeting = described_class.new
       meeting.id = 'Demo Meeting'
       meeting.server = server
       meeting.save!
@@ -215,18 +217,18 @@ RSpec.describe Meeting, redis: true do
       end
 
       it 'creates correct meeting' do
-        meeting = Meeting.find('Demo Meeting')
+        meeting = described_class.find('Demo Meeting')
         expect(meeting.server_id).to eq 'test-server-1'
 
         server = Server.find('test-server-2')
-        meeting = Meeting.find_or_create_with_server('Demo Meeting', server, 'mp')
+        meeting = described_class.find_or_create_with_server('Demo Meeting', server, 'mp')
 
         expect(meeting.id).to eq 'Demo Meeting'
-        expect(meeting.server).to_not eq server
+        expect(meeting.server).not_to eq server
         expect(meeting.server_id).to eq 'test-server-1'
 
         RedisStore.with_connection do |redis|
-          expect(redis.sismember('meetings', 'Demo Meeting')).to eq true
+          expect(redis.sismember('meetings', 'Demo Meeting')).to be true
 
           meeting_hash = redis.hgetall('meeting:Demo Meeting')
           expect(meeting_hash['server_id']).to eq 'test-server-1'
@@ -236,7 +238,7 @@ RSpec.describe Meeting, redis: true do
   end
 
   describe '#update' do
-    let(:meeting) { Meeting.find('test-meeting-1') }
+    let(:meeting) { described_class.find('test-meeting-1') }
 
     before do
       RedisStore.with_connection do |redis|
@@ -276,7 +278,8 @@ RSpec.describe Meeting, redis: true do
   end
 
   describe '#destroy' do
-    let(:meeting) { Meeting.find('test-meeting-1') }
+    let(:meeting) { described_class.find('test-meeting-1') }
+
     before do
       RedisStore.with_connection do |redis|
         redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
@@ -290,7 +293,7 @@ RSpec.describe Meeting, redis: true do
       meeting.destroy!
 
       RedisStore.with_connection do |redis|
-        expect(redis.sismember('meetings', 'test-meeting-1')).to eq false
+        expect(redis.sismember('meetings', 'test-meeting-1')).to be false
 
         redis_entry = redis.hgetall('meeting:test-meeting-1')
         expect(redis_entry).to eq({})
@@ -310,7 +313,7 @@ RSpec.describe Meeting, redis: true do
     end
 
     context 'with non-persisted object' do
-      let(:meeting) { Meeting.new }
+      let(:meeting) { described_class.new }
       let(:server) { Server.find('test-server-1') }
 
       before do

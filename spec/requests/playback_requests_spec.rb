@@ -2,20 +2,20 @@
 
 require 'rails_helper'
 
-RSpec.describe PlaybackController, type: :request do
+RSpec.describe PlaybackController do
   describe 'playback' do
     let!(:recording) { create(:recording) }
 
     it 'gets playback' do
       get "/playback/presentation/2.0/#{recording.record_id}"
 
-      expect(response.status).to eq 200
+      expect(response).to have_http_status :ok
     end
 
     it 'renders 404 if the recording url is invalid' do
       get "/recording/invalid_recording_id/invalid_format"
 
-      expect(response.status).to eq 404
+      expect(response).to have_http_status :not_found
       expect(response).to render_template 'errors/recording_not_found'
     end
 
@@ -32,7 +32,7 @@ RSpec.describe PlaybackController, type: :request do
 
       it 'renders properly' do
         get "#{playback_format.url}capture.js"
-        expect(response.status).to eq 200
+        expect(response).to have_http_status :ok
         expect(response.get_header('X-Accel-Redirect')).to eq "/static-resource#{playback_format.url}capture.js"
       end
     end
@@ -51,15 +51,15 @@ RSpec.describe PlaybackController, type: :request do
       context 'without cookies' do
         it 'allows resource access if disabled' do
           get "/#{playback_format.format}/#{recording.record_id}/slides.svg"
-          expect(response.status).to eq 200
+          expect(response).to have_http_status :ok
         end
 
         it 'blocks resource access if enabled' do
           Rails.configuration.x.protected_recordings_enabled = true
           get "/#{playback_format.format}/#{recording.record_id}/slides.svg"
 
-          expect(response.status).to eq 404
-          expect(@response.has_header?('X-Accel-Redirect')).to eq false
+          expect(response).to have_http_status :not_found
+          expect(response.has_header?('X-Accel-Redirect')).to be false
         end
       end
     end

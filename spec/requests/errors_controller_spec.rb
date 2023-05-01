@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe ErrorsController, type: :request do
+RSpec.describe ErrorsController do
   describe 'GET root_url' do
     it 'returns unsupportedRequestError if request url is root' do
       get root_url

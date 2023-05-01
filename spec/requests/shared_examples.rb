@@ -4,7 +4,7 @@ RSpec.shared_examples 'returns unsupportedRequestError' do
   let(:response_xml) { Nokogiri::XML(response.body) }
 
   it 'returns success response code' do
-    expect(response.status).to eq 200
+    expect(response).to have_http_status :ok
   end
 
   it 'returns FAILED in xml return code' do

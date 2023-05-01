@@ -10,7 +10,8 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 require 'rspec/rails'
 require 'redis'
 
-require_relative './support/test_helper' # contains helper methods that could be used with any test framework
+# contains helper methods that could be used with any test framework
+require_relative './support/test_helper'
 
 # Add additional requires below this line. Rails is not loaded until this point!
 
