@@ -5,8 +5,8 @@ name: CI Build Push
 on:
   push:
     branches:
+      - 'develop'
       - 'master'
-      - '**stable'
 
 jobs:
   main:
