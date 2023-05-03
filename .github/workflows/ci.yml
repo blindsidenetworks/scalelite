@@ -6,10 +6,8 @@ name: CI
 on:
   push:
     branches-ignore:
-      - master
-      - v1.0-stable
-      - v1.1-stable
-      - v1.2-stable
+      - 'master'
+      - '**stable'
   pull_request:
     branches: "*"
 
