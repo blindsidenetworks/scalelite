@@ -40,7 +40,7 @@ COPY --from=bbb-playback /usr/share/bigbluebutton/nginx/ /etc/bigbluebutton/ngin
 COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback/
 COPY nginx/start /etc/nginx/start
 COPY nginx/dhparam.pem /etc/nginx/dhparam.pem
-COPY nginx/conf.d /etc/nginx/conf.d/
+COPY nginx/conf.d /etc/nginx/http.d/
 EXPOSE 80
 EXPOSE 443
 ENV NGINX_HOSTNAME=localhost
@@ -53,7 +53,7 @@ RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash -
 RUN yum -y install nodejs
 # Install Ruby & Rails
 RUN curl -sL -o /etc/yum.repos.d/yarn.repo https://dl.yarnpkg.com/rpm/yarn.repo
-RUN amazon-linux-extras enable ruby3.0 postgresql14 \
+RUN amazon-linux-extras enable ruby2.6 postgresql14 \
     && yum -y install git tar gzip yarn shared-mime-info libxslt zlib-devel sqlite-devel mariadb-devel libpq-devel ruby-devel rubygems-devel rubygem-bundler rubygem-io-console rubygem-irb rubygem-json rubygem-minitest rubygem-power_assert rubygem-rake rubygem-test-unit rubygem-bigdecimal
 RUN yum -y install python3 python3-pip shadow-utils
 RUN gem install bundler -v '2.1.4'

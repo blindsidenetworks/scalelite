@@ -9,6 +9,7 @@ ENV LANG=en_US.UTF-8
 RUN apt-get update \
     && apt-get install -y software-properties-common curl net-tools nginx
 RUN add-apt-repository -y ppa:bigbluebutton/support
+
 RUN apt-get update \
     && apt-get install -y yq
 RUN curl -sL https://ubuntu.bigbluebutton.org/repo/bigbluebutton.asc | apt-key add - \
@@ -24,12 +25,11 @@ RUN apk add --no-cache nginx tini gettext \
     && ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log
 RUN rm /etc/nginx/http.d/default.conf
-COPY --from=bbb-playback /usr/share/bigbluebutton/nginx/ /usr/share/bigbluebutton/nginx/
+COPY --from=bbb-playback /usr/share/bigbluebutton/nginx/ /etc/bigbluebutton/nginx/
 COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback/
 COPY nginx/start /etc/nginx/start
 COPY nginx/dhparam.pem /etc/nginx/dhparam.pem
 COPY nginx/conf.d /etc/nginx/http.d/
-RUN ln -s /etc/nginx/http.d/ /etc/nginx/conf.d
 EXPOSE 80
 EXPOSE 443
 ENV NGINX_HOSTNAME=localhost
