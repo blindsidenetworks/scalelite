@@ -206,7 +206,9 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
 
   def test_pin_prompt_allotted_timeout_not_set
     Rails.configuration.x.stub(:fsapi_max_duration, 0) do
-      post(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
+      FsapiController.stub_any_instance(:authenticate, true) do
+        post(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
+      end
     end
     assert_response(:success)
     assert_select('section > context > extension > condition') do
@@ -216,7 +218,9 @@ class FsapiControllerTest < ActionDispatch::IntegrationTest
 
   def test_pin_prompt_allotted_timeout
     Rails.configuration.x.stub(:fsapi_max_duration, 90) do
-      post(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
+      FsapiController.stub_any_instance(:authenticate, true) do
+        post(fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' })
+      end
     end
     assert_response(:success)
     Rails.logger.debug { @response.body }
