@@ -7,12 +7,13 @@ RSpec.describe Server, redis: true do
     context 'with non-existent id' do
       it 'raises error' do
         expect {
-          Server.find('non-existent-id')
+          described_class.find('non-existent-id')
         }.to raise_error(ApplicationRedisRecord::RecordNotFound)
       end
     end
+
     context 'with no load' do
-      let(:server) { Server.find('test-1') }
+      let(:server) { described_class.find('test-1') }
 
       before do
         RedisStore.with_connection do |redis|
@@ -26,14 +27,14 @@ RSpec.describe Server, redis: true do
       it 'has proper settings' do
         expect(server.id).to eq 'test-1'
         expect(server.url).to eq 'https://test-1.example.com/bigbluebutton/api'
-        expect(server.enabled).to eq false
+        expect(server.enabled).to be false
         expect(server.load).to be_nil
-        expect(server.online).to eq false
+        expect(server.online).to be false
       end
     end
 
     context 'with load' do
-      let(:server) { Server.find('test-2') }
+      let(:server) { described_class.find('test-2') }
 
       before do
         RedisStore.with_connection do |redis|
@@ -53,15 +54,15 @@ RSpec.describe Server, redis: true do
         expect(server.id).to eq 'test-2'
         expect(server.url).to eq 'https://test-2.example.com/bigbluebutton/api'
         expect(server.secret).to eq 'test-2-secret'
-        expect(server.enabled).to eq true
+        expect(server.enabled).to be true
         expect(server.state).to be_nil
         expect(server.load).to eq 2
-        expect(server.online).to eq true
+        expect(server.online).to be true
       end
     end
 
     context 'with load and state as enabled' do
-      let(:server) { Server.find('test-2') }
+      let(:server) { described_class.find('test-2') }
 
       before do
         RedisStore.with_connection do |redis|
@@ -85,13 +86,13 @@ RSpec.describe Server, redis: true do
         expect(server.enabled).to be_nil
         expect(server.state).to eq 'enabled'
         expect(server.load).to eq 2
-        expect(server.online).to eq true
+        expect(server.online).to be true
       end
     end
 
     context 'disabled' do
       context 'when disabled' do
-        let(:server) { Server.find('test-2') }
+        let(:server) { described_class.find('test-2') }
 
         before do
           RedisStore.with_connection do |redis|
@@ -109,13 +110,13 @@ RSpec.describe Server, redis: true do
           expect(server.url).to eq 'https://test-2.example.com/bigbluebutton/api'
           expect(server.secret).to eq 'test-2-secret'
           expect(server.state).to be_nil
-          expect(server.enabled).to eq false
+          expect(server.enabled).to be false
           expect(server.load).to be_nil
         end
       end
 
       context 'with state as disabled' do
-        let(:server) { Server.find('test-2') }
+        let(:server) { described_class.find('test-2') }
 
         before do
           RedisStore.with_connection do |redis|
@@ -146,7 +147,7 @@ RSpec.describe Server, redis: true do
     context 'with no available servers' do
       it 'throws an error' do
         expect {
-          Server.find_available
+          described_class.find_available
         }.to raise_error(ApplicationRedisRecord::RecordNotFound)
       end
     end
@@ -163,14 +164,14 @@ RSpec.describe Server, redis: true do
         expect {
           # Protection against infinite loops
           Timeout.timeout(1) do
-            Server.find_available
+            described_class.find_available
           end
         }.to raise_error(ApplicationRedisRecord::RecordNotFound)
       end
     end
 
     context 'returns server' do
-      let(:server) { Server.find_available }
+      let(:server) { described_class.find_available }
 
       before do
         RedisStore.with_connection do |redis|
@@ -191,7 +192,7 @@ RSpec.describe Server, redis: true do
         expect(server.id).to eq 'test-1'
         expect(server.url).to eq 'https://test-1.example.com/bigbluebutton/api'
         expect(server.secret).to eq 'test-1-secret'
-        expect(server.enabled).to eq true
+        expect(server.enabled).to be true
         expect(server.state).to be_nil
         expect(server.load).to eq 1
       end
@@ -223,6 +224,7 @@ RSpec.describe Server, redis: true do
         end
       end
     end
+
     context 'with all servers cordoned' do
       before do
         RedisStore.with_connection do |redis|
@@ -238,7 +240,7 @@ RSpec.describe Server, redis: true do
           redis.zadd('server_load', 1, 'test-2')
         end
 
-        Server.all.each do |server|
+        described_class.all.each do |server|
           server.state = 'cordoned'
           server.save!
         end
@@ -246,7 +248,7 @@ RSpec.describe Server, redis: true do
 
       it 'raises an error' do
         expect {
-          Server.find_available
+          described_class.find_available
         }.to raise_error(ApplicationRedisRecord::RecordNotFound)
       end
     end
@@ -266,7 +268,7 @@ RSpec.describe Server, redis: true do
           redis.zadd('server_load', 1, 'test-1')
         end
 
-        Server.all.each do |server|
+        described_class.all.each do |server|
           server.enabled = false
           server.save!
         end
@@ -274,7 +276,7 @@ RSpec.describe Server, redis: true do
 
       it 'raises no error' do
         expect {
-          Server.find_available
+          described_class.find_available
         }.to raise_error(ApplicationRedisRecord::RecordNotFound)
       end
     end
@@ -296,14 +298,14 @@ RSpec.describe Server, redis: true do
           redis.zadd('server_load', 5, 'test-2')
         end
 
-        Server.all.each do |server|
+        described_class.all.each do |server|
           server.state = 'disabled'
           server.save!
         end
       end
 
       it 'is removed' do
-        Server.all.each do |server|
+        described_class.all.each do |server|
           expect(server.state).to eq 'disabled'
           expect(server.load).to be_nil
         end
@@ -325,15 +327,15 @@ RSpec.describe Server, redis: true do
           redis.zadd('server_load', 5, 'test-2')
         end
 
-        Server.all.each do |server|
+        described_class.all.each do |server|
           server.enabled = false
           server.save!
         end
       end
 
       it 'is removed' do
-        Server.all.each do |server|
-          expect(server.enabled).to eq false
+        described_class.all.each do |server|
+          expect(server.enabled).to be false
           expect(server.load).to be_nil
         end
       end
@@ -341,7 +343,7 @@ RSpec.describe Server, redis: true do
   end
 
   describe '.all' do
-    let(:servers) { Server.all }
+    let(:servers) { described_class.all }
 
     before do
       RedisStore.with_connection do |redis|
@@ -361,8 +363,9 @@ RSpec.describe Server, redis: true do
     it 'creates proper server count' do
       expect(servers.size).to eq 2
     end
+
     it 'creates different servers' do
-      expect(servers[0].id).to_not eq servers[1].id
+      expect(servers[0].id).not_to eq servers[1].id
     end
 
     it 'creates every server properly' do
@@ -391,7 +394,7 @@ RSpec.describe Server, redis: true do
   end
 
   describe '.available' do
-    let(:servers) { Server.available }
+    let(:servers) { described_class.available }
 
     context 'with state as enabled' do
       before do
@@ -453,14 +456,14 @@ RSpec.describe Server, redis: true do
         expect(server.id).to eq 'test-2'
         expect(server.url).to eq 'https://test-2.example.com/bigbluebutton/api'
         expect(server.secret).to eq 'test-2-secret'
-        expect(server.enabled).to eq true
+        expect(server.enabled).to be true
         expect(server.load).to eq 2
       end
     end
   end
 
   describe 'increment load' do
-    let(:server) { Server.find('test-2') }
+    let(:server) { described_class.find('test-2') }
 
     context 'not available' do
       before do
@@ -473,7 +476,7 @@ RSpec.describe Server, redis: true do
       end
 
       it 'fetches correct server' do
-        expect(server.load_changed?).to eq false
+        expect(server.load_changed?).to be false
         expect(server.load).to be_nil
       end
 
@@ -498,7 +501,7 @@ RSpec.describe Server, redis: true do
       end
 
       it 'fetches correct server' do
-        expect(server.load_changed?).to eq false
+        expect(server.load_changed?).to be false
         expect(server.load).to eq 4
       end
 
@@ -515,7 +518,7 @@ RSpec.describe Server, redis: true do
   describe '.create' do
     context 'without load' do
       let(:server) {
-        Server.create(
+        described_class.create(
           url: 'https://test-1.example.com/bigbluebutton/api',
           secret: 'test-1-secret',
           state: 'enabled'
@@ -523,7 +526,7 @@ RSpec.describe Server, redis: true do
       }
 
       it 'creates server' do
-        expect(server.id).to_not be_nil
+        expect(server.id).not_to be_nil
       end
 
       it 'sets Redis data properly' do
@@ -537,7 +540,7 @@ RSpec.describe Server, redis: true do
           expect(servers.size).to eq 1
           expect(servers[0]).to eq server.id
 
-          expect(redis.sismember('server_enabled', server.id)).to eq true
+          expect(redis.sismember('server_enabled', server.id)).to be true
 
           servers = redis.zrange('server_load', 0, -1)
           expect(servers.blank?).to be true
@@ -547,7 +550,7 @@ RSpec.describe Server, redis: true do
 
     context 'with load' do
       let(:server) {
-        Server.create(
+        described_class.create(
           url: 'https://test-2.example.com/bigbluebutton/api',
           secret: 'test-2-secret',
           state: 'enabled',
@@ -557,7 +560,7 @@ RSpec.describe Server, redis: true do
       }
 
       it 'creates server' do
-        expect(server.id).to_not be_nil
+        expect(server.id).not_to be_nil
       end
 
       it 'sets Redis data properly' do
@@ -571,7 +574,7 @@ RSpec.describe Server, redis: true do
           servers = redis.smembers('servers')
           expect(servers.size).to eq 1
           expect(servers[0]).to eq server.id
-          expect(redis.sismember('server_enabled', server.id)).to eq true
+          expect(redis.sismember('server_enabled', server.id)).to be true
 
           servers = redis.zrange('server_load', 0, -1, with_scores: true)
           expect(servers.size).to eq 1
@@ -583,7 +586,7 @@ RSpec.describe Server, redis: true do
 
     context 'with UUID id' do
       let(:server) {
-        Server.create(
+        described_class.create(
           url: 'https://test.example.com/bigbluebutton/api',
           secret: 'test-secret',
           enabled: false
@@ -601,7 +604,7 @@ RSpec.describe Server, redis: true do
 
     context 'with hostname id' do
       let(:server1) {
-        Server.create(
+        described_class.create(
           url: 'https://test.example.com/bigbluebutton/api',
           secret: 'test-secret',
           enabled: false
@@ -609,7 +612,7 @@ RSpec.describe Server, redis: true do
       }
 
       let(:server2) {
-        Server.new(
+        described_class.new(
           url: 'https://TEST.example.CoM/bigbluebutton/api',
           secret: 'test2-secret',
           enabled: false
@@ -631,7 +634,7 @@ RSpec.describe Server, redis: true do
   end
 
   describe '#update' do
-    let(:server) { Server.find('test-1') }
+    let(:server) { described_class.find('test-1') }
 
     before do
       RedisStore.with_connection do |redis|
@@ -664,8 +667,8 @@ RSpec.describe Server, redis: true do
 
           expect(hash['url']).to eq 'https://test-2.example.com/bigbluebutton/api'
           expect(hash['secret']).to eq server.secret
-          assert_equal('https://test-2.example.com/bigbluebutton/api', hash['url'])
-          assert_equal('test-1-secret', hash['secret'])
+          expect(hash['url']).to eq('https://test-2.example.com/bigbluebutton/api')
+          expect(hash['secret']).to eq('test-1-secret')
         end
       end
     end
@@ -783,7 +786,7 @@ RSpec.describe Server, redis: true do
       end
 
       it 'puts server online' do
-        expect(server.online).to eq false
+        expect(server.online).to be false
 
         server.online = true
         server.save!
@@ -821,7 +824,7 @@ RSpec.describe Server, redis: true do
 
       it 'sets server as disabled in Redis' do
         RedisStore.with_connection do |redis|
-          expect(redis.sismember('server_enabled', 'test-1')).to eq false
+          expect(redis.sismember('server_enabled', 'test-1')).to be false
         end
       end
     end
@@ -854,14 +857,14 @@ RSpec.describe Server, redis: true do
 
       it 'sets server as enabled in Redis' do
         RedisStore.with_connection do |redis|
-          expect(redis.sismember('server_enabled', 'test-1')).to eq true
+          expect(redis.sismember('server_enabled', 'test-1')).to be true
         end
       end
     end
   end
 
   describe '#destroy' do
-    let(:server) { Server.find('test-1') }
+    let(:server) { described_class.find('test-1') }
 
     context 'active' do
       before do
@@ -878,8 +881,8 @@ RSpec.describe Server, redis: true do
       it 'properly removes the server' do
         RedisStore.with_connection do |redis|
           expect(redis.hgetall('server:test1')).to be_empty
-          expect(redis.sismember('servers', 'test-1')).to eq false
-          expect(redis.sismember('server_enabled', 'test-1')).to eq false
+          expect(redis.sismember('servers', 'test-1')).to be false
+          expect(redis.sismember('server_enabled', 'test-1')).to be false
           expect(redis.zscore('server_load', 'test-1')).to be_nil
         end
       end
@@ -899,8 +902,8 @@ RSpec.describe Server, redis: true do
       it 'properly removes the server' do
         RedisStore.with_connection do |redis|
           expect(redis.hgetall('server:test1')).to be_empty
-          expect(redis.sismember('servers', 'test-1')).to eq false
-          expect(redis.sismember('server_enabled', 'test-1')).to eq false
+          expect(redis.sismember('servers', 'test-1')).to be false
+          expect(redis.sismember('server_enabled', 'test-1')).to be false
           expect(redis.zscore('server_load', 'test-1')).to be_nil
         end
       end
@@ -919,8 +922,8 @@ RSpec.describe Server, redis: true do
       it 'properly removes the server' do
         RedisStore.with_connection do |redis|
           expect(redis.hgetall('server:test1')).to be_empty
-          expect(redis.sismember('servers', 'test-1')).to eq false
-          expect(redis.sismember('server_enabled', 'test-1')).to eq false
+          expect(redis.sismember('servers', 'test-1')).to be false
+          expect(redis.sismember('server_enabled', 'test-1')).to be false
           expect(redis.zscore('server_load', 'test-1')).to be_nil
         end
       end
@@ -945,7 +948,7 @@ RSpec.describe Server, redis: true do
     end
 
     context 'with non-persisted object' do
-      let(:server) { Server.new(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret') }
+      let(:server) { described_class.new(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret') }
 
       it 'throws an error' do
         expect {
@@ -956,7 +959,7 @@ RSpec.describe Server, redis: true do
   end
 
   describe 'increments' do
-    let(:server) { Server.new(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret') }
+    let(:server) { described_class.new(url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret') }
 
     context 'healthy' do
       it 'starts with nil and increments by 1' do

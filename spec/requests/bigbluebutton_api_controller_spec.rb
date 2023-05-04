@@ -746,7 +746,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       get bigbluebutton_api_create_url, params: params
       post bigbluebutton_api_analytics_callback_url, params: { meeting_id: 'test-meeting-1111' }, headers: { 'HTTP_AUTHORIZATION' => 'Bearer ABCD' }
 
-      expect(response.status).to eq(204)
+      expect(response).to have_http_status(:no_content)
       expect(callback).to have_been_requested
       callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
       expect(callback_data.callback_attributes).to eq({ analytics_callback_url: params['meta_analytics-callback-url'] })
@@ -1664,6 +1664,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
           meta_params: { 'isBreakout' => 'false', 'meetingName' => "Fred's Room", 'gl-listed' => 'false' }
         )
         r2 = create(:recording)
+        initial_r1_metadata_count = r1.metadata.count
 
         meta_params = { 'newkey' => 'newvalue', 'gl-listed' => '' }
         params = encode_bbb_params('updateRecordings', {
@@ -1671,9 +1672,11 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
 
         expect { get bigbluebutton_api_update_recordings_url, params: params }
-          .to change { r1.metadata.count }.by(0)
-                                          .and(change { r2.metadata.count }.by(1))
-                                          .and(change { Metadatum.count }.by(1))
+          .to change { r2.metadata.count }.by(1)
+          .and change(Metadatum, :count).by(1)
+
+        # Can't chain `and` with `not_to` matchers
+        expect(initial_r1_metadata_count).to eq(r1.metadata.count)
 
         expect(response).to be_successful
         response_xml = Nokogiri::XML(response.body)

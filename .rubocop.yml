@@ -1,5 +1,7 @@
 require:
   - rubocop-rails
+  - rubocop-rspec
+  - rubocop-performance
 
 AllCops:
   Exclude:
@@ -227,3 +229,36 @@ Style/OptionalBooleanParameter:
 
 Style/SlicingWithRange:
   Enabled: true
+
+RSpec/ContextWording:
+  Enabled: false
+
+# Enable having multiple expectations per example in a spec.
+RSpec/MultipleExpectations:
+  Enabled: false
+
+# Enable having long examples
+RSpec/ExampleLength:
+  Enabled: false
+
+# Enable having arbitrary Spec path i.e. Api::V1::Controller.
+RSpec/FilePath:
+  Enabled: false
+
+RSpec/LetSetup:
+  Enabled: false
+
+RSpec/MessageSpies:
+  Enabled: false
+
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
+RSpec/NestedGroups:
+  Max: 7
+
+RSpec/AnyInstance:
+  Enabled: false
+
+RSpec/IndexedLet:
+  Enabled: false

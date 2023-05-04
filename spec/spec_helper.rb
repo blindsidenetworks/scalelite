@@ -58,7 +58,7 @@ RSpec.configure do |config|
   # are reset to their initial values, providing a consistent starting point
   # for each individual spec. While this approach may not be the most
   # performant, it helps maintain consistency across the test suite.
-  config.before(:each) do
+  config.before do
     FactoryBot.rewind_sequences
   end
 

@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe FsapiController, type: :request do
+RSpec.describe FsapiController do
   # Authentication-related tests
 
   context 'unauthenticated request' do
@@ -11,7 +11,7 @@ RSpec.describe FsapiController, type: :request do
 
       post fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' }
 
-      expect(response).to have_http_status(401)
+      expect(response).to have_http_status(:unauthorized)
       expect(response.headers['WWW-Authenticate']).to match(/\ABasic realm="[^"]*"\z/)
     end
   end
@@ -50,7 +50,7 @@ RSpec.describe FsapiController, type: :request do
 
   context 'initial call with no pin' do
     it 'responds with success and correct dialplan' do
-      allow_any_instance_of(FsapiController).to receive(:authenticate).and_return(true)
+      allow_any_instance_of(described_class).to receive(:authenticate).and_return(true)
 
       post fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' }
 
@@ -76,7 +76,7 @@ RSpec.describe FsapiController, type: :request do
 
   context 'non-matching pin' do
     it 'responds with success and correct dialplan' do
-      allow_any_instance_of(FsapiController).to receive(:authenticate).and_return(true)
+      allow_any_instance_of(described_class).to receive(:authenticate).and_return(true)
 
       post fsapi_url, params: { section: 'dialplan', variable_pin: '12345', 'Caller-Destination-Number': '5551234' }
 
@@ -102,7 +102,7 @@ RSpec.describe FsapiController, type: :request do
       meeting = create(:meeting)
       voice_bridge = meeting.voice_bridge
 
-      allow_any_instance_of(FsapiController).to receive(:authenticate).and_return(true)
+      allow_any_instance_of(described_class).to receive(:authenticate).and_return(true)
 
       post fsapi_url, params: { section: 'dialplan', variable_pin: voice_bridge, 'Caller-Destination-Number': '5551234' }
 
@@ -132,7 +132,7 @@ RSpec.describe FsapiController, type: :request do
       voice_bridge = meeting.voice_bridge
       breakout_voice_bridge = "#{voice_bridge}7"
 
-      allow_any_instance_of(FsapiController).to receive(:authenticate).and_return(true)
+      allow_any_instance_of(described_class).to receive(:authenticate).and_return(true)
 
       post(
         fsapi_url,
@@ -170,7 +170,7 @@ RSpec.describe FsapiController, type: :request do
       meeting = create(:meeting)
       voice_bridge = meeting.voice_bridge
 
-      allow_any_instance_of(FsapiController).to receive(:authenticate).and_return(true)
+      allow_any_instance_of(described_class).to receive(:authenticate).and_return(true)
 
       post(
         fsapi_url,
@@ -196,7 +196,7 @@ RSpec.describe FsapiController, type: :request do
       meeting = create(:meeting)
       voice_bridge = meeting.voice_bridge
 
-      allow_any_instance_of(FsapiController).to receive(:authenticate).and_return(true)
+      allow_any_instance_of(described_class).to receive(:authenticate).and_return(true)
 
       post(
         fsapi_url,
@@ -225,7 +225,7 @@ RSpec.describe FsapiController, type: :request do
       meeting = create(:meeting)
       voice_bridge = meeting.voice_bridge
 
-      allow_any_instance_of(FsapiController).to receive(:authenticate).and_return(true)
+      allow_any_instance_of(described_class).to receive(:authenticate).and_return(true)
       post(
         fsapi_url,
         params: {
@@ -250,7 +250,7 @@ RSpec.describe FsapiController, type: :request do
       meeting = create(:meeting)
       voice_bridge = meeting.voice_bridge
 
-      allow_any_instance_of(FsapiController).to receive(:authenticate).and_return(true)
+      allow_any_instance_of(described_class).to receive(:authenticate).and_return(true)
 
       post(
         fsapi_url,
@@ -279,7 +279,7 @@ RSpec.describe FsapiController, type: :request do
   context 'fullswitch max duration set to 90' do
     it 'returns sched_hangup' do
       allow(Rails.configuration.x).to receive(:fsapi_max_duration).and_return(90)
-      allow_any_instance_of(FsapiController).to receive(:authenticate).and_return(true)
+      allow_any_instance_of(described_class).to receive(:authenticate).and_return(true)
 
       post fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' }
 
@@ -297,7 +297,7 @@ RSpec.describe FsapiController, type: :request do
   context 'fullswitch max duration not set' do
     it 'does not return sched_hangup' do
       allow(Rails.configuration.x).to receive(:fsapi_max_duration).and_return(0)
-      allow_any_instance_of(FsapiController).to receive(:authenticate).and_return(true)
+      allow_any_instance_of(described_class).to receive(:authenticate).and_return(true)
 
       post fsapi_url, params: { section: 'dialplan', 'Caller-Destination-Number': '5551234' }
 

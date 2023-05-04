@@ -6,7 +6,7 @@ RSpec.describe Recording do
   describe 'recording id prefixes' do
     context 'empty list' do
       let!(:recording) { create(:recording) }
-      let(:rs) { Recording.with_recording_id_prefixes([]) }
+      let(:rs) { described_class.with_recording_id_prefixes([]) }
 
       it 'is empty' do
         expect(rs).to be_empty
@@ -17,7 +17,7 @@ RSpec.describe Recording do
       let(:meeting_id) { 'prefix-meeting-id' }
 
       let(:record_id_prefix) { Digest::SHA256.hexdigest(meeting_id) }
-      let(:rs) { Recording.with_recording_id_prefixes([record_id_prefix]) }
+      let(:rs) { described_class.with_recording_id_prefixes([record_id_prefix]) }
 
       let!(:meeting_id_recordings) { create_list(:recording, 2, meeting_id: meeting_id) }
       let!(:not_matching_recording) { create(:recording) }
@@ -42,7 +42,7 @@ RSpec.describe Recording do
       let!(:recordings_a) { create_list(:recording, 2, meeting_id: meeting_id_a) }
       let!(:recordings_b) { create_list(:recording, 3, meeting_id: meeting_id_b) }
 
-      let(:rs) { Recording.with_recording_id_prefixes([record_id_prefix_a, record_id_prefix_b]) }
+      let(:rs) { described_class.with_recording_id_prefixes([record_id_prefix_a, record_id_prefix_b]) }
 
       it 'creates proper number of recordings total' do
         expect(rs.size).to eq(recordings_a.size + recordings_b.size)
