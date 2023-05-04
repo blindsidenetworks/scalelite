@@ -620,11 +620,9 @@ RSpec.describe Server, redis: true do
         allow(Rails.configuration.x).to receive(:server_id_is_hostname).and_return(true)
       end
 
-      it 'correctly creates server1' do
+      it 'creates server1 and raises an error when trying to create server2 with the same id' do
         expect(server1.id).to eq 'test.example.com'
-      end
 
-      xit 'throws an error while trying to create server2' do
         expect {
           server2.save!
         }.to raise_error(ApplicationRedisRecord::RecordNotSaved)
