@@ -1,19 +1,5 @@
 # frozen_string_literal: true
 
-# class Tenant < ApplicationRecord
-#   SECRETS_SEPARATOR = ':'
-#
-#   validates :name, presence: true
-#   validates :secrets, presence: true
-#
-#   validates :name, uniqueness: true
-#   validates :secrets, uniqueness: true
-#
-#   def secrets_array
-#     secrets.split(SECRETS_SEPARATOR)
-#   end
-# end
-
 class Tenant < ApplicationRedisRecord
   SECRETS_SEPARATOR = ':'
 
@@ -40,10 +26,13 @@ class Tenant < ApplicationRedisRecord
         raise RecordNotSaved.new("Tenant already exists with id '#{id}'", self) if id_changed? && exists
         raise RecordNotSaved.new("Tenant with id '#{id}' is deleted", self) if !id_changed? && !exists
 
-        tenant_key = key
+        id_key = key
+        names_key = name_key
         redis.multi do |pipeline|
-          pipeline.hset(tenant_key, 'name', name) if name_changed?
-          pipeline.hset(tenant_key, 'secrets', secrets) if secrets_changed?
+          pipeline.hset(names_key, 'id', id) if id_changed? # Create tenant id -> name index
+
+          pipeline.hset(id_key, 'name', name) if name_changed?
+          pipeline.hset(id_key, 'secrets', secrets) if secrets_changed?
           pipeline.sadd('tenants', id) if id_changed?
         end
       end
@@ -51,6 +40,36 @@ class Tenant < ApplicationRedisRecord
 
     # Superclass bookkeeping
     super
+  end
+
+  # Look up a tenant by ID
+  # @param [String] id the Tenant {id}.
+  # @return [Tenant]
+  # @raise [RecordNotFound] no tenant with the provided ID exists.
+  def self.find(id)
+    with_connection do |redis|
+      hash = redis.hgetall(key(id))
+
+      raise RecordNotFound.new("Couldn't find Tenant with id=#{id}", name, id) if hash.blank?
+
+      hash[:id] = id
+      new.init_with_attributes(hash)
+    end
+  end
+
+  # Look up a tenant by ID
+  # @param [String] name the Tenant {tenant_name}.
+  # @return [Tenant]
+  # @raise [RecordNotFound] no tenant with the provided name exists.
+  def self.find_by_name(tenant_name)
+    with_connection do |redis|
+      hash = redis.hgetall(name_key(tenant_name))
+
+      raise RecordNotFound.new("Couldn't find Tenant with name=#{tenant_name}", name, tenant_name) if hash.blank?
+
+      hash[:name] = tenant_name
+      new.init_with_attributes(hash)
+    end
   end
 
   def secrets_array
@@ -63,7 +82,17 @@ class Tenant < ApplicationRedisRecord
   end
 
   # @return [String] the key of the Redis hash used to persist Tenant attributes.
+  def self.name_key(name)
+    "tenant_name:#{name}"
+  end
+
+  # @return [String] the key of the Redis hash used to persist Tenant attributes.
   def key
     self.class.key(id)
+  end
+
+  # @return [String] the key of the Redis hash used to persist Tenant attributes.
+  def name_key
+    self.class.name_key(name)
   end
 end

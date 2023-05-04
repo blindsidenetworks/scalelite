@@ -8,6 +8,9 @@ class BigBlueButtonApiController < ApplicationController
   before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled,
                                            :analytics_callback,]
 
+  before_action :set_tenant, only: [:create, :join, :end, :is_meeting_running, :get_meeting_info, :get_meetings,
+                                    :get_recordings], if: -> { Rails.configuration.x.multitenancy_enabled }
+
   def index
     # Return the scalelite build number if passed as an env variable
     build_number = Rails.configuration.x.build_number
@@ -27,7 +30,7 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      meeting = get_meeting_for_current_tenant(params[:meetingID])
+      meeting = Meeting.find(params[:meetingID], @tenant&.id)
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with MeetingNotFoundError if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
@@ -60,7 +63,7 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      meeting = get_meeting_for_current_tenant(params[:meetingID])
+      meeting = Meeting.find(params[:meetingID], @tenant&.id)
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with false if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
@@ -117,12 +120,11 @@ class BigBlueButtonApiController < ApplicationController
         # Send a GET request to the server
         response = get_post_req(uri)
 
-        # filter to only show messages for current Tennant
-        current_tenant = fetch_tenant
-        if current_tenant.present?
+        # filter to only show messages for current Tenant
+        if @tenant.present?
           response.xpath('/response/meetings/meeting').each do |m|
             meeting_tenant_id = m.xpath('metadata/tenant-id').text.to_i
-            m.remove if meeting_tenant_id != current_tenant.id
+            m.remove if meeting_tenant_id != @tenant.id
           end
         else
           response.xpath('/response/meetings/meeting').each do |m|
@@ -174,7 +176,7 @@ class BigBlueButtonApiController < ApplicationController
       server,
       moderator_pwd,
       params[:voiceBridge],
-      fetch_tenant&.id
+      @tenant&.id
     )
 
     # Update with old server if meeting already existed in database
@@ -185,8 +187,7 @@ class BigBlueButtonApiController < ApplicationController
 
     duration = params[:duration].to_i
 
-    tenant = fetch_tenant
-    params[:'meta_tenant-id'] = tenant.id if tenant.present?
+    params[:'meta_tenant-id'] = @tenant.id if @tenant.present?
 
     # Set/Overite duration if MAX_MEETING_DURATION is set and it's greater than params[:duration] (if passed)
     if !Rails.configuration.x.max_meeting_duration.zero? &&
@@ -230,7 +231,7 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      meeting = get_meeting_for_current_tenant(params[:meetingID])
+      meeting = Meeting.find(params[:meetingID], @tenant&.id)
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with MeetingNotFoundError if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
@@ -271,7 +272,7 @@ class BigBlueButtonApiController < ApplicationController
   def join
     params.require(:meetingID)
     begin
-      meeting = get_meeting_for_current_tenant(params[:meetingID])
+      meeting = Meeting.find(params[:meetingID], @tenant&.id)
       server = meeting.server
       raise ServerUnavailableError if server.offline? || server.disabled?
     rescue ServerUnavailableError
@@ -320,10 +321,9 @@ class BigBlueButtonApiController < ApplicationController
     query = query.with_recording_id_prefixes(params[:recordID].split(',')) if params[:recordID].present?
     query = query.where(meeting_id: params[:meetingID].split(',')) if params[:meetingID].present?
 
-    tenant = fetch_tenant
-    if tenant.present?
+    if @tenant.present?
       # fetch tenant's meetings. only return recordings of tenant's meetings
-      allowed_meetings = Meeting.all(tenant.id).map(&:id)
+      allowed_meetings = Meeting.all(@tenant.id).map(&:id)
       query = query.where(meeting_id: allowed_meetings)
     end
 
@@ -481,6 +481,10 @@ class BigBlueButtonApiController < ApplicationController
   def pass_through_params(excluded_params)
     params.except(*(excluded_params + [:format, :controller, :action, :checksum]))
           .to_unsafe_hash
+  end
+
+  def set_tenant
+    @tenant = fetch_tenant
   end
 
   # Success response if there are no meetings on any servers

@@ -30,8 +30,9 @@ namespace :tenants do
       puts('Error: both name and secrets are required to create a Tenant')
       exit(1)
     end
-    byebug
+
     tenant = Tenant.create!(name: name, secrets: secrets)
+
     puts('OK')
     puts("New Tenant id: #{tenant.id}")
   end
@@ -43,7 +44,7 @@ namespace :tenants do
     name = args[:name]
     secrets = args[:secrets]
 
-    tenant = Tenant.find_by id: id
+    tenant = Tenant.find(id)
     if tenant.blank?
       puts("Tenant with id #{id} does not exist in the system. Exiting...")
       exit(1)
@@ -63,7 +64,7 @@ namespace :tenants do
     check_multitenancy
     id = args[:id].to_i
 
-    tenant = Tenant.find_by id: id
+    tenant = Tenant.find(id)
     if tenant.blank?
       puts("Tenant with id #{id} does not exist in the system. Exiting...")
       exit(1)

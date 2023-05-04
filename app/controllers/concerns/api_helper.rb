@@ -75,12 +75,7 @@ module ApiHelper
     return nil unless Rails.configuration.x.multitenancy_enabled
     tenant_name = fetch_tenant_name_from_url
 
-    Tenant.find_by(name: tenant_name)
-  end
-
-  def get_meeting_for_current_tenant(meeting_id)
-    tenant = fetch_tenant
-    Meeting.find(meeting_id, tenant&.id)
+    Tenant.find_by_name(tenant_name)
   end
 
   def get_checksum(check_string, checksum_algorithm)
