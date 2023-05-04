@@ -6,10 +6,9 @@ development:
   <<: *default
   namespace: <%= ENV.fetch('REDIS_NAMESPACE') { 'scalelite_development' } %>
 
-
 test:
   <<: *default
-  url: <%= ENV['TEST_REDIS_URL'] || 'redis://localhost:6379/1' %> # Set the Redis URL for the test environment
+  driver: null # Reset to allow fakeredis to load
   namespace: scalelite_test
 
 production:
