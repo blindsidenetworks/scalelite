@@ -37,28 +37,6 @@ namespace :tenants do
     puts("New Tenant id: #{tenant.id}")
   end
 
-  desc 'Update existing Tenant'
-  task :update, [:id, :name, :secrets] => :environment do |_t, args|
-    check_multitenancy
-    id = args[:id].to_i
-    name = args[:name]
-    secrets = args[:secrets]
-
-    tenant = Tenant.find(id)
-    if tenant.blank?
-      puts("Tenant with id #{id} does not exist in the system. Exiting...")
-      exit(1)
-    end
-
-    if tenant.update(name: name, secrets: secrets)
-      puts("Tenant was updated successfully")
-    else
-      puts('Error! Tenant was not updated. Please fix the following errors:')
-      puts(tenant.errors.messages)
-      exit(1)
-    end
-  end
-
   desc 'Remove existing Tenant'
   task :remove, [:id] => :environment do |_t, args|
     check_multitenancy

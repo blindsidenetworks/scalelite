@@ -76,6 +76,8 @@ class Tenant < ApplicationRedisRecord
     end
   end
 
+  # Returns all tenants
+  # @return [Array[Tenant]]
   def self.all
     tenants = []
     with_connection do |redis|
@@ -92,6 +94,24 @@ class Tenant < ApplicationRedisRecord
       end
     end
     tenants
+  end
+
+  # Remove the Tenant from the data store
+  # @raise [RecordNotDestroyed] when the object contains data that has not been saved.
+  def destroy!
+    raise RecordNotDestroyed.new('Object is not persisted', self) unless persisted?
+    raise RecordNotDestroyed.new('Object has uncommitted changes', self) if changed?
+
+    with_connection do |redis|
+      redis.multi do |transaction|
+        transaction.del(key)
+        transaction.del(name_key)
+        transaction.srem('tenants', id)
+      end
+    end
+
+    # Superclass bookkeeping
+    super
   end
 
   def secrets_array

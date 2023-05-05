@@ -195,8 +195,6 @@ In your LMS BigBlueButton module configuration settings, update the url and secr
 Add multiple secret if required by providing a comma separated list.
 #### Remove Tenant
 `bin/rake tenants:remove[id]`
-#### Update Tenant
-`bin/rake tenants:update[id,id2,secrets] #change from subdomain id1 to id2`
 #### Show Tenants
 `bin/rake tenants:showall`
 
