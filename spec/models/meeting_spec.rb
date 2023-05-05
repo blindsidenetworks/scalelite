@@ -159,7 +159,7 @@ RSpec.describe Meeting, redis: true do
 
         it 'fetches Meetings with correct tenant_id' do
           meetings.each do |meeting|
-            expect(meeting.tenant_id.to_i).to eq tenant1.id
+            expect(meeting.tenant_id).to eq tenant1.id
           end
         end
       end

@@ -167,7 +167,10 @@ RSpec.describe ApiHelper, type: :helper do
         let(:host) { "#{subdomain}.#{host_name}" }
 
         it 'properly sets tenant' do
-          expect(fetch_tenant).to eq tenant
+          fetched_tenant = fetch_tenant
+
+          expect(fetched_tenant.id).to eq tenant.id
+          expect(fetched_tenant.name).to eq tenant.name
         end
       end
 

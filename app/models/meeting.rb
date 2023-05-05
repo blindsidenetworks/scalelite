@@ -160,9 +160,9 @@ class Meeting < ApplicationRedisRecord
           transaction.hsetnx(meeting_key, 'server_id', server.id)
           transaction.hsetnx(meeting_key, 'moderator_pw', moderator_pw)
           transaction.hsetnx(meeting_key, 'voice_bridge', voice_bridge)
+          transaction.hsetnx(meeting_key, 'tenant_id', tenant_id)
           transaction.hgetall(meeting_key)
           transaction.sadd?('meetings', id)
-          transaction.hsetnx(meeting_key, 'tenant_id', tenant_id)
         end
 
         raise ConcurrentModificationError.new('Meetings list concurrently modified', self) if created.nil?
