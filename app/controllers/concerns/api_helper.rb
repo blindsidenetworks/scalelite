@@ -75,7 +75,10 @@ module ApiHelper
     return nil unless Rails.configuration.x.multitenancy_enabled
     tenant_name = fetch_tenant_name_from_url
 
-    Tenant.find_by_name(tenant_name)
+    tenant = Tenant.find_by_name(tenant_name)
+    raise ChecksumError if tenant.blank?
+
+    tenant
   end
 
   def get_checksum(check_string, checksum_algorithm)

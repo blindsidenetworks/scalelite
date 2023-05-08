@@ -123,13 +123,13 @@ class BigBlueButtonApiController < ApplicationController
         # filter to only show messages for current Tenant
         if @tenant.present?
           response.xpath('/response/meetings/meeting').each do |m|
-            meeting_tenant_id = m.xpath('metadata/tenant-id').text.to_i
+            meeting_tenant_id = m.xpath('metadata/tenant-id').text
             m.remove if meeting_tenant_id != @tenant.id
           end
         else
           response.xpath('/response/meetings/meeting').each do |m|
-            meeting_tenant_id = m.xpath('metadata/tenant-id').text.to_i
-            m.remove if meeting_tenant_id != 0
+            meeting_tenant_id = m.xpath('metadata/tenant-id').text
+            m.remove if meeting_tenant_id.present?
           end
         end
 

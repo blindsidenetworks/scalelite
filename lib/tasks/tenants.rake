@@ -40,7 +40,7 @@ namespace :tenants do
   desc 'Remove existing Tenant'
   task :remove, [:id] => :environment do |_t, args|
     check_multitenancy
-    id = args[:id].to_i
+    id = args[:id]
 
     tenant = Tenant.find(id)
     if tenant.blank?
