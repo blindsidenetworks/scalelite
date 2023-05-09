@@ -10,7 +10,6 @@ namespace :recordings do
     loop do
       Dir.glob("#{dir}/*.tar").each do |file|
         Rails.logger.debug { "Found #{file}" }
-
         RecordingImporter.import(file)
       rescue StandardError => e
         Rails.logger.error("Failed to import recording: #{e}")
