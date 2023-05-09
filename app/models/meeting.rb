@@ -61,7 +61,7 @@ class Meeting < ApplicationRedisRecord
       if tenant_id.nil?
                         nil
       else
-        Tenant.find_by(id: tenant_id)
+        Tenant.find(tenant_id)
       end
   end
 
@@ -156,13 +156,13 @@ class Meeting < ApplicationRedisRecord
 
         voice_bridge = allocate_voice_bridge(id, voice_bridge)
 
-        created, _password_set, _voice_bridge_set, hash, _sadd_id = redis.multi do |transaction|
+        created, _password_set, _voice_bridge_set, _tenant_set, hash, _sadd_id = redis.multi do |transaction|
           transaction.hsetnx(meeting_key, 'server_id', server.id)
           transaction.hsetnx(meeting_key, 'moderator_pw', moderator_pw)
           transaction.hsetnx(meeting_key, 'voice_bridge', voice_bridge)
+          transaction.hsetnx(meeting_key, 'tenant_id', tenant_id)
           transaction.hgetall(meeting_key)
           transaction.sadd?('meetings', id)
-          transaction.hsetnx(meeting_key, 'tenant_id', tenant_id)
         end
 
         raise ConcurrentModificationError.new('Meetings list concurrently modified', self) if created.nil?
@@ -246,7 +246,9 @@ class Meeting < ApplicationRedisRecord
 
       raise RecordNotFound.new("Couldn't find Meeting with id=#{id}", name, id) if hash.blank?
 
-      raise RecordNotFound.new("Couldn't find Meeting with id=#{id} and tenant_id=#{tenant_id}", name, id) if tenant_id.to_i != hash['tenant_id'].to_i
+      if tenant_id.present? && tenant_id != hash['tenant_id'] # Meeting for the wrong tenant
+        raise RecordNotFound.new("Couldn't find Meeting with id=#{id} and tenant_id=#{tenant_id}", name, id)
+      end
 
       hash[:id] = id
       new.init_with_attributes(hash)
@@ -277,7 +279,7 @@ class Meeting < ApplicationRedisRecord
 
         if tenant_id.present?
           # Only fetch meetings for particular Tenant
-          next if tenant_id.to_i != hash['tenant_id'].to_i
+          next if tenant_id != hash['tenant_id']
         elsif hash['tenant_id'].present?
           next
         end

@@ -20,6 +20,7 @@ Rails/DynamicFindBy:
   AllowedReceivers:
     - Meeting
     - Server
+    - Tenant
 
 Rails/CreateTableWithTimestamps:
   Enabled: false

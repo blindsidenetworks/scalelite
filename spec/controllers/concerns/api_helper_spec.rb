@@ -167,15 +167,18 @@ RSpec.describe ApiHelper, type: :helper do
         let(:host) { "#{subdomain}.#{host_name}" }
 
         it 'properly sets tenant' do
-          expect(fetch_tenant).to eq tenant
+          fetched_tenant = fetch_tenant
+
+          expect(fetched_tenant.id).to eq tenant.id
+          expect(fetched_tenant.name).to eq tenant.name
         end
       end
 
       context 'without tenant in subdomain' do
         let(:host) { host_name }
 
-        it 'returns nil' do
-          expect(fetch_tenant).to be_nil
+        it 'raises ChecksumError' do
+          expect { fetch_tenant }.to raise_error(BBBErrors::ChecksumError)
         end
       end
     end
@@ -222,14 +225,6 @@ RSpec.describe ApiHelper, type: :helper do
 
         it 'returns secrets from Tenant' do
           expect(fetch_secrets).to eq tenant.secrets_array
-        end
-      end
-
-      context 'without tenant provided' do
-        let(:host) { host_name }
-
-        it 'returns secrets from config' do
-          expect(fetch_secrets).to eq config_secrets
         end
       end
     end

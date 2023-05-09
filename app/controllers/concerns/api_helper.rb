@@ -73,14 +73,12 @@ module ApiHelper
 
   def fetch_tenant
     return nil unless Rails.configuration.x.multitenancy_enabled
+
     tenant_name = fetch_tenant_name_from_url
+    tenant = Tenant.find_by_name(tenant_name)
+    raise ChecksumError if tenant.blank?
 
-    Tenant.find_by(name: tenant_name)
-  end
-
-  def get_meeting_for_current_tenant(meeting_id)
-    tenant = fetch_tenant
-    Meeting.find(meeting_id, tenant&.id)
+    tenant
   end
 
   def get_checksum(check_string, checksum_algorithm)
@@ -90,7 +88,6 @@ module ApiHelper
   end
 
   def checksum_algorithm
-    # rubocop:disable Rails/EnvironmentVariableAccess
     # default to SHA256 unless explicitly specified
     return 'SHA256' if ENV['LOADBALANCER_CHECKSUM_ALGORITHM'].blank?
     # rubocop:enable Rails/EnvironmentVariableAccess

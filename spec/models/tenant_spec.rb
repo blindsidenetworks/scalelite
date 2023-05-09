@@ -3,36 +3,23 @@
 require 'rails_helper'
 
 RSpec.describe Tenant, redis: true do
-  describe 'validators' do
-    let(:tenant) { build(:tenant) }
-
-    it 'has valid factory' do
-      expect(tenant).to be_valid
+  describe '.find' do
+    context 'with non-existent id' do
+      it 'raises error' do
+        expect {
+          described_class.find('non-existent-id')
+        }.to raise_error(ApplicationRedisRecord::RecordNotFound)
+      end
     end
 
-    context 'with incorrect params' do
-      it 'is invalid without a name' do
-        tenant.name = ''
-        expect(tenant).not_to be_valid
-      end
+    context 'with correct id' do
+      let(:tenant) { create(:tenant) }
 
-      it 'is invalid without a secret' do
-        tenant.secrets = ''
-        expect(tenant).not_to be_valid
-      end
-
-      context 'with duplicating attributes' do
-        it 'is invalid with duplicating name' do
-          described_class.create(name: tenant.name, secrets: 'uniq secret')
-
-          expect(tenant).not_to be_valid
-        end
-
-        it 'is invalid with duplicating secret' do
-          described_class.create(name: 'uniq name', secrets: tenant.secrets)
-
-          expect(tenant).not_to be_valid
-        end
+      it 'has proper settings' do
+        ten = described_class.find(tenant.id)
+        expect(ten.id).to eq tenant.id
+        expect(ten.name).to eq tenant.name
+        expect(ten.secrets).to eq tenant.secrets
       end
     end
   end
@@ -50,28 +37,15 @@ RSpec.describe Tenant, redis: true do
     end
 
     context 'with multiple secrets' do
-      let(:nb_of_secrets) { rand(3..10) }
-      let(:secrets_array) { [] }
-      let(:tenant) { build(:tenant) }
-
-      before do
-        nb_of_secrets.times do
-          hash = Faker::Crypto.sha512
-          secrets_array << hash
-        end
-        secrets_string = secrets_array.join(Tenant::SECRETS_SEPARATOR)
-
-        tenant.update(secrets: secrets_string)
-      end
+      let(:secrets_string) { '123:abc:1ac' }
+      let(:tenant) { create(:tenant, secrets: secrets_string) }
 
       it 'returns correct number of elements' do
-        expect(tenant.secrets_array.size).to eq nb_of_secrets
+        expect(tenant.secrets_array.size).to eq secrets_string.split(':').count
       end
 
       it 'contains all the elements' do
-        tenant.secrets_array.each do |tenant_secret|
-          expect(secrets_array).to include tenant_secret
-        end
+        expect(tenant.secrets_array).to eq secrets_string.split(':')
       end
     end
   end

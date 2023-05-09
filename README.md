@@ -185,7 +185,7 @@ Register the tenants using:
 docker exec -it scalelite-api /bin/bash
 bin/rake tenants:add[t1,secret1]
 bin/rake tenants:add[t2,secret2]
-bin/rake tenants:showall #confirm tenants
+bin/rake tenants #confirm tenants
 ```
 In your LMS BigBlueButton module configuration settings, update the url and secret fields:
 `https://sl.example.com/bigbluebutton/api => https://t1.example.com/bigbluebutton/api`
@@ -195,10 +195,8 @@ In your LMS BigBlueButton module configuration settings, update the url and secr
 Add multiple secret if required by providing a comma separated list.
 #### Remove Tenant
 `bin/rake tenants:remove[id]`
-#### Update Tenant
-`bin/rake tenants:update[id,id2,secrets] #change from subdomain id1 to id2`
 #### Show Tenants
-`bin/rake tenants:showall`
+`bin/rake tenants`
 
 
 ### Customizing Strings
