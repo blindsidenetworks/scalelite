@@ -394,7 +394,7 @@ class BigBlueButtonApiController < ApplicationController
     query_params = { record_id: record_ids }
     query_params[:metadata] = { key: 'tenant-id', value: @tenant.id } if @tenant.present? # filter based on tenant
 
-    unless Recording.includes(:metadata).exists?(query_params)
+    if Recording.includes(:metadata).where(query_params).blank?
       @updated = false
       return render(:update_recordings)
     end
