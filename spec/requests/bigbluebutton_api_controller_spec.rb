@@ -10,6 +10,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
   before do
     # Disabling the checksum for the specs and re-enable it only when testing specifically the checksum
     allow_any_instance_of(described_class).to receive(:verify_checksum).and_return(nil)
+    Rails.configuration.x.multitenancy_enabled = false
   end
 
   describe '#index' do
@@ -192,6 +193,48 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         expect(response_xml.at_xpath('/response/meetings').text).to eq('')
       end
     end
+
+    context 'multitenancy' do
+      let(:host_name) { 'api.rna1.blindside-dev.com' }
+      let(:host) { "bn.#{host_name}" }
+      let!(:tenant) { create(:tenant, name: 'bn') }
+      let!(:tenant1) { create(:tenant) }
+
+      before do
+        Rails.configuration.x.base_url = host_name
+        Rails.configuration.x.multitenancy_enabled = true
+
+        host! host
+      end
+
+      it 'responds with only the current tenants meetings' do
+        server1 = create(:server)
+
+        stub_request(:get, encode_bbb_uri("getMeetings", server1.url, server1.secret)).to_return(
+          body: "<response>
+                  <returncode>SUCCESS</returncode>
+                  <meetings>
+                    <meeting>
+                      <meetingName>test-meeting-1</meetingName>
+                      <metadata><tenant-id>#{tenant.id}</tenant-id></metadata>
+                    </meeting>
+                    <meeting>
+                      <meetingName>test-meeting-2</meetingName>
+                      <metadata><tenant-id>#{tenant1.id}</tenant-id></metadata>
+                    </meeting>
+                  </meetings>
+                </response>"
+        )
+
+        get bigbluebutton_api_get_meetings_url
+
+        response_xml = Nokogiri.XML(response.body)
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+
+        expect(response_xml.xpath("//meetingName[text()=\"test-meeting-1\"]")).to be_present
+        expect(response_xml.xpath("//meetingName[text()=\"test-meeting-2\"]")).not_to be_present
+      end
+    end
   end
 
   describe '#get_meeting_info' do
@@ -301,6 +344,47 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         end
       end
     end
+
+    context 'multitenancy' do
+      let(:host_name) { 'api.rna1.blindside-dev.com' }
+      let(:host) { "bn.#{host_name}" }
+      let!(:tenant) { create(:tenant, name: 'bn') }
+      let!(:tenant1) { create(:tenant) }
+
+      before do
+        Rails.configuration.x.base_url = host_name
+        Rails.configuration.x.multitenancy_enabled = true
+
+        host! host
+      end
+
+      it 'responds with the meeting if it is the tenants meeting' do
+        server = create(:server)
+        meeting = create(:meeting, server: server, tenant: tenant)
+
+        stub_request(:get, encode_bbb_uri("getMeetingInfo", server.url, server.secret, meetingID: meeting.id))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID></response>")
+
+        get bigbluebutton_api_get_meeting_info_url, params: { meetingID: meeting.id }
+
+        response_xml = Nokogiri.XML(response.body)
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.at_xpath("/response/meetingID").text).to(eq("test-meeting-1"))
+      end
+
+      it 'responds with MeetingNotFoundError if its another tenants meeting' do
+        server = create(:server)
+        meeting = create(:meeting, server: server, tenant: tenant1)
+
+        get bigbluebutton_api_get_meeting_info_url, params: { meetingID: meeting.id }
+
+        response_xml = Nokogiri.XML(response.body)
+        expected_error = BBBErrors::MeetingNotFoundError.new
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
+        expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
+      end
+    end
   end
 
   describe '#is_meeting_running' do
@@ -366,6 +450,45 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         response_xml = Nokogiri::XML(response.body)
         expect(response_xml.at_xpath("/response/returncode").text).to eq("SUCCESS")
         expect(response_xml.at_xpath("/response/running").text).to eq("true")
+      end
+    end
+
+    context 'multitenancy' do
+      let(:host_name) { 'api.rna1.blindside-dev.com' }
+      let(:host) { "bn.#{host_name}" }
+      let!(:tenant) { create(:tenant, name: 'bn') }
+      let!(:tenant1) { create(:tenant) }
+
+      before do
+        Rails.configuration.x.base_url = host_name
+        Rails.configuration.x.multitenancy_enabled = true
+
+        host! host
+      end
+
+      it 'responds with the meeting if it is the tenants meeting' do
+        server = create(:server)
+        meeting = create(:meeting, server: server, tenant: tenant)
+
+        stub_request(:get, encode_bbb_uri("isMeetingRunning", server.url, server.secret, meetingID: meeting.id))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><running>true</running></response>")
+
+        get bigbluebutton_api_is_meeting_running_url, params: { meetingID: meeting.id }
+
+        response_xml = Nokogiri.XML(response.body)
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.at_xpath("/response/running").text).to be_present
+      end
+
+      it 'responds with false if its another tenants meeting' do
+        server = create(:server)
+        meeting = create(:meeting, server: server, tenant: tenant1)
+
+        get bigbluebutton_api_is_meeting_running_url, params: { meetingID: meeting.id }
+
+        response_xml = Nokogiri.XML(response.body)
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.at_xpath("/response/running").text).to(eq("false"))
       end
     end
   end
@@ -723,6 +846,36 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         expect(server.load).to eq(1)
       end
     end
+
+    context 'multitenancy' do
+      let(:host_name) { 'api.rna1.blindside-dev.com' }
+      let(:host) { "bn.#{host_name}" }
+      let!(:tenant) { create(:tenant, name: 'bn') }
+      let!(:tenant1) { create(:tenant) }
+
+      before do
+        Rails.configuration.x.base_url = host_name
+        Rails.configuration.x.multitenancy_enabled = true
+
+        host! host
+      end
+
+      it 'sets the tenant-id metadata parameter' do
+        server = create(:server)
+        create_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
+        stub_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567", 'meta_tenant-id': tenant.id }
+
+        stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, stub_params))
+                      .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                                        <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+        get bigbluebutton_api_create_url, params: create_params
+
+        response_xml = Nokogiri.XML(response.body)
+        expect(stub_create).to have_been_requested
+        expect(response_xml.at_xpath("/response/returncode").text).to eq("SUCCESS")
+      end
+    end
   end
 
   describe '#analytics_callback' do
@@ -847,6 +1000,52 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
         expect(response_xml.at_xpath("/response/messageKey").text).to(eq("sentEndMeetingRequest"))
         expect { Meeting.find("test-meeting-1") }.to(raise_error(ApplicationRedisRecord::RecordNotFound))
+      end
+    end
+
+    context 'multitenancy' do
+      let(:host_name) { 'api.rna1.blindside-dev.com' }
+      let(:host) { "bn.#{host_name}" }
+      let!(:tenant) { create(:tenant, name: 'bn') }
+      let!(:tenant1) { create(:tenant) }
+
+      before do
+        Rails.configuration.x.base_url = host_name
+        Rails.configuration.x.multitenancy_enabled = true
+
+        host! host
+      end
+
+      it 'responds with the meeting if it is the tenants meeting' do
+        server = create(:server)
+        meeting = create(:meeting, server: server, tenant: tenant)
+        params = { meetingID: meeting.id, password: "test-password" }
+
+        stub_request(:get, encode_bbb_uri("end", server.url, server.secret, params))
+          .to_return(body: "<response><returncode>SUCCESS</returncode><messageKey>sentEndMeetingRequest</messageKey>
+                            <message>A request to end the meeting was sent. Please wait a few seconds,
+                            and then use the getMeetingInfo or isMeetingRunning API calls to verify that it was ended.
+                            </message></response>")
+
+        get bigbluebutton_api_end_url, params: params
+
+        response_xml = Nokogiri.XML(response.body)
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("SUCCESS"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq("sentEndMeetingRequest"))
+        expect { Meeting.find(meeting.id) }.to(raise_error(ApplicationRedisRecord::RecordNotFound))
+      end
+
+      it 'responds with MeetingNotFoundError if its another tenants meeting' do
+        server = create(:server)
+        meeting = create(:meeting, server: server, tenant: tenant1)
+
+        get bigbluebutton_api_end_url, params: { meetingID: meeting.id }
+
+        response_xml = Nokogiri.XML(response.body)
+        expected_error = BBBErrors::MeetingNotFoundError.new
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
+        expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
       end
     end
   end
@@ -1006,6 +1205,43 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         post bigbluebutton_api_join_url, params: params
 
         expect(response).to redirect_to(encode_bbb_uri("join", server.url, server.secret, params).to_s)
+      end
+    end
+
+    context 'multitenancy' do
+      let(:host_name) { 'api.rna1.blindside-dev.com' }
+      let(:host) { "bn.#{host_name}" }
+      let!(:tenant) { create(:tenant, name: 'bn') }
+      let!(:tenant1) { create(:tenant) }
+
+      before do
+        Rails.configuration.x.base_url = host_name
+        Rails.configuration.x.multitenancy_enabled = true
+
+        host! host
+      end
+
+      it 'redirects to the meeting if it is the tenants meeting' do
+        server = create(:server)
+        meeting = create(:meeting, server: server, tenant: tenant)
+
+        params = { meetingID: meeting.id, password: "test-password", fullName: "test-name" }
+
+        get bigbluebutton_api_join_url, params: params
+        expect(response).to redirect_to(encode_bbb_uri("join", server.url, server.secret, params).to_s)
+      end
+
+      it 'responds with MeetingNotFoundError if its another tenants meeting' do
+        server = create(:server)
+        meeting = create(:meeting, server: server, tenant: tenant1)
+
+        get bigbluebutton_api_join_url, params: { meetingID: meeting.id }
+
+        response_xml = Nokogiri.XML(response.body)
+        expected_error = BBBErrors::MeetingNotFoundError.new
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
+        expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
       end
     end
   end
@@ -1393,6 +1629,37 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         expect(xml_response.xpath("//response/recordings/recording").count).to eq(3)
       end
     end
+
+    context 'multitenancy' do
+      let(:host_name) { 'api.rna1.blindside-dev.com' }
+      let(:host) { "bn.#{host_name}" }
+      let!(:tenant) { create(:tenant, name: 'bn') }
+      let!(:tenant1) { create(:tenant) }
+
+      before do
+        Rails.configuration.x.base_url = host_name
+        Rails.configuration.x.multitenancy_enabled = true
+
+        host! host
+      end
+
+      it 'responds with only the tenants recordings' do
+        create_list(:recording, 5)
+        r1 = create(:recording, state: 'published')
+        r2 = create(:recording, state: 'published')
+        create(:metadatum, recording: r1, key: "tenant-id", value: tenant.id)
+        create(:metadatum, recording: r2, key: "tenant-id", value: tenant1.id)
+
+        params = encode_bbb_params("getRecordings", { recordID: [r1.record_id, r2.record_id].join(",") })
+
+        get bigbluebutton_api_get_recordings_url, params: params
+
+        expect(response).to have_http_status(:success)
+        xml_response = Nokogiri::XML(response.body)
+        expect(xml_response.at_xpath("//response/returncode").text).to eq("SUCCESS")
+        expect(xml_response.xpath("//response/recordings/recording").count).to eq(1)
+      end
+    end
   end
 
   describe '#publish_recordings' do
@@ -1540,6 +1807,52 @@ RSpec.describe BigBlueButtonApiController, redis: true do
 
         allow(Rails.configuration.x).to receive(:recording_disabled).and_return(false)
         reload_routes!
+      end
+    end
+
+    context 'multitenancy' do
+      let(:host_name) { 'api.rna1.blindside-dev.com' }
+      let(:host) { "bn.#{host_name}" }
+      let!(:tenant) { create(:tenant, name: 'bn') }
+      let!(:tenant1) { create(:tenant) }
+
+      before do
+        Rails.configuration.x.base_url = host_name
+        Rails.configuration.x.multitenancy_enabled = true
+
+        host! host
+      end
+
+      it 'allows you to update your own recording (based on tenant)' do
+        r = create(:recording, :published)
+        create(:metadatum, recording: r, key: "tenant-id", value: tenant.id)
+
+        expect(r.published).to be(true)
+        params = encode_bbb_params("publishRecordings", { recordID: r.record_id, publish: "false" }.to_query)
+
+        get bigbluebutton_api_publish_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/published').text).to eq('false')
+
+        r.reload
+        expect(r.published).to be(false)
+      end
+
+      it 'returns an error if trying to access another tenants recording' do
+        r = create(:recording, :published)
+        create(:metadatum, recording: r, key: "tenant-id", value: tenant1.id)
+
+        params = encode_bbb_params("publishRecordings", { recordID: "not-a-real-record-id", publish: "true" }.to_query)
+
+        get bigbluebutton_api_publish_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('notFound')
       end
     end
   end
@@ -1728,6 +2041,54 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         reload_routes!
       end
     end
+
+    context 'multitenancy' do
+      let(:host_name) { 'api.rna1.blindside-dev.com' }
+      let(:host) { "bn.#{host_name}" }
+      let!(:tenant) { create(:tenant, name: 'bn') }
+      let!(:tenant1) { create(:tenant) }
+
+      before do
+        Rails.configuration.x.base_url = host_name
+        Rails.configuration.x.multitenancy_enabled = true
+
+        host! host
+      end
+
+      it 'allows you to update your own recording (based on tenant)' do
+        r = create(:recording, :published)
+        create(:metadatum, recording: r, key: "tenant-id", value: tenant.id)
+
+        meta_params = { 'newparam' => 'newvalue' }
+        params = encode_bbb_params('updateRecordings', {
+          recordID: r.record_id,
+        }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+        expect { get bigbluebutton_api_update_recordings_url, params: params }.to change(Metadatum, :count).by(1)
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/updated').text).to eq('true')
+      end
+
+      it 'returns false if trying to access another tenants recording' do
+        r = create(:recording, :published)
+        create(:metadatum, recording: r, key: "tenant-id", value: tenant1.id)
+
+        meta_params = { 'newparam' => 'newvalue' }
+        params = encode_bbb_params('updateRecordings', {
+          recordID: r.record_id,
+        }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+        expect { get bigbluebutton_api_update_recordings_url, params: params }.not_to change(Metadatum, :count)
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/updated').text).to eq('false')
+      end
+    end
   end
 
   describe '#delete_recordings' do
@@ -1824,6 +2185,50 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         expect(response_xml.at_xpath('/response/deleted').text).to eq('true')
 
         expect(r.reload.state).to eq('deleted')
+      end
+    end
+
+    context 'multitenancy' do
+      let(:host_name) { 'api.rna1.blindside-dev.com' }
+      let(:host) { "bn.#{host_name}" }
+      let!(:tenant) { create(:tenant, name: 'bn') }
+      let!(:tenant1) { create(:tenant) }
+
+      before do
+        Rails.configuration.x.base_url = host_name
+        Rails.configuration.x.multitenancy_enabled = true
+
+        host! host
+      end
+
+      it 'allows you to delete your own recording (based on tenant)' do
+        r = create(:recording, :published)
+        create(:metadatum, recording: r, key: "tenant-id", value: tenant.id)
+
+        params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
+
+        get bigbluebutton_api_delete_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/deleted').text).to eq('true')
+
+        expect(r.reload.state).to eq('deleted')
+      end
+
+      it 'returns notFound if trying to access another tenants recording' do
+        r = create(:recording, :published)
+        create(:metadatum, recording: r, key: "tenant-id", value: tenant1.id)
+
+        params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
+
+        get bigbluebutton_api_delete_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq('notFound')
       end
     end
   end
