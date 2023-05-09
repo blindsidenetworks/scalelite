@@ -4,22 +4,22 @@ def check_multitenancy
   abort 'Multitenancy is disabled, task can not be completed' unless ENV['MULTITENANCY_ENABLED']
 end
 
-namespace :tenants do
-  desc 'List all the Tenants'
-  task showall: :environment do |_t, _args|
-    check_multitenancy
-    tenants = Tenant.all
+desc 'List all the Tenants'
+task tenants: :environment do |_t, _args|
+  check_multitenancy
+  tenants = Tenant.all
 
-    if tenants.present?
-      puts "TenantID, Name, Secrets"
-      tenants.each do |tenant|
-        puts "#{tenant.id}, #{tenant.name}, #{tenant.secrets}"
-      end
+  if tenants.present?
+    puts "TenantID, Name, Secrets"
+    tenants.each do |tenant|
+      puts "#{tenant.id}, #{tenant.name}, #{tenant.secrets}"
     end
-
-    puts "Total number of tenants: #{tenants.size}"
   end
 
+  puts "Total number of tenants: #{tenants.size}"
+end
+
+namespace :tenants do
   desc 'Add a new Tenant'
   task :add, [:name, :secrets] => :environment do |_t, args|
     check_multitenancy
