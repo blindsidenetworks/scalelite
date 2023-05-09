@@ -55,7 +55,7 @@ class RecordingImporter
       end
     end
 
-    FileUtils.rm(filename)
+    # FileUtils.rm(filename)
     PostImporterScripts.run(recording.id)
   rescue ActiveRecord::StatementInvalid
     ActiveRecord::Base.establish_connection

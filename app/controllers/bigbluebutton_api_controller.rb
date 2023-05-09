@@ -8,8 +8,8 @@ class BigBlueButtonApiController < ApplicationController
   before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled,
                                            :analytics_callback,]
 
-  before_action :set_tenant, only: [:create, :join, :end, :is_meeting_running, :get_meeting_info, :get_meetings,
-                                    :get_recordings], if: -> { Rails.configuration.x.multitenancy_enabled }
+  before_action :set_tenant, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled,
+                                      :analytics_callback], if: -> { Rails.configuration.x.multitenancy_enabled }
 
   def index
     # Return the scalelite build number if passed as an env variable
@@ -301,6 +301,10 @@ class BigBlueButtonApiController < ApplicationController
     end
 
     query = Recording.includes(playback_formats: [:thumbnails], metadata: []).references(:metadata)
+
+    # Filter recordings for current tenant
+    query = query.where(metadata: { key: 'tenant-id', value: @tenant.id }) if @tenant.present?
+
     query = if params[:state].present?
               states = params[:state].split(',')
               states.include?('any') ? query : query.where(state: states)
@@ -321,12 +325,6 @@ class BigBlueButtonApiController < ApplicationController
     query = query.with_recording_id_prefixes(params[:recordID].split(',')) if params[:recordID].present?
     query = query.where(meeting_id: params[:meetingID].split(',')) if params[:meetingID].present?
 
-    if @tenant.present?
-      # fetch tenant's meetings. only return recordings of tenant's meetings
-      allowed_meetings = Meeting.all(@tenant.id).map(&:id)
-      query = query.where(meeting_id: allowed_meetings)
-    end
-
     @recordings = query.order(starttime: :desc).all
     @url_prefix = "#{request.protocol}#{request.host_with_port}"
 
@@ -339,7 +337,10 @@ class BigBlueButtonApiController < ApplicationController
 
     publish = params[:publish].casecmp('true').zero?
 
-    query = Recording.where(record_id: params[:recordID].split(',')).load
+    query_params = { record_id: params[:recordID].split(',') }
+    query_params[:metadata] = { key: 'tenant-id', value: @tenant.id } if @tenant.present? # filter based on tenant
+
+    query = Recording.includes(:metadata).where(query_params).load
     query = query.state_is_published_unpublished
     raise BBBError.new('notFound', 'We could not find recordings') if query.none?
 
@@ -388,6 +389,15 @@ class BigBlueButtonApiController < ApplicationController
 
   def update_recordings
     raise BBBError.new('missingParamRecordID', 'You must specify a recordID.') if params[:recordID].blank?
+    record_ids = params[:recordID].split(',')
+
+    query_params = { record_id: record_ids }
+    query_params[:metadata] = { key: 'tenant-id', value: @tenant.id } if @tenant.present? # filter based on tenant
+
+    unless Recording.includes(:metadata).exists?(query_params)
+      @updated = false
+      return render(:update_recordings)
+    end
 
     add_metadata = {}
     remove_metadata = []
@@ -405,7 +415,6 @@ class BigBlueButtonApiController < ApplicationController
 
     logger.debug("Adding metadata: #{add_metadata}")
     logger.debug("Removing metadata: #{remove_metadata}")
-    record_ids = params[:recordID].split(',')
     recording_updated = false
     Metadatum.transaction do
       Metadatum.upsert_by_record_id(record_ids, add_metadata)
@@ -420,7 +429,10 @@ class BigBlueButtonApiController < ApplicationController
   def delete_recordings
     raise BBBError.new('missingParamRecordID', 'You must specify a recordID.') if params[:recordID].blank?
 
-    query = Recording.where(record_id: params[:recordID].split(',')).load
+    query_params = { record_id: params[:recordID].split(',') }
+    query_params[:metadata] = { key: 'tenant-id', value: @tenant.id } if @tenant.present? # filter based on tenant
+
+    query = Recording.includes(:metadata).where(query_params).load
     raise BBBError.new('notFound', 'We could not find recordings') if query.none?
 
     query.each do |rec|
