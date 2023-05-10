@@ -24,6 +24,37 @@ RSpec.describe Tenant, redis: true do
     end
   end
 
+  describe '.find_by_name' do
+    context 'with non-existent name' do
+      it 'returns nil' do
+        expect(
+          described_class.find_by(name: 'non-existent-name')
+        ).to be_nil
+      end
+    end
+
+    context 'with correct name' do
+      let(:tenant) { create(:tenant) }
+
+      it 'has proper settings' do
+        ten = described_class.find_by(name: tenant.name)
+        expect(ten.id).to eq tenant.id
+        expect(ten.name).to eq tenant.name
+        expect(ten.secrets).to eq tenant.secrets
+      end
+    end
+  end
+
+  describe '.all' do
+    let!(:tenants) { create_list(:tenant, 5) }
+
+    it 'returns all of the tenants' do
+      all = described_class.all
+      expect(all.count).to eq(tenants.count)
+      expect(all.map(&:id)).to match_array(tenants.map(&:id))
+    end
+  end
+
   describe '.secrets_array' do
     context 'with single secret' do
       let(:secret) { Faker::Crypto.sha512 }

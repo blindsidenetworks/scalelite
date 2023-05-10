@@ -48,7 +48,7 @@ namespace :tenants do
       exit(1)
     end
 
-    if tenant.delete
+    if tenant.destroy!
       puts("Tenant was successfully deleted.")
     else
       puts("Error! Tenant has not been deleted")
