@@ -21,6 +21,7 @@ Rails/DynamicFindBy:
     - Meeting
     - Server
     - Tenant
+    - described_class
 
 Rails/CreateTableWithTimestamps:
   Enabled: false
