@@ -28,7 +28,7 @@ RSpec.describe Tenant, redis: true do
     context 'with non-existent name' do
       it 'returns nil' do
         expect(
-          described_class.find_by(name: 'non-existent-name')
+          described_class.find_by_name('non-existent-name')
         ).to be_nil
       end
     end
@@ -37,7 +37,7 @@ RSpec.describe Tenant, redis: true do
       let(:tenant) { create(:tenant) }
 
       it 'has proper settings' do
-        ten = described_class.find_by(name: tenant.name)
+        ten = described_class.find_by_name(tenant.name)
         expect(ten.id).to eq tenant.id
         expect(ten.name).to eq tenant.name
         expect(ten.secrets).to eq tenant.secrets
