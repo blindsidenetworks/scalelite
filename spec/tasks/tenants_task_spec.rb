@@ -22,7 +22,7 @@ RSpec.describe 'tenants tasks', type: :task do
 
       # rubocop:disable Layout/LineLength
       expect { task.invoke }.to output(
-        "TenantID, Name, Secrets\n#{tenant2.id}, #{tenant2.name}, #{tenant2.secrets}\n#{tenant1.id}, #{tenant1.name}, #{tenant1.secrets}\nTotal number of tenants: 2\n"
+        "id: #{tenant2.id}\n\tname: #{tenant2.name}\n\tsecrets: #{tenant2.secrets}\nid: #{tenant1.id}\n\tname: #{tenant1.name}\n\tsecrets: #{tenant1.secrets}\nTotal number of tenants: 2\n"
       ).to_stdout
       # rubocop:enable Layout/LineLength
     end
