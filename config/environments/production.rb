@@ -109,8 +109,8 @@ Rails.application.configure do
   url_host = ENV.fetch('URL_HOST', nil)
 
   config.hosts = if ENV['MULTITENANCY_ENABLED'] == 'true' && url_host.present?
-                        ".#{url_host}"
-                      else
-                        url_host
-                      end
+                   ".#{url_host}"
+                 else
+                   url_host
+                 end
 end
