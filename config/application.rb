@@ -106,12 +106,17 @@ module Scalelite
     # Recordings imported will be unpublished by default, if set to 'true'. Defaults to false.
     config.x.recording_import_unpublished = ENV.fetch('RECORDING_IMPORT_UNPUBLISHED', 'false').casecmp?('true')
 
-    # Scalelite Host name
-    config.x.url_host = ENV.fetch('URL_HOST', nil)
-
-    config.x.base_url = ENV.fetch('BASE_URL', nil)
-
+    # Multitenancy values
     config.x.multitenancy_enabled = ENV.fetch('MULTITENANCY_ENABLED', nil)
+
+    # Scalelite Host name
+    url_host = ENV.fetch('URL_HOST', nil)
+
+    config.x.url_host = if config.x.multitenancy_enabled && url_host.present?
+      ".#{url_host}"
+    else
+      url_host
+    end
 
     # DB connection retry attempt counts
     config.x.db_connection_retry_count = ENV.fetch('DB_CONNECTION_RETRY_COUNT', '3').to_i

@@ -186,11 +186,7 @@ To ensure the security of each tenant's data, we recommend using either a wildca
 
 Each tenant will have access only to their own meetings and recordings. They will not be able to receive any information on other tenants or make any changes or actions to other tenants' resources.
 
-To enable multitenancy in Scalelite, you need to set two environment variables in your `.env` file:
-
-1.  `MULTITENANCY_ENABLED: true` - This variable enables the multitenancy feature in Scalelite.
-
-2.  `BASE_URL: sl.example.com` - This variable specifies the base URL for your Scalelite deployment. Replace `sl.example.com` with the actual domain name that your Scalelite server is deployed at.
+To enable multitenancy in Scalelite, you only need to set `MULTITENANCY_ENABLED=true` in your environment variables.
 
 #### Sample Tenant Setup
 To create new tenants, we've added a few rake tasks to help. First, add the new tenants and secrets to Scalelite:

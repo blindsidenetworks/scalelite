@@ -201,7 +201,6 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       let!(:tenant1) { create(:tenant) }
 
       before do
-        Rails.configuration.x.base_url = host_name
         Rails.configuration.x.multitenancy_enabled = true
 
         host! host
@@ -352,7 +351,6 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       let!(:tenant1) { create(:tenant) }
 
       before do
-        Rails.configuration.x.base_url = host_name
         Rails.configuration.x.multitenancy_enabled = true
 
         host! host
@@ -460,7 +458,6 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       let!(:tenant1) { create(:tenant) }
 
       before do
-        Rails.configuration.x.base_url = host_name
         Rails.configuration.x.multitenancy_enabled = true
 
         host! host
@@ -854,7 +851,6 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       let!(:tenant1) { create(:tenant) }
 
       before do
-        Rails.configuration.x.base_url = host_name
         Rails.configuration.x.multitenancy_enabled = true
 
         host! host
@@ -1010,7 +1006,6 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       let!(:tenant1) { create(:tenant) }
 
       before do
-        Rails.configuration.x.base_url = host_name
         Rails.configuration.x.multitenancy_enabled = true
 
         host! host
@@ -1215,7 +1210,6 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       let!(:tenant1) { create(:tenant) }
 
       before do
-        Rails.configuration.x.base_url = host_name
         Rails.configuration.x.multitenancy_enabled = true
 
         host! host
@@ -1637,7 +1631,6 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       let!(:tenant1) { create(:tenant) }
 
       before do
-        Rails.configuration.x.base_url = host_name
         Rails.configuration.x.multitenancy_enabled = true
 
         host! host
@@ -1817,7 +1810,6 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       let!(:tenant1) { create(:tenant) }
 
       before do
-        Rails.configuration.x.base_url = host_name
         Rails.configuration.x.multitenancy_enabled = true
 
         host! host
@@ -2049,7 +2041,6 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       let!(:tenant1) { create(:tenant) }
 
       before do
-        Rails.configuration.x.base_url = host_name
         Rails.configuration.x.multitenancy_enabled = true
 
         host! host
@@ -2195,7 +2186,6 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       let!(:tenant1) { create(:tenant) }
 
       before do
-        Rails.configuration.x.base_url = host_name
         Rails.configuration.x.multitenancy_enabled = true
 
         host! host
