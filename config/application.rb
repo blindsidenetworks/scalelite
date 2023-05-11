@@ -108,12 +108,15 @@ module Scalelite
 
     # Multitenancy values
     config.x.multitenancy_enabled = ENV.fetch('MULTITENANCY_ENABLED', nil)
-    config.x.base_url = ENV.fetch('BASE_URL', nil)
 
     # Scalelite Host name
     url_host = ENV.fetch('URL_HOST', nil)
-    multitenancy_wildcard = config.x.multitenancy_enabled && url_host.present? ? "." : ""
-    config.x.url_host = "#{multitenancy_wildcard}#{url_host}"
+
+    config.x.url_host = if config.x.multitenancy_enabled && url_host.present?
+      ".#{url_host}"
+    else
+      url_host
+    end
 
     # DB connection retry attempt counts
     config.x.db_connection_retry_count = ENV.fetch('DB_CONNECTION_RETRY_COUNT', '3').to_i
