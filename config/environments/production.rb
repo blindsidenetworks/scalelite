@@ -106,5 +106,11 @@ Rails.application.configure do
   # config.active_record.database_resolver = ActiveRecord::Middleware::DatabaseSelector::Resolver
   # config.active_record.database_resolver_context = ActiveRecord::Middleware::DatabaseSelector::Resolver::Session
 
-  config.hosts = ENV['URL_HOST'].presence || nil
+  url_host = ENV.fetch('URL_HOST', nil)
+
+  config.hosts = if ENV['MULTITENANCY_ENABLED'] == 'true' && url_host.present?
+                        ".#{url_host}"
+                      else
+                        url_host
+                      end
 end
