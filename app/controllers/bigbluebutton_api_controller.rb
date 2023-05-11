@@ -8,6 +8,9 @@ class BigBlueButtonApiController < ApplicationController
   before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled,
                                            :analytics_callback,]
 
+  before_action :set_tenant, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled,
+                                      :analytics_callback], if: -> { Rails.configuration.x.multitenancy_enabled }
+
   def index
     # Return the scalelite build number if passed as an env variable
     build_number = Rails.configuration.x.build_number
@@ -27,7 +30,7 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      meeting = Meeting.find(params[:meetingID])
+      meeting = Meeting.find(params[:meetingID], @tenant&.id)
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with MeetingNotFoundError if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
@@ -60,7 +63,7 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      meeting = Meeting.find(params[:meetingID])
+      meeting = Meeting.find(params[:meetingID], @tenant&.id)
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with false if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
@@ -117,6 +120,19 @@ class BigBlueButtonApiController < ApplicationController
         # Send a GET request to the server
         response = get_post_req(uri)
 
+        # filter to only show messages for current Tenant
+        if @tenant.present?
+          response.xpath('/response/meetings/meeting').each do |m|
+            meeting_tenant_id = m.xpath('metadata/tenant-id').text
+            m.remove if meeting_tenant_id != @tenant.id
+          end
+        else
+          response.xpath('/response/meetings/meeting').each do |m|
+            meeting_tenant_id = m.xpath('metadata/tenant-id').text
+            m.remove if meeting_tenant_id.present?
+          end
+        end
+
         # Skip over if no meetings on this server
         server_meetings = response.xpath('/response/meetings/meeting')
         next if server_meetings.empty?
@@ -154,7 +170,14 @@ class BigBlueButtonApiController < ApplicationController
 
     moderator_pwd = params[:moderatorPW].presence || SecureRandom.alphanumeric(8)
     params[:moderatorPW] = moderator_pwd
-    meeting = Meeting.find_or_create_with_server!(params[:meetingID], server, moderator_pwd, params[:voiceBridge])
+
+    meeting = Meeting.find_or_create_with_server!(
+      params[:meetingID],
+      server,
+      moderator_pwd,
+      params[:voiceBridge],
+      @tenant&.id
+    )
 
     # Update with old server if meeting already existed in database
     server = meeting.server
@@ -163,6 +186,8 @@ class BigBlueButtonApiController < ApplicationController
     server.increment_load(1)
 
     duration = params[:duration].to_i
+
+    params[:'meta_tenant-id'] = @tenant.id if @tenant.present?
 
     # Set/Overite duration if MAX_MEETING_DURATION is set and it's greater than params[:duration] (if passed)
     if !Rails.configuration.x.max_meeting_duration.zero? &&
@@ -206,7 +231,7 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      meeting = Meeting.find(params[:meetingID])
+      meeting = Meeting.find(params[:meetingID], @tenant&.id)
     rescue ApplicationRedisRecord::RecordNotFound
       # Respond with MeetingNotFoundError if the meeting could not be found
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
@@ -247,7 +272,7 @@ class BigBlueButtonApiController < ApplicationController
   def join
     params.require(:meetingID)
     begin
-      meeting = Meeting.find(params[:meetingID])
+      meeting = Meeting.find(params[:meetingID], @tenant&.id)
       server = meeting.server
       raise ServerUnavailableError if server.offline? || server.disabled?
     rescue ServerUnavailableError
@@ -276,6 +301,10 @@ class BigBlueButtonApiController < ApplicationController
     end
 
     query = Recording.includes(playback_formats: [:thumbnails], metadata: []).references(:metadata)
+
+    # Filter recordings for current tenant
+    query = query.where(metadata: { key: 'tenant-id', value: @tenant.id }) if @tenant.present?
+
     query = if params[:state].present?
               states = params[:state].split(',')
               states.include?('any') ? query : query.where(state: states)
@@ -308,7 +337,10 @@ class BigBlueButtonApiController < ApplicationController
 
     publish = params[:publish].casecmp('true').zero?
 
-    query = Recording.where(record_id: params[:recordID].split(',')).load
+    query_params = { record_id: params[:recordID].split(',') }
+    query_params[:metadata] = { key: 'tenant-id', value: @tenant.id } if @tenant.present? # filter based on tenant
+
+    query = Recording.includes(:metadata).where(query_params).load
     query = query.state_is_published_unpublished
     raise BBBError.new('notFound', 'We could not find recordings') if query.none?
 
@@ -357,6 +389,15 @@ class BigBlueButtonApiController < ApplicationController
 
   def update_recordings
     raise BBBError.new('missingParamRecordID', 'You must specify a recordID.') if params[:recordID].blank?
+    record_ids = params[:recordID].split(',')
+
+    query_params = { record_id: record_ids }
+    query_params[:metadata] = { key: 'tenant-id', value: @tenant.id } if @tenant.present? # filter based on tenant
+
+    if Recording.includes(:metadata).where(query_params).blank?
+      @updated = false
+      return render(:update_recordings)
+    end
 
     add_metadata = {}
     remove_metadata = []
@@ -374,14 +415,11 @@ class BigBlueButtonApiController < ApplicationController
 
     logger.debug("Adding metadata: #{add_metadata}")
     logger.debug("Removing metadata: #{remove_metadata}")
-    record_ids = params[:recordID].split(',')
     recording_updated = false
     Metadatum.transaction do
       Metadatum.upsert_by_record_id(record_ids, add_metadata)
       Metadatum.delete_by_record_id(record_ids, remove_metadata)
-      if params[:protect].present?
-        recording_updated = Recording.find_by(record_id: record_ids.first).update!(protected: params[:protect])
-      end
+      recording_updated = Recording.find_by(record_id: record_ids.first).update!(protected: params[:protect]) if params[:protect].present?
     end
 
     @updated = !(add_metadata.empty? && remove_metadata.empty?) || recording_updated
@@ -391,7 +429,10 @@ class BigBlueButtonApiController < ApplicationController
   def delete_recordings
     raise BBBError.new('missingParamRecordID', 'You must specify a recordID.') if params[:recordID].blank?
 
-    query = Recording.where(record_id: params[:recordID].split(',')).load
+    query_params = { record_id: params[:recordID].split(',') }
+    query_params[:metadata] = { key: 'tenant-id', value: @tenant.id } if @tenant.present? # filter based on tenant
+
+    query = Recording.includes(:metadata).where(query_params).load
     raise BBBError.new('notFound', 'We could not find recordings') if query.none?
 
     query.each do |rec|
@@ -452,6 +493,10 @@ class BigBlueButtonApiController < ApplicationController
   def pass_through_params(excluded_params)
     params.except(*(excluded_params + [:format, :controller, :action, :checksum]))
           .to_unsafe_hash
+  end
+
+  def set_tenant
+    @tenant = fetch_tenant
   end
 
   # Success response if there are no meetings on any servers

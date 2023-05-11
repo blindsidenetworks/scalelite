@@ -11,7 +11,6 @@ module RedisStore
 
       # Reading from ENV is probably fine here; only happens once near (but not at) application init,
       # and it's a fallback, and there's no way exposed in rails to read this value other than ENV.
-      # rubocop:disable Rails/EnvironmentVariableAccess
       pool = Rails.configuration.x.redis_store.pool || ENV['RAILS_MAX_THREADS'] || ConnectionPool::DEFAULTS[:size]
       # rubocop:enable Rails/EnvironmentVariableAccess
       pool_timeout = Rails.configuration.x.redis_store.pool_timeout || ConnectionPool::DEFAULTS[:timeout]

@@ -176,6 +176,66 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `FSAPI_PASSWORD`: Password (for "Basic" authentication) to access the freeswitch dialplan API. Default is to use the first `LOADBALANCER_SECRET` as the password. You can set this to the empty string to disable authentication.
 * `FSAPI_MAX_DURATION`: Maximum duration for voice calls handled by the freeswitch dialplan integration in minutes. Defaults to `MAX_MEETING_DURATION` if that is set, otherwise no limit. You probably want to set a limit here to ensure you do not have excess expenses due to people not hanging up calls.
 
+### Multitenancy
+
+Scalelite supports multitenancy using subdomains for each tenant. By using subdomains, you can easily isolate each tenant's data and ensure that they can only access their own meetings and recordings.
+
+To access their deployment, each tenant can use the following URL format: `tenant_name.sl.example.com`. Here, `tenant_name` refers to the name of the tenant, and `sl.example.com` is the domain where Scalelite is deployed.
+
+To ensure the security of each tenant's data, we recommend using either a wildcard SSL/TLS certificate or separate DNS entries for each tenant. This will prevent unauthorized access to other tenants' data.
+
+Each tenant will have access only to their own meetings and recordings. They will not be able to receive any information on other tenants or make any changes or actions to other tenants' resources.
+
+To enable multitenancy in Scalelite, you need to set two environment variables in your `.env` file:
+
+1.  `MULTITENANCY_ENABLED: true` - This variable enables the multitenancy feature in Scalelite.
+
+2.  `BASE_URL: sl.example.com` - This variable specifies the base URL for your Scalelite deployment. Replace `sl.example.com` with the actual domain name that your Scalelite server is deployed at.
+
+#### Sample Tenant Setup
+To create new tenants, we've added a few rake tasks to help. First, add the new tenants and secrets to Scalelite:
+```sh  
+docker exec -it scalelite-api /bin/bash
+./bin/rake tenants:add[tenant1,secret1]
+./bin/rake tenants:add[tenant2,secret2:secret2a:secret2b]
+./bin/rake tenants #confirm tenants
+```  
+Once you have created multiple tenants in Scalelite, you will need to update the endpoint and secret for each tenant in any BigBlueButton front-end that you are using (such as Greenlight or Moodle).
+
+To do this, you will need to set the following environment variables / configuration variables in your BigBlueButton front-end:
+
+1.  `BIGBLUEBUTTON_ENDPOINT: tenant1.sl.example.com` - Replace `tenant1.sl.example.com` with the subdomain URL for the specific tenant.
+
+2.  `BIGBLUEBUTTON_SECRET: secret1` - Replace `secret1` with the secret for the specific tenant.
+
+Note that you will need to set these environment variables for each tenant in your BigBlueButton front-end. This ensures that each tenant's meetings and recordings are directed to their specific Scalelite deployment.
+
+#### Add Tenant
+`./bin/rake tenants:add[id,secrets]`
+
+If you need to add multiple secrets for a tenant, you can provide a colon-separated (`:`) list of secrets when creating the tenant in Scalelite.
+
+When you run this command, Scalelite will print out the ID of the newly created tenant, followed by `OK` if the operation was successful.
+
+#### Remove Tenant
+`./bin/rake tenants:remove[id]`
+
+Warning: Removing a tenant with data still in the database may cause some inconsistencies.
+
+#### Show Tenants
+`./bin/rake tenants`
+
+When you run this command, Scalelite will return a list of all tenants, along with their IDs, names, and secrets. For example:
+
+```
+id: 9a870f45-ec23-4d29-828b-4673f3536d7b
+        name: tenant1
+        secrets: secret1
+id: 4f3e4bb8-2a4e-41a6-9af8-0678c651777f
+        name: tenant2
+        secrets: secret2:secret2a:secret2b
+```
+
 ### Customizing Strings
 
 If you'd like to customize the strings on certain error pages returned by Scalelite (`recording_not_found`), you can do so by duplicating the locale file and changing whatever lines you see fit.

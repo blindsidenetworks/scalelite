@@ -98,7 +98,7 @@ class Server < ApplicationRedisRecord
           pipeline.hset(server_key, 'users', users) if users_changed?
           pipeline.hset(server_key, 'largest_meeting', largest_meeting) if largest_meeting_changed?
           pipeline.hset(server_key, 'videos', videos) if videos_changed?
-          pipeline.sadd('servers', id) if id_changed?
+          pipeline.sadd?('servers', id) if id_changed?
           state.present? ? save_with_state(pipeline) : save_without_state(pipeline)
         end
 
@@ -116,7 +116,7 @@ class Server < ApplicationRedisRecord
 
   def handle_enabled_state(redis)
     if state_changed?
-      redis.sadd('server_enabled', id)
+      redis.sadd?('server_enabled', id)
       redis.zadd('server_load', self.load, id) if self.load.present?
       redis.zrem('cordoned_server_load', id)
     end
@@ -155,7 +155,7 @@ class Server < ApplicationRedisRecord
   def save_without_state(redis)
     if enabled_changed?
       if enabled
-        redis.sadd('server_enabled', id)
+        redis.sadd?('server_enabled', id)
       else
         redis.srem('server_enabled', id)
         redis.zrem('server_load', id)
@@ -241,7 +241,7 @@ class Server < ApplicationRedisRecord
   end
 
   def disabled?
-    state.eql?('disabled') || state.nil? && !enabled
+    state.eql?('disabled') || (state.nil? && !enabled)
   end
 
   def cordoned?
@@ -249,7 +249,7 @@ class Server < ApplicationRedisRecord
   end
 
   def enabled?
-    state.eql?('enabled') || state.nil? && enabled
+    state.eql?('enabled') || (state.nil? && enabled)
   end
 
   # Find a server by ID

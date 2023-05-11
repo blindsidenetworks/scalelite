@@ -46,7 +46,7 @@ class RecordingTest < ActiveSupport::TestCase
 
     rs = Recording.with_recording_id_prefixes([record_id_prefix_a, record_id_prefix_b])
     assert_equal(4, rs.length)
-    assert_equal(2, rs.select { |r| r.meeting_id == meeting_id_a }.length)
-    assert_equal(2, rs.select { |r| r.meeting_id == meeting_id_b }.length)
+    assert_equal(2, rs.count { |r| r.meeting_id == meeting_id_a })
+    assert_equal(2, rs.count { |r| r.meeting_id == meeting_id_b })
   end
 end

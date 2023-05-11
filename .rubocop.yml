@@ -1,10 +1,13 @@
 require:
   - rubocop-rails
+  - rubocop-rspec
+  - rubocop-performance
 
 AllCops:
   Exclude:
   - 'bin/**/*'
   - 'db/schema.rb'
+  - 'db/migrate/*'
   - 'vendor/**/*'
   - 'vendor/bundle/**/*'
   DisabledByDefault: false
@@ -17,6 +20,8 @@ Rails/DynamicFindBy:
   AllowedReceivers:
     - Meeting
     - Server
+    - Tenant
+    - described_class
 
 Rails/CreateTableWithTimestamps:
   Enabled: false
@@ -138,7 +143,7 @@ Metrics/ClassLength:
 
 # Limit lines to 80 characters.
 Layout/LineLength:
-  Max: 130
+  Max: 150
 
 # Avoid methods longer than 10 lines of code.
 Metrics/MethodLength:
@@ -226,3 +231,36 @@ Style/OptionalBooleanParameter:
 
 Style/SlicingWithRange:
   Enabled: true
+
+RSpec/ContextWording:
+  Enabled: false
+
+# Enable having multiple expectations per example in a spec.
+RSpec/MultipleExpectations:
+  Enabled: false
+
+# Enable having long examples
+RSpec/ExampleLength:
+  Enabled: false
+
+# Enable having arbitrary Spec path i.e. Api::V1::Controller.
+RSpec/FilePath:
+  Enabled: false
+
+RSpec/LetSetup:
+  Enabled: false
+
+RSpec/MessageSpies:
+  Enabled: false
+
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
+RSpec/NestedGroups:
+  Max: 7
+
+RSpec/AnyInstance:
+  Enabled: false
+
+RSpec/IndexedLet:
+  Enabled: false

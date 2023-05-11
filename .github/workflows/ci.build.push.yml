@@ -5,6 +5,7 @@ name: CI Build Push
 on:
   push:
     branches-ignore:
+      - 'develop'
       - 'master'
       - '**stable'
       - 'snyk**'

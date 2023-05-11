@@ -15,7 +15,7 @@ module ApiHelper
 
   # Verify checksum
   def verify_checksum
-    secrets = Rails.configuration.x.loadbalancer_secrets
+    secrets = fetch_secrets
 
     raise ChecksumError if params[:checksum].blank?
     raise ChecksumError if secrets.empty?
@@ -48,6 +48,39 @@ module ApiHelper
     raise ChecksumError
   end
 
+  def fetch_secrets
+    return Rails.configuration.x.loadbalancer_secrets unless Rails.configuration.x.multitenancy_enabled
+
+    tenant = fetch_tenant
+    if tenant.present?
+      tenant.secrets_array
+    else
+      Rails.configuration.x.loadbalancer_secrets
+    end
+  end
+
+  def fetch_tenant_name_from_url
+    base_url = Rails.configuration.x.base_url
+    tenant_name_end_position = request.host.index(base_url)
+
+    return '' if tenant_name_end_position.nil? # happens if base_url was not found in current host name
+    return '' if tenant_name_end_position.zero? # happens if stings are the same, so no subdomain
+
+    tenant_name_end_position -= 1 # to remove dot '.' a the end
+
+    request.host[0...tenant_name_end_position]
+  end
+
+  def fetch_tenant
+    return nil unless Rails.configuration.x.multitenancy_enabled
+
+    tenant_name = fetch_tenant_name_from_url
+    tenant = Tenant.find_by_name(tenant_name)
+    raise ChecksumError if tenant.blank?
+
+    tenant
+  end
+
   def get_checksum(check_string, checksum_algorithm)
     return Digest::SHA512.hexdigest(check_string) if checksum_algorithm == 'SHA512'
     return Digest::SHA256.hexdigest(check_string) if checksum_algorithm == 'SHA256'
@@ -77,7 +110,6 @@ module ApiHelper
     base_uri += '/' unless base_uri.ends_with?('/')
 
     bbb_params = add_additional_params(action, bbb_params)
-
     check_string = URI.encode_www_form(bbb_params)
     checksum = get_checksum(action + check_string + secret, checksum_algorithm)
 
@@ -92,8 +124,8 @@ module ApiHelper
       # Use values that are 1/10 the normal values, but clamp to a minimum.
       # If the original configured timeout value is below the minimum, then use that instead.
       return {
-        open_timeout: [[0.2, Rails.configuration.x.open_timeout].min, Rails.configuration.x.open_timeout / 10].max,
-        read_timeout: [[0.5, Rails.configuration.x.read_timeout].min, Rails.configuration.x.read_timeout / 10].max,
+        open_timeout: 0.2.clamp(Rails.configuration.x.read_timeout / 10, Rails.configuration.x.read_timeout),
+        read_timeout: 0.5.clamp(Rails.configuration.x.read_timeout / 10, Rails.configuration.x.read_timeout),
       }
     end
 
@@ -101,12 +133,12 @@ module ApiHelper
   end
 
   def encoded_token(payload)
-    secret = Rails.configuration.x.loadbalancer_secrets[0]
+    secret = fetch_secrets[0]
     JWT.encode(payload, secret, 'HS512', typ: 'JWT')
   end
 
   def decoded_token(token)
-    Rails.configuration.x.loadbalancer_secrets.any? do |secret|
+    fetch_secrets.any? do |secret|
       JWT.decode(token, secret, true, algorithm: 'HS512')
     rescue JWT::DecodeError
       false
@@ -155,9 +187,7 @@ module ApiHelper
       doc = Nokogiri::XML(res.body)
       returncode = doc.at_xpath('/response/returncode')
       raise InternalError, 'Response did not include returncode' if returncode.nil?
-      if returncode.content != 'SUCCESS'
-        raise BBBError.new(doc.at_xpath('/response/messageKey').content, doc.at_xpath('/response/message').content)
-      end
+      raise BBBError.new(doc.at_xpath('/response/messageKey').content, doc.at_xpath('/response/message').content) if returncode.content != 'SUCCESS'
 
       doc
     end
