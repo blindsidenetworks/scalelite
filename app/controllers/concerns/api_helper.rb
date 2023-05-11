@@ -88,7 +88,6 @@ module ApiHelper
   end
 
   def checksum_algorithm
-    # rubocop:disable Rails/EnvironmentVariableAccess
     # default to SHA256 unless explicitly specified
     return 'SHA256' if ENV['LOADBALANCER_CHECKSUM_ALGORITHM'].blank?
     # rubocop:enable Rails/EnvironmentVariableAccess
