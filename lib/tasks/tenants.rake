@@ -10,9 +10,10 @@ task tenants: :environment do |_t, _args|
   tenants = Tenant.all
 
   if tenants.present?
-    puts "TenantID, Name, Secrets"
     tenants.each do |tenant|
-      puts "#{tenant.id}, #{tenant.name}, #{tenant.secrets}"
+      puts("id: #{tenant.id}")
+      puts("\tname: #{tenant.name}")
+      puts("\tsecrets: #{tenant.secrets}")
     end
   end
 
