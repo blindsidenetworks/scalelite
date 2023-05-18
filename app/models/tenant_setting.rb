@@ -64,6 +64,8 @@ class TenantSetting < ApplicationRedisRecord
     settings
   end
 
+  # Returns all 2 separate arrays for settings that are either default or override
+  # @return {param1: defaultValue}, {param2: overrideValue}
   def self.defaults_and_overrides(tenant_id)
     default = {}
     override = {}
