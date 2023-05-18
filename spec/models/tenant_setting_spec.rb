@@ -28,8 +28,8 @@ RSpec.describe TenantSetting, redis: true do
 
     it 'returns empty hashes if the tenant is nil' do
       default, override = described_class.defaults_and_overrides(nil)
-      expect(default).to be_nil
-      expect(override).to be_nil
+      expect(default).to eq({})
+      expect(override).to eq({})
     end
   end
 end
