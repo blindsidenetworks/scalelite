@@ -5,6 +5,29 @@ require 'rails_helper'
 RSpec.describe TenantSetting, redis: true do
   let(:tenant) { create(:tenant) }
 
+  describe '.find' do
+    context 'with non-existent id' do
+      it 'raises error' do
+        expect {
+          described_class.find('non-existent-id')
+        }.to raise_error(ApplicationRedisRecord::RecordNotFound)
+      end
+    end
+
+    context 'with correct id' do
+      let(:setting) { create(:tenant_setting, tenant_id: create(:tenant).id) }
+
+      it 'has proper settings' do
+        set = described_class.find(setting.id)
+        expect(set.id).to eq setting.id
+        expect(set.param).to eq setting.param
+        expect(set.value).to eq setting.value
+        expect(set.override).to eq setting.override
+        expect(set.tenant_id).to eq setting.tenant_id
+      end
+    end
+  end
+
   describe '.all' do
     let!(:settings) { create_list(:tenant_setting, 5, tenant_id: tenant.id) }
 

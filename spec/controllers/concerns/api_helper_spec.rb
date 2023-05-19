@@ -20,6 +20,10 @@ RSpec.describe ApiHelper, type: :helper do
 
   let(:request) { controller.request }
 
+  before do
+    Rails.configuration.x.multitenancy_enabled = false
+  end
+
   describe 'checksum length' do
     context 'with correct length' do
       context 'with sha1' do

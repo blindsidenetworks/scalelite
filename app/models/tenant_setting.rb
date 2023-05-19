@@ -26,7 +26,7 @@ class TenantSetting < ApplicationRedisRecord
       self.id = SecureRandom.uuid if id.nil?
 
       redis.watch('tenant_settings') do
-        exists = redis.sismember('tenant_settings', id)
+        exists = redis.sismember("tenant_settings:#{tenant_id}", id)
         raise RecordNotSaved.new("TenantSetting already exists with id '#{id}'", self) if id_changed? && exists
         raise RecordNotSaved.new("TenantSetting with id '#{id}' is deleted", self) if !id_changed? && !exists
 
@@ -34,6 +34,7 @@ class TenantSetting < ApplicationRedisRecord
           pipeline.hset(key, 'param', param) if param_changed?
           pipeline.hset(key, 'value', value) if value_changed?
           pipeline.hset(key, 'override', override) if override_changed?
+          pipeline.hset(key, 'tenant_id', tenant_id) if tenant_id_changed?
 
           pipeline.sadd?("tenant_settings:#{tenant_id}", id) if id_changed?
         end
@@ -42,6 +43,22 @@ class TenantSetting < ApplicationRedisRecord
 
     # Superclass bookkeeping
     super
+  end
+
+  # Look up a TenentSetting by ID
+  # @param [String] id the TenentSetting {id}.
+  # @return [TenantSetting]
+  # @raise [RecordNotFound] no TenentSetting with the provided ID exists.
+  def self.find(id)
+    with_connection do |redis|
+      hash = redis.hgetall(key(id))
+
+      raise RecordNotFound.new("Couldn't find TenantSetting with id=#{id}", name, id) if hash.blank?
+
+      hash[:id] = id
+
+      new.init_with_attributes(hash)
+    end
   end
 
   # Returns all tenant settings for a given tenant
@@ -62,6 +79,23 @@ class TenantSetting < ApplicationRedisRecord
       end
     end
     settings
+  end
+
+  # Remove the TenantSetting from the data store
+  # @raise [RecordNotDestroyed] when the object contains data that has not been saved.
+  def destroy!
+    raise RecordNotDestroyed.new('Object is not persisted', self) unless persisted?
+    raise RecordNotDestroyed.new('Object has uncommitted changes', self) if changed?
+
+    with_connection do |redis|
+      redis.multi do |transaction|
+        transaction.del(key)
+        transaction.srem("tenant_settings:#{tenant_id}", id)
+      end
+    end
+
+    # Superclass bookkeeping
+    super
   end
 
   # Returns all 2 separate arrays for settings that are either default or override

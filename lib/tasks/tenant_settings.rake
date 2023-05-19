@@ -46,4 +46,22 @@ namespace :tenantSettings do
     puts('OK')
     puts("New TenantSetting id: #{setting.id}")
   end
+
+  desc 'Remove existing TenantSetting'
+  task :remove, [:id] => :environment do |_t, args|
+    check_multitenancy
+    id = args[:id]
+
+    setting = TenantSetting.find(id)
+    if setting.blank?
+      puts("TenantSetting with id #{id} does not exist in the system. Exiting...")
+      exit(1)
+    end
+
+    if setting.destroy!
+      puts("TenantSetting was successfully deleted.")
+    else
+      puts("Error! TenantSetting has not been deleted")
+    end
+  end
 end
