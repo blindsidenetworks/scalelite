@@ -187,7 +187,12 @@ module ApiHelper
   def add_additional_params(action, bbb_params)
     bbb_params = bbb_params.symbolize_keys
     final_params = bbb_params
-    default, override = TenantSetting.defaults_and_overrides(@tenant&.id)
+
+    default, override = if %w[create join].include? action
+      TenantSetting.defaults_and_overrides(@tenant&.id)
+    else
+      [{}, {}]
+    end
 
     final_params = default&.merge(final_params)
 
