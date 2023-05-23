@@ -43,8 +43,8 @@ namespace :recordings do
     end
   end
 
-  desc 'Associate a tenant with all recordings'
-  task :import, [:tenant_id] => :environment do |_t, args|
+  desc 'Associate any existing recordings with a tenant'
+  task :addToTenant, [:tenant_id] => :environment do |_t, args|
     tenant_id = args[:tenant_id]
     unless tenant_id
       puts('No tenant ID was provided')
