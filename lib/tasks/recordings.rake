@@ -52,12 +52,14 @@ namespace :recordings do
     end
 
     Recording.all.each do |rec|
-      next if rec.metadata.exists?(key: tenant_id)
+      next if rec.metadata.exists?(key: 'tenant-id')
       begin
         Metadatum.create!(recording_id: rec.id, key: 'tenant-id', value: tenant_id)
       rescue ActiveRecord::RecordInvalid => e
         puts("Error creating metadatum record for recording with id #{rec.id}: #{e}")
       end
     end
+
+    puts("All existing recordings have been successfully linked to tenant #{tenant_id}")
   end
 end
