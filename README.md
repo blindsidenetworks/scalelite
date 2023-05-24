@@ -231,6 +231,10 @@ id: 4f3e4bb8-2a4e-41a6-9af8-0678c651777f
         name: tenant2
         secrets: secret2:secret2a:secret2b
 ```
+#### Associate Old Recordings with a Tenant 
+`./bin/rake recordings:addToTenant[tenant-id]`
+
+If you are switching over from single-tenancy to multitenancy, the existing recordings will have to be transferred to the new tenant. The above task updates the recordings' metadata with the tenant id.
 
 ### Customizing Strings
 
