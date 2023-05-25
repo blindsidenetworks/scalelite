@@ -186,20 +186,31 @@ module ApiHelper
 
   def add_additional_params(action, bbb_params)
     bbb_params = bbb_params.symbolize_keys
+    final_params = bbb_params
+
+    default, override = if %w[create join].include? action
+      TenantSetting.defaults_and_overrides(@tenant&.id)
+    else
+      [{}, {}]
+    end
+
+    final_params = default&.merge(final_params)
 
     case action
     when 'create'
       # Merge with the default (bbb_params takes precedence)
-      final_params = Rails.configuration.x.default_create_params.merge(bbb_params)
+      final_params = Rails.configuration.x.default_create_params.merge(final_params)
       # Merge with the override (override takes precedence)
-      final_params.merge(Rails.configuration.x.override_create_params)
+      final_params.merge!(Rails.configuration.x.override_create_params)
     when 'join'
       # Merge with the default (bbb_params takes precedence)
-      final_params = Rails.configuration.x.default_join_params.merge(bbb_params)
+      final_params = Rails.configuration.x.default_join_params.merge(final_params)
       # Merge with the override (override takes precedence)
-      final_params.merge(Rails.configuration.x.override_join_params)
-   else
-     bbb_params
-   end
+      final_params.merge!(Rails.configuration.x.override_join_params)
+    end
+
+    final_params&.merge!(override)
+
+    final_params
   end
 end

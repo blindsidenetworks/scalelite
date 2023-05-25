@@ -844,6 +844,84 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         expect(stub_create).to have_been_requested
         expect(response_xml.at_xpath("/response/returncode").text).to eq("SUCCESS")
       end
+
+      context 'tenant settings' do
+        context 'default' do
+          let!(:default_setting) { create(:tenant_setting, param: "paramx", value: "paramxvalue", override: "false", tenant_id: tenant.id) }
+
+          it "correctly sets the param as a default" do
+            params = {
+              meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password"
+            }
+            expected_params = {
+              paramx: 'paramxvalue', meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password", 'meta_tenant-id': tenant.id
+            }
+
+            stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, expected_params))
+                          .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                                        <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+            get bigbluebutton_api_create_url, params: params
+
+            expect(stub_create).to have_been_requested
+          end
+
+          it "gets overridden by the requester if the value is passed in" do
+            params = {
+              paramx: 'paramxnewvalue', meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password"
+            }
+            expected_params = {
+              paramx: 'paramxnewvalue', meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password", 'meta_tenant-id': tenant.id
+            }
+
+            stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, expected_params))
+                          .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                                        <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+            get bigbluebutton_api_create_url, params: params
+
+            expect(stub_create).to have_been_requested
+          end
+        end
+
+        context 'override' do
+          let!(:default_setting) { create(:tenant_setting, param: "paramx", value: "paramxvalue", override: "true", tenant_id: tenant.id) }
+
+          it "correctly sets the param if not already set" do
+            params = {
+              meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password"
+            }
+            expected_params = {
+              meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password", 'meta_tenant-id': tenant.id, paramx: 'paramxvalue'
+            }
+
+            stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, expected_params))
+                          .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                                        <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+            get bigbluebutton_api_create_url, params: params
+
+            expect(stub_create).to have_been_requested
+          end
+
+          it "overrides the value passed by the requester" do
+            params = {
+              paramx: 'paramxnewvalue', meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password"
+            }
+            expected_params = {
+              paramx: 'paramxvalue', meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password", 'meta_tenant-id': tenant.id
+            }
+
+            stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, expected_params))
+                          .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                                        <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+            get bigbluebutton_api_create_url, params: params
+
+            expect(stub_create).to have_been_requested
+          end
+        end
+      end
     end
   end
 
@@ -1200,6 +1278,78 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
         expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
         expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
+      end
+
+      context 'tenant settings' do
+        let(:meeting) { create(:meeting, server: server, tenant: tenant) }
+
+        context 'default' do
+          let!(:default_setting) { create(:tenant_setting, param: "paramx", value: "paramxvalue", override: "false", tenant_id: tenant.id) }
+
+          it "correctly sets the param as a default" do
+            params = {
+              meetingID: meeting.id, moderatorPW: 'mp', fullName: 'test-name'
+            }
+            expected_params = {
+              paramx: 'paramxvalue', meetingID: meeting.id, moderatorPW: 'mp', fullName: 'test-name'
+            }
+
+            get bigbluebutton_api_join_url, params: params
+
+            redirect_url = URI(response.headers['Location'])
+            redirect_params = URI.decode_www_form(redirect_url.query)
+            expect(redirect_params.assoc('paramx').last).to eq(expected_params[:paramx])
+          end
+
+          it "gets overridden by the requester if the value is passed in" do
+            params = {
+              paramx: 'paramxnewvalue', meetingID: meeting.id, moderatorPW: 'mp', fullName: 'test-name'
+            }
+            expected_params = {
+              paramx: 'paramxnewvalue', meetingID: meeting.id, moderatorPW: 'mp', fullName: 'test-name'
+            }
+
+            get bigbluebutton_api_join_url, params: params
+
+            redirect_url = URI(response.headers['Location'])
+            redirect_params = URI.decode_www_form(redirect_url.query)
+            expect(redirect_params.assoc('paramx').last).to eq(expected_params[:paramx])
+          end
+        end
+
+        context 'override' do
+          let!(:default_setting) { create(:tenant_setting, param: "paramx", value: "paramxvalue", override: "true", tenant_id: tenant.id) }
+
+          it "correctly sets the param if not already set" do
+            params = {
+              meetingID: meeting.id, moderatorPW: 'mp', fullName: 'test-name'
+            }
+            expected_params = {
+              paramx: 'paramxvalue', meetingID: meeting.id, moderatorPW: 'mp', fullName: 'test-name'
+            }
+
+            get bigbluebutton_api_join_url, params: params
+
+            redirect_url = URI(response.headers['Location'])
+            redirect_params = URI.decode_www_form(redirect_url.query)
+            expect(redirect_params.assoc('paramx').last).to eq(expected_params[:paramx])
+          end
+
+          it "overrides the value passed by the requester" do
+            params = {
+              paramx: 'paramxnewvalue', meetingID: meeting.id, moderatorPW: 'mp', fullName: 'test-name'
+            }
+            expected_params = {
+              paramx: 'paramxvalue', meetingID: meeting.id, moderatorPW: 'mp', fullName: 'test-name'
+            }
+
+            get bigbluebutton_api_join_url, params: params
+
+            redirect_url = URI(response.headers['Location'])
+            redirect_params = URI.decode_www_form(redirect_url.query)
+            expect(redirect_params.assoc('paramx').last).to eq(expected_params[:paramx])
+          end
+        end
       end
     end
   end
