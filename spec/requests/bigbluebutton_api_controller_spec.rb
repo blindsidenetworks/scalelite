@@ -846,8 +846,6 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       context 'tenant settings' do
-        let(:server) { create(:server) }
-
         context 'default' do
           let!(:default_setting) { create(:tenant_setting, param: "paramx", value: "paramxvalue", override: "false", tenant_id: tenant.id) }
 
@@ -1283,7 +1281,6 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       end
 
       context 'tenant settings' do
-        let(:server) { create(:server) }
         let(:meeting) { create(:meeting, server: server, tenant: tenant) }
 
         context 'default' do
