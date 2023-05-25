@@ -4,7 +4,7 @@
 
 Scalelite is an open source load balancer that manages a pool of BigBlueButton servers.  It makes the pool of servers appear as a single (very scalable) BigBlueButton server.  A front-end, such as [Moodle](https://moodle.org/plugins/mod_bigbluebuttonbn) or [Greenlight](https://github.com/bigbluebutton/greenlight), sends standard BigBlueButton API requests to the Scalelite server which, in turn, distributes those request to the least loaded BigBlueButton server in the pool.
 
-A single BigBlueButton server that meets the [minimum configuration](http://docs.bigbluebutton.org/2.2/install.html#minimum-server-requirements) supports around 200 concurrent users.
+A single BigBlueButton server that meets the [minimum configuration](https://docs.bigbluebutton.org/administration/install#minimum-server-requirements) supports around 200 concurrent users.
 
 For many schools and organizations, the ability to 4 simultaneous classes of 50 users, or 8 simultaneous meetings of 25 users, is enough capacity.  However, what if a school wants to support 1,500 users across 50 simultaneous classes?  A single BigBlueButton server cannot handle such a load.
 
@@ -50,7 +50,7 @@ For the Scalelite Server, the minimum recommended server requirements are:
 - 4 CPU Cores
 - 8 GB Memory
 
-For **each** BigBlueButton server, the minimum requirements can be found [here](http://docs.bigbluebutton.org/2.2/install.html#minimum-server-requirements).
+For **each** BigBlueButton server, the minimum requirements can be found [here](https://docs.bigbluebutton.org/administration/install#minimum-server-requirements).
 
 For the external Postgres Database, the minimum recommended server requirements are:
 - 2 CPU Cores
@@ -231,6 +231,10 @@ id: 4f3e4bb8-2a4e-41a6-9af8-0678c651777f
         name: tenant2
         secrets: secret2:secret2a:secret2b
 ```
+#### Associate Old Recordings with a Tenant 
+`./bin/rake recordings:addToTenant[tenant-id]`
+
+If you are switching over from single-tenancy to multitenancy, the existing recordings will have to be transferred to the new tenant. The above task updates the recordings' metadata with the tenant id.
 
 ### Tenant Settings
 

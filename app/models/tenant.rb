@@ -28,9 +28,10 @@ class Tenant < ApplicationRedisRecord
 
         id_key = key
         names_key = name_key
+        old_names_key = self.class.name_key(name_was)
         redis.multi do |pipeline|
-          pipeline.hset(names_key, 'id', id) if id_changed? # Create tenant id -> name index
-
+          pipeline.hset(names_key, 'id', id) if id_changed? || name_changed? # Create tenant id -> name index
+          pipeline.del(old_names_key) if !id_changed? && name_changed? # Delete the old name key if it's not a new record and the name was updated
           pipeline.hset(id_key, 'name', name) if name_changed?
           pipeline.hset(id_key, 'secrets', secrets) if secrets_changed?
           pipeline.sadd?('tenants', id) if id_changed?

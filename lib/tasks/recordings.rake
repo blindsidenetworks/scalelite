@@ -42,4 +42,24 @@ namespace :recordings do
       end
     end
   end
+
+  desc 'Associate any existing recordings with a tenant'
+  task :addToTenant, [:tenant_id] => :environment do |_t, args|
+    tenant_id = args[:tenant_id]
+    unless tenant_id
+      puts('No tenant ID was provided')
+      exit(1)
+    end
+
+    Recording.all.each do |rec|
+      next if rec.metadata.exists?(key: 'tenant-id')
+      begin
+        Metadatum.create!(recording_id: rec.id, key: 'tenant-id', value: tenant_id)
+      rescue ActiveRecord::RecordInvalid => e
+        puts("Error creating metadatum record for recording with id #{rec.id}: #{e}")
+      end
+    end
+
+    puts("All existing recordings have been successfully linked to tenant #{tenant_id}")
+  end
 end
