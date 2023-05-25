@@ -7,12 +7,13 @@ task status: :environment do
   include ApiHelper
 
   servers_info = []
+  ServerInfo = Struct.new(:hostname, :state, :status, :meetings, :users, :largest, :videos, :load)
+
   Server.all.each do |server|
     state = server.state
     enabled = server.enabled
     state = server.state.present? ? status_with_state(state) : status_without_state(enabled)
 
-    ServerInfo = Struct.new(:hostname, :state, :status, :meetings, :users, :largest, :videos, :load)
     info = ServerInfo.new(URI.parse(server.url).host, state, server.online ? 'online' : 'offline', server.meetings, server.users,
 server.largest_meeting, server.videos, server.load)
 
