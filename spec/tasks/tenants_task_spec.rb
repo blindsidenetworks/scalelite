@@ -44,6 +44,23 @@ RSpec.describe 'tenants tasks', type: :task do
     end
   end
 
+  describe ':update' do
+    let(:task) { Rake::Task['tenants:update'] }
+    let(:tenant) { create(:tenant) }
+
+    it 'updates an existing tenant' do
+      tenant_name = 'new_tenant_name'
+      tenant_secrets = 'new_tenant_secrets'
+
+      task.invoke(tenant.id, tenant_name, tenant_secrets)
+
+      reload_tenant = Tenant.find(tenant.id)
+
+      expect(reload_tenant.name).to eq(tenant_name)
+      expect(reload_tenant.secrets).to eq(tenant_secrets)
+    end
+  end
+
   describe ':remove' do
     let(:task) { Rake::Task['tenants:remove'] }
 
