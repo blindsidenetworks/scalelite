@@ -1354,6 +1354,42 @@ RSpec.describe BigBlueButtonApiController, redis: true do
     end
   end
 
+  describe '#insert_document' do
+    it "responds with MissingMeetingIDError if meeting ID is not passed" do
+      post bigbluebutton_api_insertDocument_url
+
+      response_xml = Nokogiri.XML(response.body)
+      expected_error = BBBErrors::MissingMeetingIDError.new
+      expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+      expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
+      expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
+    end
+
+    it "responds with MeetingNotFoundError if meeting is not found in database for join" do
+      post bigbluebutton_api_insertDocument_url, params: { meetingID: "test-meeting-1" }
+
+      response_xml = Nokogiri.XML(response.body)
+      expected_error = BBBErrors::MeetingNotFoundError.new
+      expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+      expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
+      expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
+    end
+
+    it 'forwards the request to the BigBlueButton server' do
+      server = create(:server)
+      meeting = create(:meeting, server: server)
+
+      stub_insert = stub_request(:post, encode_bbb_uri("insertDocument", server.url, server.secret, { meetingID: meeting.id }))
+                    .to_return(body: "<response><returncode>SUCCESS</returncode><message>Presentation is being uploaded</message></response>")
+
+      post bigbluebutton_api_insertDocument_url, params: { meetingID: meeting.id }
+
+      response_xml = Nokogiri.XML(response.body)
+      expect(stub_insert).to have_been_requested
+      expect(response_xml.at_xpath("/response/returncode").text).to eq("SUCCESS")
+    end
+  end
+
   describe '#get_recordings' do
     context 'GET request' do
       context 'verify checksum' do

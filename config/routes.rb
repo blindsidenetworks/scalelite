@@ -16,6 +16,7 @@ Rails.application.routes.draw do
     match 'end', to: 'bigbluebutton_api#end', via: [:get, :post]
     match 'join', to: 'bigbluebutton_api#join', via: [:get, :post]
     post 'analytics_callback', to: 'bigbluebutton_api#analytics_callback', as: :analytics_callback
+    post 'insertDocument', to: 'bigbluebutton_api#insert_document'
     if Rails.configuration.x.recording_disabled
       match('getRecordings', to: 'bigbluebutton_api#get_recordings_disabled', as: :get_recordings, via: [:get, :post])
       match('publishRecordings', to: 'bigbluebutton_api#recordings_disabled', as: :publish_recordings, via: [:get, :post])

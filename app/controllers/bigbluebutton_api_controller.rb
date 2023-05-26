@@ -295,6 +295,37 @@ class BigBlueButtonApiController < ApplicationController
     redirect_to(uri.to_s)
   end
 
+  def insert_document
+    params.require(:meetingID)
+
+    begin
+      meeting = Meeting.find(params[:meetingID], @tenant&.id)
+    rescue ApplicationRedisRecord::RecordNotFound # Respond with MeetingNotFoundError if the meeting could not be found
+      logger.info("The requested meeting #{params[:meetingID]} does not exist")
+      raise MeetingNotFoundError
+    end
+
+    server = meeting.server
+    begin
+      # Send a POST request to the server
+      response = get_post_req(
+        encode_bbb_uri('insertDocument', server.url, server.secret, meetingID: params[:meetingID]),
+        request.body.read,
+        **bbb_req_timeout(server)
+      )
+    rescue BBBError
+      # Reraise the error to return error xml to caller
+      raise
+    rescue StandardError => e
+      logger.warn("Error #{e} inserting document into meeting #{params[:meetingID]} on server #{server.id}.")
+      logger.debug { e.full_message }
+      raise InternalError, 'Unable to insert document on server.'
+    end
+
+    # Render response from the server
+    render(xml: response)
+  end
+
   def get_recordings
     if Rails.configuration.x.get_recordings_api_filtered && (params[:recordID].blank? && params[:meetingID].blank?)
       raise BBBError.new('missingParameters', 'param meetingID or recordID must be included.')
