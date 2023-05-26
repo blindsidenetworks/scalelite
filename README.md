@@ -213,6 +213,13 @@ If you need to add multiple secrets for a tenant, you can provide a colon-separa
 
 When you run this command, Scalelite will print out the ID of the newly created tenant, followed by `OK` if the operation was successful.
 
+#### Update Tenant
+`./bin/rake tenants:update[id,name,secrets]`
+
+You can update an existing tenants name or secrets using this rake command.
+
+When you run this command, Scalelite will print out the ID of the updated tenant, followed by `OK` if the operation was successful.
+
 #### Remove Tenant
 `./bin/rake tenants:remove[id]`
 
