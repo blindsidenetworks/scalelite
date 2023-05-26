@@ -30,6 +30,12 @@ Rails.application.routes.draw do
     end
   end
 
+  namespace :api do
+    namespace :v1 do
+      resources :tenants, only: [:index, :show, :create, :update, :destroy]
+    end
+  end
+
   get('health_check', to: 'health_check#index')
 
   unless Rails.configuration.x.recording_disabled

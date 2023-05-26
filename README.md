@@ -4,7 +4,7 @@
 
 Scalelite is an open source load balancer that manages a pool of BigBlueButton servers.  It makes the pool of servers appear as a single (very scalable) BigBlueButton server.  A front-end, such as [Moodle](https://moodle.org/plugins/mod_bigbluebuttonbn) or [Greenlight](https://github.com/bigbluebutton/greenlight), sends standard BigBlueButton API requests to the Scalelite server which, in turn, distributes those request to the least loaded BigBlueButton server in the pool.
 
-A single BigBlueButton server that meets the [minimum configuration](http://docs.bigbluebutton.org/2.2/install.html#minimum-server-requirements) supports around 200 concurrent users.
+A single BigBlueButton server that meets the [minimum configuration](https://docs.bigbluebutton.org/administration/install#minimum-server-requirements) supports around 200 concurrent users.
 
 For many schools and organizations, the ability to 4 simultaneous classes of 50 users, or 8 simultaneous meetings of 25 users, is enough capacity.  However, what if a school wants to support 1,500 users across 50 simultaneous classes?  A single BigBlueButton server cannot handle such a load.
 
@@ -50,7 +50,7 @@ For the Scalelite Server, the minimum recommended server requirements are:
 - 4 CPU Cores
 - 8 GB Memory
 
-For **each** BigBlueButton server, the minimum requirements can be found [here](http://docs.bigbluebutton.org/2.2/install.html#minimum-server-requirements).
+For **each** BigBlueButton server, the minimum requirements can be found [here](https://docs.bigbluebutton.org/administration/install#minimum-server-requirements).
 
 For the external Postgres Database, the minimum recommended server requirements are:
 - 2 CPU Cores
@@ -235,6 +235,48 @@ id: 4f3e4bb8-2a4e-41a6-9af8-0678c651777f
 `./bin/rake recordings:addToTenant[tenant-id]`
 
 If you are switching over from single-tenancy to multitenancy, the existing recordings will have to be transferred to the new tenant. The above task updates the recordings' metadata with the tenant id.
+
+### Tenant Settings
+
+If you have enabled multitenancy for your Scalelite deployment, you gain the ability to customize the parameters passed into the `create` and `join` calls on a per-tenant basis. This functionality empowers you to tailor the user experience according to the specific needs and preferences of each tenant.
+
+By customizing these parameters for each tenant, you can modify various aspects of the meeting experience, such as recording settings, welcome messages, and lock settings, among others. This level of customization ensures that each tenant receives a unique and tailored experience within the Scalelite platform.
+
+#### Add Tenant Setting
+`./bin/rake tenantSettings:add[tenant_id,param,value,override]`
+
+To add a new TenantSetting, Scalelite requires 4 values:
+1. `tenant_id`: This is the unique identifier of the tenant to which you want to add the setting.
+2. `param`: Specify the name of the parameter you wish to set. For example, you can use values like record, welcome, or lockSettingsLockOnJoin. To view a comprehensive list of available options, refer to the [create](https://docs.bigbluebutton.org/development/api#create) and [join](https://docs.bigbluebutton.org/development/api#join) documentation.
+3. `value` -> Assign the desired value to the parameter you specified. It can be a boolean value like 'true' or 'false', a numeric value like '5' or a string like 'Welcome to BigBlueButton'.
+4. `override` -> This field should be set to either 'true' or 'false'. If set to 'true', the provided value will override any value passed by the person making the create/join call. If set to 'false', the value will only be applied if the user making the create/join call does not provide any value for the specified parameter.
+
+When you run this command, Scalelite will print out the ID of the newly created setting, followed by `OK` if the operation was successful.
+
+#### Remove Tenant Setting
+`./bin/rake tenantSettings:remove[id]`
+
+#### Show Tenant Settings
+`./bin/rake tenantSettings`
+
+When you run this command, Scalelite will return a list of all settings for all tenants. For example:
+
+```
+Tenant: tenant1
+  id: 18dcd4eb-769b-4c59-a441-5a9f7c0bf209
+        param: param1
+        value: value1
+        override: true
+Tenant: tenant2
+  id: 9867dd51-9065-4486-9216-afb238a04748
+        param: param2
+        value: value2
+        override: false
+  id: ac7d7443-3515-4b02-bdcf-6f6452a3e00a
+        param: param3
+        value: value3
+        override: true
+```
 
 ### Customizing Strings
 
