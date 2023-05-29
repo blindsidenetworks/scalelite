@@ -42,14 +42,13 @@ module Api
       # GET /api/v1/tenants/:id
       #
       # Successful response:
-      # [
-      #   {
-      #     "id": String,
-      #     "name": String,
-      #     "secrets": String,
-      #   },
-      #   ...
-      # ]
+      #  {
+      #    "id": String,
+      #    "name": String,
+      #    "secrets": String,
+      #    "new_record": Boolean,
+      #    "destroyed": Boolean
+      #  }
       def show
         render json: @tenant, status: :ok
       end
@@ -59,10 +58,8 @@ module Api
       #
       # Expected params:
       # {
-      #   "tenant": {
-      #     "name": String,                 # Required: Name of the tenant
-      #     "secrets": String,              # Required: Tenant secret(s)
-      #   }
+      #   "name": String,                 # Required: Name of the tenant
+      #   "secrets": String,              # Required: Tenant secret(s)
       # }
       def create
         if tenant_params[:name].blank? || tenant_params[:secrets].blank?
@@ -78,10 +75,8 @@ module Api
       #
       # Expected params:
       # {
-      #   "tenant": {
-      #     "name": String,     # include the parameter you want updated
-      #     "secrets": String
-      #   }
+      #   "name": String,     # include the parameter you want updated
+      #   "secrets": String
       # }
       def update
         @tenant.name = tenant_params[:name] if tenant_params[:name].present?
@@ -93,7 +88,7 @@ module Api
       end
 
       # Delete tenant
-      # DELETE /api/v1/servers/:id
+      # DELETE /api/v1/tenants/:id
       #
       # Successful response:
       # { "id" : String }

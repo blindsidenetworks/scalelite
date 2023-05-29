@@ -196,6 +196,9 @@ docker exec -it scalelite-api /bin/bash
 ./bin/rake tenants:add[tenant2,secret2:secret2a:secret2b]
 ./bin/rake tenants #confirm tenants
 ```  
+
+You can also add tenants using the tenants API (See '[Tenant Management with API # Add Tenant](#tenant-management-with-api)').
+
 Once you have created multiple tenants in Scalelite, you will need to update the endpoint and secret for each tenant in any BigBlueButton front-end that you are using (such as Greenlight or Moodle).
 
 To do this, you will need to set the following environment variables / configuration variables in your BigBlueButton front-end:
@@ -205,27 +208,42 @@ To do this, you will need to set the following environment variables / configura
 2.  `BIGBLUEBUTTON_SECRET: secret1` - Replace `secret1` with the secret for the specific tenant.
 
 Note that you will need to set these environment variables for each tenant in your BigBlueButton front-end. This ensures that each tenant's meetings and recordings are directed to their specific Scalelite deployment.
+#### Tenant Management with Rake Tasks
 
-#### Add Tenant
+<details>
+ <summary> Add Tenant </summary>
+
 `./bin/rake tenants:add[id,secrets]`
 
 If you need to add multiple secrets for a tenant, you can provide a colon-separated (`:`) list of secrets when creating the tenant in Scalelite.
 
 When you run this command, Scalelite will print out the ID of the newly created tenant, followed by `OK` if the operation was successful.
 
-#### Update Tenant
+</details>
+
+<details>
+ <summary> Update Tenant </summary>
+
 `./bin/rake tenants:update[id,name,secrets]`
 
 You can update an existing tenants name or secrets using this rake command.
 
 When you run this command, Scalelite will print out the ID of the updated tenant, followed by `OK` if the operation was successful.
 
-#### Remove Tenant
+</details>
+
+<details>
+ <summary> Remove Tenant </summary>
+
 `./bin/rake tenants:remove[id]`
 
 Warning: Removing a tenant with data still in the database may cause some inconsistencies.
 
-#### Show Tenants
+</details>
+
+<details>
+ <summary> Show Tenants </summary>
+
 `./bin/rake tenants`
 
 When you run this command, Scalelite will return a list of all tenants, along with their IDs, names, and secrets. For example:
@@ -238,18 +256,26 @@ id: 4f3e4bb8-2a4e-41a6-9af8-0678c651777f
         name: tenant2
         secrets: secret2:secret2a:secret2b
 ```
-#### Associate Old Recordings with a Tenant 
+
+</details>
+
+<details>
+ <summary> Associate Old Recordings with a Tenant  </summary>
+
 `./bin/rake recordings:addToTenant[tenant-id]`
 
 If you are switching over from single-tenancy to multitenancy, the existing recordings will have to be transferred to the new tenant. The above task updates the recordings' metadata with the tenant id.
 
-### Tenant Settings
+</details>
 
+#### Tenant Settings 
 If you have enabled multitenancy for your Scalelite deployment, you gain the ability to customize the parameters passed into the `create` and `join` calls on a per-tenant basis. This functionality empowers you to tailor the user experience according to the specific needs and preferences of each tenant.
 
 By customizing these parameters for each tenant, you can modify various aspects of the meeting experience, such as recording settings, welcome messages, and lock settings, among others. This level of customization ensures that each tenant receives a unique and tailored experience within the Scalelite platform.
 
-#### Add Tenant Setting
+<details>
+ <summary> Add Tenant Setting  </summary>
+
 `./bin/rake tenantSettings:add[tenant_id,param,value,override]`
 
 To add a new TenantSetting, Scalelite requires 4 values:
@@ -260,10 +286,18 @@ To add a new TenantSetting, Scalelite requires 4 values:
 
 When you run this command, Scalelite will print out the ID of the newly created setting, followed by `OK` if the operation was successful.
 
-#### Remove Tenant Setting
+</details>
+
+<details>
+ <summary> Remove Tenant Setting  </summary>
+
 `./bin/rake tenantSettings:remove[id]`
 
-#### Show Tenant Settings
+</details>
+
+<details>
+ <summary> Show Tenant Settings  </summary>
+
 `./bin/rake tenantSettings`
 
 When you run this command, Scalelite will return a list of all settings for all tenants. For example:
@@ -284,6 +318,146 @@ Tenant: tenant2
         value: value3
         override: true
 ```
+</details>
+
+#### Tenant Management with API
+
+<details>
+ <summary> Add Tenant </summary>
+
+`POST /api/v1/tenants`
+
+##### Expected Parameters
+
+```
+{
+  "name": String,                 # Required: Name of the tenant
+  "secrets": String,              # Required: Tenant secret(s)
+}
+```
+##### Responses
+
+| http status   | response                                                            |
+|---------------|---------------------------------------------------------------------|
+| `created`     | `{"id":"<id of created tenant>"}`                     |
+| `bad request` | `{"message": 'Error: both name and secrets are required to create a Tenant'}`  |
+
+##### Example cURL
+
+```javascript
+curl --header "Content-Type: application/json" --request POST --data '{"name": "example-tenant", "secrets":"example-secret" }' http://localhost:4000/api/v1/tenants -v
+```
+
+If you need to add multiple secrets for a tenant, you can provide a colon-separated (`:`) list of secrets when creating the tenant in Scalelite.
+</details>
+
+<details>
+ <summary> Update Tenant </summary>
+
+`PUT api/v1/tenants/:id?name=xxx || PUT api/v1/tenants/:id?secrets=xxx`
+
+##### Expected Parameters
+
+```
+{
+ "name": String,     # include the parameter you want updated
+ "secrets": String
+}
+```
+
+##### Responses
+
+| http status             |  response                                                           |
+|-------------------------|---------------------------------------------------------------------|
+| `ok`                    |  `{"id": String,"name": String,"secrets": String,"destroyed": Boolean,"new_record": Boolean}` |
+| `unprocessable entity`  | `Redis RecordNotSaved error message`  |
+
+##### Example cURL
+
+```javascript
+curl --header "Content-Type: application/json" --request PATCH --data '{"secrets":"new-secret" }' http://localhost:4000/api/v1/tenants/<tenant-id> -v
+```
+
+</details>
+
+<details>
+ <summary>Remove Tenant</summary>
+
+`DELETE /api/v1/tenants/:id`
+##### Expected Parameters
+n/a
+##### Responses
+
+| http status             |  response                                                           |
+|-------------------------|---------------------------------------------------------------------|
+| `ok`                    |  `{ "id" : String }` |
+| `unprocessable entity`  | `Redis RecordNotDestroyed error message`  |
+
+##### Example cURL
+
+```javascript
+curl --header "Content-Type: application/json" --request DELETE http://localhost:4000/api/v1/tenants/a783d62f-e457-4842-b23b-28a34d3a219e -v
+```
+
+Warning: Removing a tenant with data still in the database may cause some inconsistencies.
+
+</details>
+
+<details>
+ <summary>Show Tenants</summary>
+
+`GET /api/v1/tenants`
+
+Returns a list of all tenants
+##### Expected Parameters
+
+n/a
+##### Successful Response
+
+```
+[
+  {
+    "id": String,
+    "name": String,
+    "secrets": String,
+  },
+  ...
+]
+```
+
+##### Example cURL
+
+```javascript
+  curl --request GET http://localhost:4000/api/v1/tenants
+```
+</details>
+
+<details>
+ <summary>Find Tenant</summary>
+
+`GET /api/v1/tenants/:id`
+
+Returns the data associated with a single tenant
+
+##### Expected Parameters
+n/a
+##### Successful Response
+```
+{
+  "id": String,
+  "name": String,
+  "secrets": String,
+  "destroyed": Boolean,
+  "new_record": Boolean
+}
+```
+
+##### Example cURL
+
+ ```javascript
+ curl --request GET http://localhost:4000/api/v1/tenants/<id>
+ ```
+</details>
 
 ### Customizing Strings
 
