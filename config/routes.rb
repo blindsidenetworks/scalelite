@@ -30,16 +30,14 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :servers, only: [:index, :create, :update, :destroy] do
-    member do
-      post 'panic'
-    end
-  end
-
   namespace :api do
-    namespace :v1 do
-      resources :tenants, only: [:index, :show, :create, :update, :destroy]
+    resources :servers, only: [:index, :create, :update, :destroy] do
+      member do
+        post 'panic'
+      end
     end
+
+    resources :tenants, only: [:index, :show, :create, :update, :destroy]
   end
 
   get('health_check', to: 'health_check#index')

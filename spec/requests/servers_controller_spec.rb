@@ -4,7 +4,7 @@
 
 require 'rails_helper'
 
-RSpec.describe ServersController, type: :controller do
+RSpec.describe Api::ServersController, type: :controller do
   include ApiHelper
 
   describe 'GET #index' do
