@@ -31,7 +31,7 @@ Rails.application.routes.draw do
   end
 
   namespace :api do
-    resources :servers, only: [:index, :create, :update, :destroy] do
+    resources :servers, only: [:index, :show, :create, :update, :destroy] do
       member do
         post 'panic'
       end
