@@ -2,169 +2,11 @@
 
 Scalelite comes with an API that allows for the management of tenants and servers.
 
-## Tenants API
-
-### Show Tenant
-```sh 
-GET /api/v1/tenants/:id
-```
-
-Returns the data associated with a single tenant
-
-#### Expected Parameters
-`id` the id of the tenant for which you are searching for.
-
-#### Successful Response
-```
-{
-  "id": String,
-  "name": String,
-  "secrets": String,
-  "destroyed": Boolean,
-  "new_record": Boolean
-},
-status: ok
-```
-
-#### Example cURL
-
- ```javascript
- curl --request GET http://localhost:4000/api/v1/tenants/<id>
- ```
-
-### Show All Tenants
-```sh 
-GET /api/v1/tenants
-```
-
-Returns a list of all tenants
-
-#### Expected Parameters
-n/a
-
-#### Successful Response
-
-```
-[
-  {
-    "id": String,
-    "name": String,
-    "secrets": String,
-  },
-  ...
-],
-status: ok
-```
-
-#### Example cURL
-
-```javascript
-curl --request GET http://localhost:4000/api/v1/tenants
-```
-
-### Add Tenant
-```sh 
-POST /api/v1/tenants
-```
-
-#### Expected Parameters
-
-```
-{
-  "name": String,                 # Required: Name of the tenant
-  "secrets": String,              # Required: Tenant secret(s)
-}
-```
-#### Successful Response
-```
-{
-  "id": String
-}, 
-status: created
-``` 
-
-#### Example cURL
-
-```javascript
-curl --header "Content-Type: application/json" --request POST --data '{"name": "example-tenant", "secrets":"example-secret" }' http://localhost:4000/api/v1/tenants -v
-```
-
-If you need to add multiple secrets for a tenant, you can provide a colon-separated (`:`) list of secrets when creating the tenant in Scalelite.
-
-### Update Tenant
-```sh
-PUT api/v1/tenants/:id?name=xxx
-```
-or
-
-```sh 
-PUT api/v1/tenants/:id?secrets=xxx
-```
-or
-
-```sh 
-PUT api/v1/tenants/:id?name=xxx&secrets=yyy
-```
-
-#### Expected Parameters
-
-```
-{
- "name": String,     # include the parameter you want updated
- "secrets": String
-}
-```
-
-#### Successful Response
-
-```
-{
-  "id": String,
-  "name": String,
-  "secrets": String,
-  "destroyed": Boolean,
-  "new_record": Boolean
-}
-status: ok
-```
-
-#### Example cURL
-
-```javascript
-curl --header "Content-Type: application/json" --request PATCH --data '{"secrets":"new-secret" }' http://localhost:4000/api/v1/tenants/<tenant-id> -v
-```
-
-### Remove Tenant
-```sh
-DELETE /api/v1/tenants/:id
-```
-
-#### Expected Parameters
-`id` the id of the tenant you wish to delete
-
-#### Successful Response
-
-```
-{ 
-  "id": String 
-}
-status: ok
-```
-
-#### Example cURL
-
-```javascript
-curl --header "Content-Type: application/json" --request DELETE http://localhost:4000/api/v1/tenants/a783d62f-e457-4842-b23b-28a34d3a219e -v
-```
-
-Warning: Removing a tenant with data still in the database may cause some inconsistencies.
-
-
 ## Servers API
 
-### Index All Servers
+### All Servers
 ```sh 
-GET /servers
+GET /api/servers
 ```
 
 Returns a list of all servers
@@ -190,9 +32,15 @@ n/a
 status: ok
 ```
 
+#### Example cURL
+
+```bash
+curl --request GET https://scalelite-hostname.com/api/servers
+```
+
 ### Show Server
 ```sh 
-GET /servers/:id
+GET /api/servers/:id
 ```
 
 Returns the data associated with a single server
@@ -214,9 +62,15 @@ n/a
 status: ok
 ```
 
+#### Example cURL
+
+ ```bash
+ curl --request GET https://scalelite-hostname.com/api/servers/<id>
+ ```
+
 ### Create Server
 ```sh 
-POST /servers
+POST /api/servers
 ```
 
 Adds a new server
@@ -246,9 +100,15 @@ Adds a new server
 status: ok
 ```
 
+#### Example cURL
+
+```bash
+curl --header "Content-Type: application/json" --request POST --data '{"url": "https://server1.com/bigbluebutton/api", "secret":"example-secret" }' https://scalelite-hostname.com/api/servers -v
+```
+
 ### Update Server
 ```sh 
-PUT /servers/:id
+PUT /api/servers/:id
 ```
 
 Updates a server
@@ -278,9 +138,15 @@ Updates a server
 status: ok
 ```
 
+#### Example cURL
+
+```bash
+curl --header "Content-Type: application/json" --request PATCH --data '{"secret":"new-secret" }' https://scalelite-hostname.com/api/server/<server-id> -v
+```
+
 ### Delete Server
 ```sh 
-DELETE /servers/:id
+DELETE /api/servers/:id
 ```
 
 Deletes a server
@@ -298,9 +164,15 @@ n/a
 status: ok
 ```
 
+#### Example cURL
+
+```bash
+curl --header "Content-Type: application/json" --request DELETE https://scalelite-hostname.com/api/servers/a783d62f-e457-4842-b23b-28a34d3a219e -v
+```
+
 ### Panic
 ```sh
-POST /servers/panic
+POST /api/servers/:id/panic
 ```
 
 Set a server as unavailable and destroy all meetings from it
@@ -314,7 +186,7 @@ Set a server as unavailable and destroy all meetings from it
 }
 ```
 
-### Successful Response
+#### Successful Response
 ```
 {
   success: {
@@ -323,3 +195,166 @@ Set a server as unavailable and destroy all meetings from it
 },
 status: ok
 ```
+
+#### Example cURL
+
+```bash
+curl --header "Content-Type: application/json" --request POST https://scalelite-hostname.com/api/servers/a783d62f-e457-4842-b23b-28a34d3a219e/panic -v
+```
+
+## Tenants API
+
+### All Tenants
+```sh 
+GET /api/tenants
+```
+
+Returns a list of all tenants
+
+#### Expected Parameters
+n/a
+
+#### Successful Response
+
+```
+[
+  {
+    "id": String,
+    "name": String,
+    "secrets": String,
+  },
+  ...
+],
+status: ok
+```
+
+#### Example cURL
+
+```bash
+curl --request GET https://scalelite-hostname.com/api/tenants
+```
+
+### Show Tenant
+```sh 
+GET /api/tenants/:id
+```
+
+Returns the data associated with a single tenant
+
+#### Expected Parameters
+`id` the id of the tenant for which you are searching for.
+
+#### Successful Response
+```
+{
+  "id": String,
+  "name": String,
+  "secrets": String,
+  "destroyed": Boolean,
+  "new_record": Boolean
+},
+status: ok
+```
+
+#### Example cURL
+
+ ```bash
+ curl --request GET https://scalelite-hostname.com/api/tenants/<id>
+ ```
+
+### Create Tenant
+```sh 
+POST /api/tenants
+```
+
+#### Expected Parameters
+
+```
+{
+  "name": String,                 # Required: Name of the tenant
+  "secrets": String,              # Required: Tenant secret(s)
+}
+```
+#### Successful Response
+```
+{
+  "id": String
+}, 
+status: created
+``` 
+
+#### Example cURL
+
+```bash
+curl --header "Content-Type: application/json" --request POST --data '{"name": "example-tenant", "secrets":"example-secret" }' https://scalelite-hostname.com/api/tenants -v
+```
+
+If you need to add multiple secrets for a tenant, you can provide a colon-separated (`:`) list of secrets when creating the tenant in Scalelite.
+
+### Update Tenant
+```sh
+PUT api/tenants/:id?name=xxx
+```
+or
+
+```sh 
+PUT api/tenants/:id?secrets=xxx
+```
+or
+
+```sh 
+PUT api/tenants/:id?name=xxx&secrets=yyy
+```
+
+#### Expected Parameters
+
+```
+{
+ "name": String,     # include the parameter you want updated
+ "secrets": String
+}
+```
+
+#### Successful Response
+
+```
+{
+  "id": String,
+  "name": String,
+  "secrets": String,
+  "destroyed": Boolean,
+  "new_record": Boolean
+}
+status: ok
+```
+
+#### Example cURL
+
+```bash
+curl --header "Content-Type: application/json" --request PATCH --data '{"secrets":"new-secret" }' https://scalelite-hostname.com/api/tenants/<tenant-id> -v
+```
+
+### Remove Tenant
+```sh
+DELETE /api/tenants/:id
+```
+
+#### Expected Parameters
+`id` the id of the tenant you wish to delete
+
+#### Successful Response
+
+```
+{ 
+  "id": String 
+}
+status: ok
+```
+
+#### Example cURL
+
+```bash
+curl --header "Content-Type: application/json" --request DELETE https://scalelite-hostname.com/api/tenants/a783d62f-e457-4842-b23b-28a34d3a219e -v
+```
+
+Warning: Removing a tenant with data still in the database may cause some inconsistencies.
