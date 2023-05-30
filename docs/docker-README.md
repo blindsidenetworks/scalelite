@@ -43,7 +43,7 @@ For communication between Scalelite containers, a private network should be crea
 
 `docker network create scalelite`
 
-Create a file `/etc/default/scalelite` with the environment variables to configure the application. Reference the [Required Configuration](README.md#required) section for details as needed. For most deployments, you will need to include the following variables at a minimum.
+Create a file `/etc/default/scalelite` with the environment variables to configure the application. Reference the [Required Configuration](../README.md#required) section for details as needed. For most deployments, you will need to include the following variables at a minimum.
 
 ```
 URL_HOST
@@ -73,7 +73,7 @@ NGINX_SSL=true
 SCALELITE_NGINX_EXTRA_OPTS=--mount type=bind,source=/etc/letsencrypt,target=/etc/nginx/ssl,readonly
 ```
 
-Next you should Create a file `/etc/systemd/system/scalelite.target` with the content found in the [scalelite.target](systemd/scalelite.target) file. This unit is a helper to allow starting and stopping all of the Scalelite containers together.
+Next you should Create a file `/etc/systemd/system/scalelite.target` with the content found in the [scalelite.target](../systemd/scalelite.target) file. This unit is a helper to allow starting and stopping all of the Scalelite containers together.
 
 And enable the target by running
 
@@ -83,13 +83,13 @@ And enable the target by running
 
 The scalelite-api container holds the application code responsible for responding to BigBlueButton API requests. The scalelite-nginx container is responsible for SSL termination (if configured) and for serving recording playback files. Both containers must be colocated on the same host. For a high availability deployment, you can run multiple instances on different hosts behind an external HTTP load balancer.
 
-Create a systemd unit file `/etc/systemd/system/scalelite-api.service` with the content found in the [scalelite-api.service](systemd/scalelite-api.service) file.
+Create a systemd unit file `/etc/systemd/system/scalelite-api.service` with the content found in the [scalelite-api.service](../systemd/scalelite-api.service) file.
 
 And enable it by running
 
 `systemctl enable scalelite-api.service`
 
-Create a systemd unit file `/etc/systemd/system/scalelite-nginx.service` with the content found in the [scalelite-nginx.service](systemd/scalelite-nginx.service) file.
+Create a systemd unit file `/etc/systemd/system/scalelite-nginx.service` with the content found in the [scalelite-nginx.service](../systemd/scalelite-nginx.service) file.
 
 And enable it by running systemctl
 
@@ -119,7 +119,7 @@ You should restart all Scalelite services again afterwards by running
 The scalelite-poller container runs a process that periodically checks the reachability and load of BigBlueButton servers, and detects when meetings have ended.
 Only a single poller is required in a deployment, but running multiple pollers will not cause any errors. It can be colocated on the same host system as the web frontend.
 
-Create a systemd unit file `/etc/systemd/system/scalelite-poller.service` with the content found in the [scalelite-poller.service](systemd/scalelite-poller.service) file.
+Create a systemd unit file `/etc/systemd/system/scalelite-poller.service` with the content found in the [scalelite-poller.service](../systemd/scalelite-poller.service) file.
 
 And enable it by running
 
@@ -146,7 +146,7 @@ If you are not doing a high-availability deployment of Scalelite, then you **MAY
 
 You **MAY** colocate the recording importer and meeting status poller on the same host.
 
-Create a systemd unit file `/etc/systemd/system/scalelite-recording-importer.service` with the content found in the [scalelite-recording-importer.service](systemd/scalelite-recording-importer.service) file.
+Create a systemd unit file `/etc/systemd/system/scalelite-recording-importer.service` with the content found in the [scalelite-recording-importer.service](../systemd/scalelite-recording-importer.service) file.
 
 And enable it by running
 
