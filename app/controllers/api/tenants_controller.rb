@@ -2,13 +2,16 @@
 
 module Api
   class TenantsController < ApplicationController
+    include ApiHelper
+
     skip_before_action :verify_authenticity_token
 
+    before_action :verify_lb_checksum
     before_action :check_multitenancy
-    before_action :set_tenant, only: [:show, :update, :destroy]
+    before_action :set_tenant, only: [:tenant_info, :update_tenant, :delete_tenant]
 
     # Return a list of all tenants
-    # GET /api/v1/tenants
+    # GET scalelite/api/tenants
     #
     # Successful response:
     # [
@@ -19,7 +22,7 @@ module Api
     #   },
     #   ...
     # ]
-    def index
+    def tenants
       tenants = Tenant.all
 
       if tenants.empty?
@@ -38,65 +41,63 @@ module Api
     end
 
     # Retrieve the information for a specific tenant
-    # GET /api/v1/tenants/:id
+    # POST scalelite/api/tenantinfo
+    #
+    # Required Parameters:
+    # { "id": String }
     #
     # Successful response:
-    # [
-    #   {
-    #     "id": String,
-    #     "name": String,
-    #     "secrets": String,
-    #   },
-    #   ...
-    # ]
-    def show
+    #  {
+    #    "id": String,
+    #    "name": String,
+    #    "secrets": String,
+    #  },
+    #  ...
+    def tenant_info
       render json: @tenant, status: :ok
     end
 
     # Add a new tenant
-    # POST /api/v1/tenants
+    # POST scalelite/api/addTenant
     #
     # Expected params:
     # {
-    #   "tenant": {
-    #     "name": String,                 # Required: Name of the tenant
-    #     "secrets": String,              # Required: Tenant secret(s)
-    #   }
+    #   "name": String,                 # Required: Name of the tenant
+    #   "secrets": String,              # Required: Tenant secret(s)
     # }
-    def create
+    def add_tenant
       if tenant_params[:name].blank? || tenant_params[:secrets].blank?
         render json: { message: 'Error: both name and secrets are required to create a Tenant' }, status: :bad_request
       else
         tenant = Tenant.create(tenant_params)
-        render json: { id: tenant.id }, status: :created
+        render json: { tenant: tenant }, status: :created
       end
     end
 
     # Update a tenant
-    # PUT api/v1/tenants/:id?name=xxx || PUT api/v1/tenants/:id?secrets=xxx
+    # POST scalelite/api/updateTenant
     #
     # Expected params:
     # {
-    #   "tenant": {
-    #     "name": String,     # include the parameter you want updated
-    #     "secrets": String
-    #   }
+    #   "id": String        # Required
+    #   "name": String,     # include the parameter you want updated
+    #   "secrets": String
     # }
-    def update
+    def update_tenant
       @tenant.name = tenant_params[:name] if tenant_params[:name].present?
       @tenant.secrets = tenant_params[:secrets] if tenant_params[:secrets].present?
       @tenant.save!
-      render json: { tenant: @tenant.to_json }, status: :ok
+      render json: { tenant: @tenant }, status: :ok
     rescue ApplicationRedisRecord::RecordNotSaved => e
       render json: { error: e.message }, status: :unprocessable_entity
     end
 
     # Delete tenant
-    # DELETE /api/v1/servers/:id
+    # POST scalelite/api/deleteTenant
     #
     # Successful response:
     # { "id" : String }
-    def destroy
+    def delete_tenant
       @tenant.destroy!
       render json: { id: @tenant.id }, status: :ok
     rescue ApplicationRedisRecord::RecordNotDestroyed => e
@@ -106,17 +107,21 @@ module Api
     private
 
     def set_tenant
-      @tenant = Tenant.find(params[:id])
+      @tenant = Tenant.find(tenant_params[:id])
     rescue ApplicationRedisRecord::RecordNotFound => e
       render json: { error: e.message }, status: :not_found
     end
 
     def tenant_params
-      params.require(:tenant).permit(:name, :secrets)
+      params.require(:tenant).permit(:id, :name, :secrets)
     end
 
     def check_multitenancy
       return render json: { message: "Multitenancy is disabled" }, status: :precondition_failed unless Rails.configuration.x.multitenancy_enabled
+    end
+
+    def verify_lb_checksum
+      verify_checksum({ use_loadbalancer_secret: true })
     end
   end
 end

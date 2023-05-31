@@ -14,8 +14,11 @@ module ApiHelper
   CHECKSUM_LENGTH_SHA512 = 128
 
   # Verify checksum
-  def verify_checksum
-    secrets = fetch_secrets
+  #
+  # @param [boolean] use_loadbalancer_secret. Set true for API endpoints (such as the tenants API)
+  #     which should be accessed only by superadmins.
+  def verify_checksum(use_loadbalancer_secret = false)
+    secrets = fetch_secrets(use_loadbalancer_secret)
 
     raise ChecksumError if params[:checksum].blank?
     raise ChecksumError if secrets.empty?
@@ -48,8 +51,8 @@ module ApiHelper
     raise ChecksumError
   end
 
-  def fetch_secrets
-    return Rails.configuration.x.loadbalancer_secrets unless Rails.configuration.x.multitenancy_enabled
+  def fetch_secrets(use_loadbalancer_secret = false)
+    return Rails.configuration.x.loadbalancer_secrets unless Rails.configuration.x.multitenancy_enabled && !use_loadbalancer_secret
 
     tenant = fetch_tenant
     if tenant.present?

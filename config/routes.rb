@@ -30,14 +30,19 @@ Rails.application.routes.draw do
     end
   end
 
-  namespace :api do
-    resources :servers, only: [:index, :show, :create, :update, :destroy] do
-      member do
-        post 'panic'
-      end
-    end
+  scope 'scalelite/api', module: 'api', as: 'scalelite_api' do
+    match '/tenants', to: 'tenants#tenants', via: [:get, :post]
+    post '/tenantInfo', to: 'tenants#tenant_info'
+    post '/addTenant', to: 'tenants#add_tenant'
+    post '/updateTenant', to: 'tenants#update_tenant'
+    post '/deleteTenant', to: 'tenants#delete_tenant'
 
-    resources :tenants, only: [:index, :show, :create, :update, :destroy]
+    match '/servers', to: 'servers#servers', via: [:get, :post]
+    post '/serverInfo', to: 'servers#server_info'
+    post '/addServer', to: 'servers#add_server'
+    post '/updateServer', to: 'servers#update_server'
+    post '/deleteServer', to: 'servers#delete_server'
+    post '/panicServer', to: 'servers#panic_server'
   end
 
   get('health_check', to: 'health_check#index')
