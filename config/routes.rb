@@ -32,10 +32,10 @@ Rails.application.routes.draw do
 
   scope 'scalelite/api', module: 'api', as: 'scalelite_api' do
     match '/tenants', to: 'tenants#tenants', via: [:get, :post]
-    post '/tenantInfo', to: 'tenants#tenant_info'
-    post '/addTenant', to: 'tenants#add_tenant'
-    post '/updateTenant', to: 'tenants#update_tenant'
-    post '/deleteTenant', to: 'tenants#delete_tenant'
+    post '/tenantInfo', to: 'tenants#tenant_info', as: :tenant_info
+    post '/addTenant', to: 'tenants#add_tenant', as: :add_tenant
+    post '/updateTenant', to: 'tenants#update_tenant', as: :update_tenant
+    post '/deleteTenant', to: 'tenants#delete_tenant', as: :delete_tenant
 
     match '/servers', to: 'servers#servers', via: [:get, :post]
     post '/serverInfo', to: 'servers#server_info'
