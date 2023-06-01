@@ -149,4 +149,36 @@ RSpec.describe Api::TenantsController do
       end
     end
   end
+
+  describe 'verify_checksum' do
+    before do
+      allow_any_instance_of(described_class).to receive(:verify_lb_checksum).and_call_original
+    end
+
+    it 'successfully creates a tenant with checksum value computed using SHA1' do
+      allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['sha1-secret'])
+      post scalelite_api_add_tenant_url,
+params: { tenant: { name: "SHA1-tenant", secrets: "SHA1-secret" }, checksum: '8adf3a77cafa6e72c3ac7ada5e42d92f8ea8f4f0' }
+      expect(response).to have_http_status(:created)
+    end
+
+    it 'successfully creates a tenant with checksum value computed using SHA256' do
+      allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['sha256-secret'])
+      post scalelite_api_add_tenant_url,
+params: { tenant: { name: "SHA1-tenant", secrets: "SHA256-secret" }, checksum: 'a8a7e0b3ab8fe65283628e7032177ab3696e41f7c1bc8aec86fd8c60ffb44cdd' }
+      expect(response).to have_http_status(:created)
+    end
+
+    it 'returns a checksum error if the wrong secret is used' do
+      allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['sha1-secret'])
+
+      # a random secret was used to generate the checksum here
+      post scalelite_api_add_tenant_url,
+params: { tenant: { name: "SHA1-tenant", secrets: "SHA1-secret" }, checksum: 'e636000e010c2effcabdfcf78bb59d0971bfb8eb' }
+
+      xml_response = Nokogiri::XML(response.body)
+      expect(xml_response.at_xpath("//response/returncode").text).to eq("FAILED")
+      expect(xml_response.at_xpath("//response/messageKey").text).to eq("checksumError")
+    end
+  end
 end

@@ -220,4 +220,40 @@ RSpec.describe Api::ServersController do
       expect(json['error']).to eq("Couldn't find server with id=nonexistent_id")
     end
   end
+
+  describe 'verify_checksum' do
+    before do
+      allow_any_instance_of(described_class).to receive(:verify_lb_checksum).and_call_original
+    end
+
+    let(:valid_params) {
+      { url: 'https://example.com/bigbluebutton',
+        secret: 'supersecret',
+        load_multiplier: 1.5 }
+    }
+
+    it 'successfully creates a server with checksum value computed using SHA1' do
+      allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['sha1-secret'])
+      post scalelite_api_add_server_url, params: { server: valid_params, checksum: 'a347310666f712cc1d5e860969aaf39bda37298d' }
+      expect(response).to have_http_status(:created)
+    end
+
+    it 'successfully creates a server with checksum value computed using SHA256' do
+      allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['sha256-secret'])
+      post scalelite_api_add_server_url,
+params: { server: valid_params, checksum: 'b6a4fd61f463c63ba8ac0696c02f87ee3f8de6d5e9f3e94cedeaded63161c73a' }
+      expect(response).to have_http_status(:created)
+    end
+
+    it 'returns a checksum error if the wrong secret is used' do
+      allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['sha1-secret'])
+
+      # a random secret was used to generate the checksum here
+      post scalelite_api_add_tenant_url, params: { server: valid_params, checksum: 'e636000e010c2effcabdfcf78bb59d0971bfb8eb' }
+
+      xml_response = Nokogiri::XML(response.body)
+      expect(xml_response.at_xpath("//response/returncode").text).to eq("FAILED")
+      expect(xml_response.at_xpath("//response/messageKey").text).to eq("checksumError")
+    end
+  end
 end
