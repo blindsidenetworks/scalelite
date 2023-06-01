@@ -37,7 +37,7 @@ module Api
     end
 
     # Retrieve a single BigBlueButton server
-    # POST /scalelite/api/getServerInfo
+    # GET /scalelite/api/getServerInfo?id=
     #
     # Expected params:
     # {

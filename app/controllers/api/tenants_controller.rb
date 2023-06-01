@@ -11,7 +11,7 @@ module Api
     before_action :set_tenant, only: [:get_tenant_info, :update_tenant, :delete_tenant]
 
     # Return a list of all tenants
-    # GET scalelite/api/tenants
+    # GET scalelite/api/getTenants
     #
     # Successful response:
     # [
@@ -41,7 +41,7 @@ module Api
     end
 
     # Retrieve the information for a specific tenant
-    # POST scalelite/api/tenantinfo
+    # GET scalelite/api/getTenantInfo?id=
     #
     # Required Parameters:
     # { "id": String }
@@ -99,7 +99,7 @@ module Api
     # { "id" : String }
     def delete_tenant
       @tenant.destroy!
-      render json: { id: @tenant.id }, status: :ok
+      render json: { success: "Tenant id=#{@tenant.id} was destroyed" }, status: :ok
     rescue ApplicationRedisRecord::RecordNotDestroyed => e
       render json: { error: e.message }, status: :unprocessable_entity
     end
