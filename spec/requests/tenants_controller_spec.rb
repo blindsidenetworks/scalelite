@@ -48,14 +48,14 @@ RSpec.describe Api::TenantsController do
     end
   end
 
-  describe 'POST #tenant_info' do
+  describe 'GET #get_tenant_info' do
     before do
       Rails.configuration.x.multitenancy_enabled = true
     end
 
     it 'returns the tenant associated with the given ID' do
       tenant = create(:tenant)
-      post scalelite_api_get_tenant_info_url, params: { id: tenant.id }
+      get scalelite_api_get_tenant_info_url, params: { id: tenant.id }
       expect(response).to have_http_status(:ok)
       puts("response: #{response.parsed_body}")
       returned_tenant = response.parsed_body
@@ -64,7 +64,7 @@ RSpec.describe Api::TenantsController do
     end
 
     it 'renders an error message if the tenant was not found' do
-      post scalelite_api_get_tenant_info_url, params: { id: 'nonexistent-id' }
+      get scalelite_api_get_tenant_info_url, params: { id: 'nonexistent-id' }
       expect(response).to have_http_status(:not_found)
       expect(response.parsed_body['error']).to eq("Couldn't find Tenant with id=nonexistent-id")
     end
@@ -138,7 +138,7 @@ RSpec.describe Api::TenantsController do
         tenant = create(:tenant)
         expect { post scalelite_api_delete_tenant_url, params: { id: tenant.id } }.to change { Tenant.all.count }.by(-1)
         expect(response).to have_http_status(:ok)
-        expect(response.parsed_body['id']).to eq(tenant.id)
+        expect(response.parsed_body['success']).to eq("Tenant id=#{tenant.id} was destroyed")
       end
     end
 

@@ -31,14 +31,14 @@ Rails.application.routes.draw do
   end
 
   scope 'scalelite/api', module: 'api', as: 'scalelite_api' do
-    match '/getTenants', to: 'tenants#get_tenants', as: :get_tenants, via: [:get, :post]
-    post '/getTenantInfo', to: 'tenants#get_tenant_info', as: :get_tenant_info
+    get '/getTenants', to: 'tenants#get_tenants', as: :get_tenants
+    get '/getTenantInfo', to: 'tenants#get_tenant_info', as: :get_tenant_info
     post '/addTenant', to: 'tenants#add_tenant', as: :add_tenant
     post '/updateTenant', to: 'tenants#update_tenant', as: :update_tenant
     post '/deleteTenant', to: 'tenants#delete_tenant', as: :delete_tenant
 
-    match '/getServers', to: 'servers#get_servers', as: :get_servers, via: [:get, :post]
-    post '/getServerInfo', to: 'servers#get_server_info', as: :get_server_info
+    get '/getServers', to: 'servers#get_servers', as: :get_servers
+    get '/getServerInfo', to: 'servers#get_server_info', as: :get_server_info
     post '/addServer', to: 'servers#add_server', as: :add_server
     post '/updateServer', to: 'servers#update_server', as: :update_server
     post '/deleteServer', to: 'servers#delete_server', as: :delete_server
