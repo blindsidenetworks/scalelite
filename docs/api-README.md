@@ -105,7 +105,7 @@ status: ok
 #### Example cURL
 
 ```bash
-curl --header "Content-Type: application/json" --request POST --data '{"url": "https://server1.com/bigbluebutton/api", "secret":"example-secret" }' 'https://scalelite-hostname.com/scalelite/api/addServer?checksum=<checksum>' -v
+curl --header "Content-Type: application/json" --request POST --data '{"server": {"url": "https://server1.com/bigbluebutton/api", "secret":"example-secret" } }' 'https://scalelite-hostname.com/scalelite/api/addServer?checksum=<checksum>' -v
 ```
 
 ### Update Server
@@ -144,7 +144,7 @@ status: ok
 #### Example cURL
 
 ```bash
-curl --header "Content-Type: application/json" --request POST --data '{"id": "<server-id>", "secret":"new-secret" }' 'https://scalelite-hostname.com/scalelite/api/updateServer?checksum=<checksum>' -v
+curl --header "Content-Type: application/json" --request POST --data '{"id": "<server-id>", "server": {"secret":"new-secret"} }' 'https://scalelite-hostname.com/scalelite/api/updateServer?checksum=<checksum>' -v
 ```
 
 ### Delete Server
@@ -279,8 +279,10 @@ POST /scalelite/api/addTenant
 
 ```
 {
-  "name": String,                 # Required: Name of the tenant
-  "secrets": String,              # Required: Tenant secret(s)
+  "tenant": {
+    "name": String,                 # Required: Name of the tenant
+    "secrets": String,              # Required: Tenant secret(s)
+  }
 }
 ```
 #### Successful Response
@@ -294,7 +296,7 @@ status: created
 #### Example cURL
 
 ```bash
-curl --header "Content-Type: application/json" --request POST --data '{"name": "example-tenant", "secrets":"example-secret" }' 'https://scalelite-hostname.com/scalelite/api/addTenant?id=<tenant-id>&checksum=<checksum>' -v
+curl --header "Content-Type: application/json" --request POST --data '{"tenant": {"name": "example-tenant", "secrets":"example-secret" } }' 'https://scalelite-hostname.com/scalelite/api/addTenant?id=<tenant-id>&checksum=<checksum>' -v
 ```
 
 If you need to add multiple secrets for a tenant, you can provide a colon-separated (`:`) list of secrets when creating the tenant in Scalelite.
@@ -309,8 +311,10 @@ POST /scalelite/api/updateTenant
 
 ```
 {
- "name": String,     # include the parameter you want updated
- "secrets": String
+  "tenant": {
+    "name": String,     # include the parameter you want updated
+    "secrets": String
+  }
 }
 ```
 
@@ -330,7 +334,7 @@ status: ok
 #### Example cURL
 
 ```bash
-curl --header "Content-Type: application/json" --request POST --data '{"id":"<tenant-id>", "secrets":"new-secret" }' 'https://scalelite-hostname.com/scalelite/api/updateTenant?id=<tenant-id>&checksum=<checksum>'-v
+curl --header "Content-Type: application/json" --request POST --data '{"id":"<tenant-id>", "tenant": {"secrets":"new-secret" } }' 'https://scalelite-hostname.com/scalelite/api/updateTenant?id=<tenant-id>&checksum=<checksum>'-v
 ```
 
 ### Remove Tenant
