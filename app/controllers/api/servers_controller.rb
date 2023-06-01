@@ -6,10 +6,11 @@ module Api
 
     skip_before_action :verify_authenticity_token
 
-    before_action :set_server, only: [:show, :update, :destroy, :panic]
+    before_action -> { verify_checksum(true) }
+    before_action :set_server, only: [:get_server_info, :update_server, :delete_server, :panic_server]
 
     # Return a list of the configured BigBlueButton servers
-    # GET /bigbluebutton/servers
+    # GET /scalelite/api/servers
     #
     # Successful response:
     # [
@@ -24,7 +25,7 @@ module Api
     #   },
     #   ...
     # ]
-    def index
+    def get_servers
       servers = Server.all
 
       if servers.empty?
@@ -36,7 +37,12 @@ module Api
     end
 
     # Retrieve a single BigBlueButton server
-    # GET /bigbluebutton/servers/:id
+    # POST /scalelite/api/getServerInfo
+    #
+    # Expected params:
+    # {
+    #  "id" : String   # Required
+    # }
     #
     # Successful response:
     #   {
@@ -48,7 +54,7 @@ module Api
     #     "load_multiplier": String,
     #     "online": String
     #   }
-    def show
+    def get_server_info
       begin
         render json: server_to_json(@server), status: :ok
       rescue StandardError => e
@@ -57,7 +63,7 @@ module Api
     end
 
     # Add a new BigBlueButton server (it will be added disabled)
-    # POST /bigbluebutton/servers
+    # POST /scalelite/api/addServer
     #
     # Expected params:
     # {
@@ -67,7 +73,7 @@ module Api
     #     "load_multiplier": Float       # Optional: A non-zero number, defaults to 1.0 if not provided or zero
     #   }
     # }
-    def create
+    def add_server
       if server_create_params[:url].blank? || server_create_params[:secret].blank?
         render json: { error: 'Server needs a URL and a secret' }, status: :bad_request
       else
@@ -80,17 +86,18 @@ module Api
     end
 
     # Update a BigBlueButton server
-    # PUT /bigbluebutton/servers/:id
+    # POST /scalelite/api/updateServer
     #
     # Expected params:
     # {
+    #   "id": String               # Required: the server ID
     #   "server": {
     #     "state": String,         # Optional: 'enable', 'cordon', or 'disable'
     #     "load_multiplier": Float # Optional: A non-zero number
     #     "secret": String         # Optional: Secret key of the BigBlueButton server
     #   }
     # }
-    def update
+    def update_server
       begin
         updated_server = ServerUpdateService.new(@server, server_update_params).call
         render json: server_to_json(updated_server), status: :ok
@@ -100,8 +107,14 @@ module Api
     end
 
     # Remove a BigBlueButton server
-    # DELETE /bigbluebutton/servers/:id
-    def destroy
+    #
+    # POST /scalelite/api/deleteServer
+    #
+    # Required Params:
+    # {
+    #  "id" : String   # Required
+    # }
+    def delete_server
       begin
         @server.destroy!
         render json: { success: "Server id=#{@server.id} was destroyed" }, status: :ok
@@ -111,15 +124,16 @@ module Api
     end
 
     # Set a BigBlueButton server as unavailable and clear all meetings from it
-    # POST /bigbluebutton/servers/:id/panic
+    # POST /scalelite/api/panicServer
     #
     # Expected params:
     # {
+    #   "id": String            # Required
     #   "server": {
     #     "keep_state": Boolean # Optional: Set to 'true' if you want to keep the server's state after panicking, defaults to 'false'
     #   }
     # }
-    def panic
+    def panic_server
       begin
         keep_state = (server_panic_params[:keep_state].presence || false)
         meetings = Meeting.all.select { |m| m.server_id == @server.id }
