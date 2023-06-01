@@ -38,11 +38,11 @@ Rails.application.routes.draw do
     post '/deleteTenant', to: 'tenants#delete_tenant', as: :delete_tenant
 
     match '/servers', to: 'servers#servers', via: [:get, :post]
-    post '/serverInfo', to: 'servers#server_info'
-    post '/addServer', to: 'servers#add_server'
-    post '/updateServer', to: 'servers#update_server'
-    post '/deleteServer', to: 'servers#delete_server'
-    post '/panicServer', to: 'servers#panic_server'
+    post '/serverInfo', to: 'servers#server_info', as: :servers_info
+    post '/addServer', to: 'servers#add_server', as: :add_server
+    post '/updateServer', to: 'servers#update_server', as: :update_server
+    post '/deleteServer', to: 'servers#delete_server', as: :delete_server
+    post '/panicServer', to: 'servers#panic_server', as: :panic_server
   end
 
   get('health_check', to: 'health_check#index')

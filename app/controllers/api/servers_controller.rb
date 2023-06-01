@@ -148,9 +148,9 @@ module Api
 
     def set_server
       begin
-        @server = Server.find(params[:id])
+        @server = Server.find(server_id_param[:id])
       rescue ApplicationRedisRecord::RecordNotFound
-        render json: { error: "Couldn't find server with id=#{params[:id]}" }, status: :not_found
+        render json: { error: "Couldn't find server with id=#{server_id_param[:id]}" }, status: :not_found
       end
     end
 
@@ -176,6 +176,10 @@ module Api
 
     def server_panic_params
       params.permit(:keep_state)
+    end
+
+    def server_id_param
+      params.require(:server).permit(:id)
     end
 
     def verify_lb_checksum
