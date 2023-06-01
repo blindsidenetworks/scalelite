@@ -6,9 +6,9 @@ module Api
 
     skip_before_action :verify_authenticity_token
 
-    before_action :verify_lb_checksum
+    before_action -> { verify_checksum(true) }
     before_action :check_multitenancy
-    before_action :set_tenant, only: [:tenant_info, :update_tenant, :delete_tenant]
+    before_action :set_tenant, only: [:get_tenant_info, :update_tenant, :delete_tenant]
 
     # Return a list of all tenants
     # GET scalelite/api/tenants
@@ -22,7 +22,7 @@ module Api
     #   },
     #   ...
     # ]
-    def tenants
+    def get_tenants
       tenants = Tenant.all
 
       if tenants.empty?
@@ -53,7 +53,7 @@ module Api
     #    "secrets": String,
     #  },
     #  ...
-    def tenant_info
+    def get_tenant_info
       render json: @tenant, status: :ok
     end
 
@@ -107,21 +107,17 @@ module Api
     private
 
     def set_tenant
-      @tenant = Tenant.find(tenant_params[:id])
+      @tenant = Tenant.find(params[:id])
     rescue ApplicationRedisRecord::RecordNotFound => e
       render json: { error: e.message }, status: :not_found
     end
 
     def tenant_params
-      params.require(:tenant).permit(:id, :name, :secrets)
+      params.require(:tenant).permit(:name, :secrets)
     end
 
     def check_multitenancy
       return render json: { message: "Multitenancy is disabled" }, status: :precondition_failed unless Rails.configuration.x.multitenancy_enabled
-    end
-
-    def verify_lb_checksum
-      verify_checksum({ use_loadbalancer_secret: true })
     end
   end
 end

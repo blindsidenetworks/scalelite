@@ -9,13 +9,13 @@ RSpec.describe Api::ServersController do
 
   before do
     # Disabling the checksum for the specs and re-enable it only when testing specifically the checksum
-    allow_any_instance_of(described_class).to receive(:verify_lb_checksum).and_return(true)
+    allow_any_instance_of(described_class).to receive(:verify_checksum).and_return(true)
   end
 
   describe 'GET #servers' do
     it 'returns a list of configured BigBlueButton servers' do
       servers = create_list(:server, 3)
-      get scalelite_api_servers_url
+      get scalelite_api_get_servers_url
       expect(response).to have_http_status(:ok)
       server_list = response.parsed_body
       expect(server_list.size).to eq(3)
@@ -37,7 +37,7 @@ RSpec.describe Api::ServersController do
     end
 
     it 'returns a message if no servers are configured' do
-      get scalelite_api_servers_url
+      get scalelite_api_get_servers_url
       expect(response).to have_http_status(:not_found)
       expect(response.parsed_body['error']).to eq('No servers are configured')
     end
@@ -88,7 +88,7 @@ RSpec.describe Api::ServersController do
     context 'when updating state' do
       it 'updates the server state to "enabled"' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { server: { id: server.id, state: 'enable' } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { state: 'enable' } }
         updated_server = Server.find(server.id) # Reload
         expect(updated_server.state).to eq('enabled')
         expect(response).to have_http_status(:ok)
@@ -98,7 +98,7 @@ RSpec.describe Api::ServersController do
 
       it 'updates the server state to "cordoned"' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { server: { id: server.id, state: 'cordon' } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { state: 'cordon' } }
         updated_server = Server.find(server.id) # Reload
         expect(updated_server.state).to eq('cordoned')
         expect(response).to have_http_status(:ok)
@@ -108,7 +108,7 @@ RSpec.describe Api::ServersController do
 
       it 'updates the server state to "disabled"' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { server: { id: server.id, state: 'disable' } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { state: 'disable' } }
         updated_server = Server.find(server.id) # Reload
         expect(updated_server.state).to eq('disabled')
         expect(response).to have_http_status(:ok)
@@ -118,7 +118,7 @@ RSpec.describe Api::ServersController do
 
       it 'returns an error for an invalid state parameter' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { server: { id: server.id, state: 'invalid_state' } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { state: 'invalid_state' } }
         expect(response).to have_http_status(:bad_request)
         expect(response.parsed_body['error']).to eq("Invalid state parameter: invalid_state")
       end
@@ -127,7 +127,7 @@ RSpec.describe Api::ServersController do
     context 'when updating load_multiplier' do
       it 'updates the server load_multiplier' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { server: { id: server.id, load_multiplier: '2.5' } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { load_multiplier: '2.5' } }
         updated_server = Server.find(server.id) # Reload
         expect(updated_server.load_multiplier).to eq("2.5")
         expect(response).to have_http_status(:ok)
@@ -137,7 +137,7 @@ RSpec.describe Api::ServersController do
 
       it 'returns an error for an invalid load_multiplier parameter' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { server: { id: server.id, load_multiplier: 0 } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { load_multiplier: 0 } }
         expect(response).to have_http_status(:bad_request)
         expect(response.parsed_body['error']).to eq("Load-multiplier must be a non-zero number")
       end
@@ -148,7 +148,7 @@ RSpec.describe Api::ServersController do
     context 'with an existing server' do
       it 'deletes the server' do
         server = create(:server)
-        expect { post scalelite_api_delete_server_url, params: { server: { id: server.id } } }.to change { Server.all.count }.by(-1)
+        expect { post scalelite_api_delete_server_url, params: { id: server.id } }.to change { Server.all.count }.by(-1)
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body['success']).to eq("Server id=#{server.id} was destroyed")
       end
@@ -156,7 +156,7 @@ RSpec.describe Api::ServersController do
 
     context 'with a non-existent server' do
       it 'does not delete any server' do
-        post scalelite_api_delete_server_url, params: { server: { id: 'nonexistent-id' } }
+        post scalelite_api_delete_server_url, params: { id: 'nonexistent-id' }
         expect(response).to have_http_status(:not_found)
         expect(response.parsed_body['error']).to eq("Couldn't find server with id=nonexistent-id")
       end
@@ -189,7 +189,7 @@ RSpec.describe Api::ServersController do
         .to_return(body: "<response><returncode>SUCCESS</returncode><messageKey>OK</messageKey>
                       <message>The meeting was ended successfully.</message></response>")
 
-      post scalelite_api_panic_server_url, params: { server: { id: server.id } }
+      post scalelite_api_panic_server_url, params: { id: server.id }
 
       expect(response).to have_http_status(:ok)
       json = response.parsed_body
@@ -202,7 +202,7 @@ RSpec.describe Api::ServersController do
     it 'keeps server state if keep_state is true' do
       server = create(:server, state: 'enabled')
 
-      post scalelite_api_panic_server_url, params: { server: { id: server.id }, keep_state: true }
+      post scalelite_api_panic_server_url, params: { id: server.id, keep_state: true }
 
       expect(response).to have_http_status(:ok)
       json = response.parsed_body
@@ -213,7 +213,7 @@ RSpec.describe Api::ServersController do
     end
 
     it 'returns an error message if the server is not found' do
-      post scalelite_api_panic_server_url, params: { server: { id: 'nonexistent_id' } }
+      post scalelite_api_panic_server_url, params: { id: 'nonexistent_id' }
 
       expect(response).to have_http_status(:not_found)
       json = response.parsed_body
@@ -223,7 +223,7 @@ RSpec.describe Api::ServersController do
 
   describe 'verify_checksum' do
     before do
-      allow_any_instance_of(described_class).to receive(:verify_lb_checksum).and_call_original
+      allow_any_instance_of(described_class).to receive(:verify_checksum).and_call_original
     end
 
     let(:valid_params) {

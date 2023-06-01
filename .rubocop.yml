@@ -173,6 +173,8 @@ Naming/MethodParameterName:
 Naming/AccessorMethodName:
   Exclude:
     - app/controllers/bigbluebutton_api_controller.rb
+    - app/controllers/api/tenants_controller.rb
+    - app/controllers/api/servers_controller.rb
 
 Naming/PredicateName:
   Exclude:

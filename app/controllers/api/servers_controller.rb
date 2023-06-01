@@ -6,8 +6,8 @@ module Api
 
     skip_before_action :verify_authenticity_token
 
-    before_action :verify_lb_checksum
-    before_action :set_server, only: [:server_info, :update_server, :delete_server, :panic_server]
+    before_action -> { verify_checksum(true) }
+    before_action :set_server, only: [:get_server_info, :update_server, :delete_server, :panic_server]
 
     # Return a list of the configured BigBlueButton servers
     # GET /scalelite/api/servers
@@ -25,7 +25,7 @@ module Api
     #   },
     #   ...
     # ]
-    def servers
+    def get_servers
       servers = Server.all
 
       if servers.empty?
@@ -37,7 +37,12 @@ module Api
     end
 
     # Retrieve a single BigBlueButton server
-    # GET /scalelite/api/serverInfo
+    # POST /scalelite/api/getServerInfo
+    #
+    # Expected params:
+    # {
+    #  "id" : String   # Required
+    # }
     #
     # Successful response:
     #   {
@@ -49,7 +54,7 @@ module Api
     #     "load_multiplier": String,
     #     "online": String
     #   }
-    def server_info
+    def get_server_info
       begin
         render json: server_to_json(@server), status: :ok
       rescue StandardError => e
@@ -85,8 +90,8 @@ module Api
     #
     # Expected params:
     # {
+    #   "id": String               # Required: the server ID
     #   "server": {
-    #     "id": String             # Required: the server ID q
     #     "state": String,         # Optional: 'enable', 'cordon', or 'disable'
     #     "load_multiplier": Float # Optional: A non-zero number
     #     "secret": String         # Optional: Secret key of the BigBlueButton server
@@ -106,7 +111,9 @@ module Api
     # POST /scalelite/api/deleteServer
     #
     # Required Params:
-    # { "id" : String }
+    # {
+    #  "id" : String   # Required
+    # }
     def delete_server
       begin
         @server.destroy!
@@ -121,8 +128,8 @@ module Api
     #
     # Expected params:
     # {
+    #   "id": String            # Required
     #   "server": {
-    #     "id": String          # Required
     #     "keep_state": Boolean # Optional: Set to 'true' if you want to keep the server's state after panicking, defaults to 'false'
     #   }
     # }
@@ -148,9 +155,9 @@ module Api
 
     def set_server
       begin
-        @server = Server.find(server_id_param[:id])
+        @server = Server.find(params[:id])
       rescue ApplicationRedisRecord::RecordNotFound
-        render json: { error: "Couldn't find server with id=#{server_id_param[:id]}" }, status: :not_found
+        render json: { error: "Couldn't find server with id=#{params[:id]}" }, status: :not_found
       end
     end
 
@@ -176,14 +183,6 @@ module Api
 
     def server_panic_params
       params.permit(:keep_state)
-    end
-
-    def server_id_param
-      params.require(:server).permit(:id)
-    end
-
-    def verify_lb_checksum
-      verify_checksum({ use_loadbalancer_secret: true })
     end
   end
 end
