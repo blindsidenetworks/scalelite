@@ -62,8 +62,10 @@ module Api
     #
     # Expected params:
     # {
-    #   "name": String,                 # Required: Name of the tenant
-    #   "secrets": String,              # Required: Tenant secret(s)
+    #   "tenant": {
+    #     "name": String,                 # Required: Name of the tenant
+    #     "secrets": String,              # Required: Tenant secret(s)
+    #   }
     # }
     def add_tenant
       if tenant_params[:name].blank? || tenant_params[:secrets].blank?
@@ -80,8 +82,10 @@ module Api
     # Expected params:
     # {
     #   "id": String        # Required
-    #   "name": String,     # include the parameter you want updated
-    #   "secrets": String
+    #   "tenant": {
+    #     "name": String,     # include the parameter you want updated
+    #     "secrets": String
+    #   }
     # }
     def update_tenant
       @tenant.name = tenant_params[:name] if tenant_params[:name].present?
