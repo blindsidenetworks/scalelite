@@ -207,7 +207,7 @@ class BigBlueButtonApiController < ApplicationController
     excluded_params = Rails.configuration.x.create_exclude_params
     # Pass along all params except the built in rails ones and excluded_params
     uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params(excluded_params))
-    body = request.post? ? request.body.read : override_default_presentations
+    body = request.post? ? request.body.read : generate_default_presentations
 
     begin
       # Send a GET/POST request to the server

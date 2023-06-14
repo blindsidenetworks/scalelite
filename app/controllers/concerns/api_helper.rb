@@ -218,7 +218,8 @@ module ApiHelper
   end
 end
 
-def override_default_presentations
+def generate_default_presentations
+  return '' if Rails.configuration.x.default_presentations.empty?
   doc = Nokogiri::XML('<modules></modules>')
   module_pres = Nokogiri::XML::Node.new("module", doc)
   module_pres['name'] = "presentation"
