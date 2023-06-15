@@ -14,6 +14,10 @@ task tenants: :environment do |_t, _args|
       puts("id: #{tenant.id}")
       puts("\tname: #{tenant.name}")
       puts("\tsecrets: #{tenant.secrets}")
+      puts("\tdefault presentations: #{tenant.default_presentations_array.length}")
+      tenant.default_presentations_array.each { |x|
+        puts("\t\t#{x[0]} -> #{x[1]}")
+      }
     end
   end
 
@@ -53,6 +57,25 @@ namespace :tenants do
     tenant = Tenant.find(id)
     tenant.name = name if name.present?
     tenant.secrets = secrets if secrets.present?
+    tenant.save!
+
+    puts('OK')
+    puts("Updated Tenant id: #{tenant.id}")
+  end
+
+  desc 'Set default presentations for an existing Tenant'
+  task :presentations, [:id, :pres] => :environment do |_t, args|
+    check_multitenancy
+    id = args[:id]
+    pres = args[:pres]
+
+    if id.blank?
+      puts('Error: id is required to update a Tenant')
+      exit(1)
+    end
+
+    tenant = Tenant.find(id)
+    tenant.default_presentations = (pres.presence || '')
     tenant.save!
 
     puts('OK')

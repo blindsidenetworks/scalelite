@@ -212,6 +212,9 @@ class BigBlueButtonApiController < ApplicationController
       # Read the body if POST
       body = request.post? ? request.body.read : ''
 
+      # Override body with default presentations if empty
+      body = generate_tenant_presentations unless body != ''
+
       # Send a GET/POST request to the server
       response = get_post_req(uri, body, **bbb_req_timeout(server))
     rescue BBBError
