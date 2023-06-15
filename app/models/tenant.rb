@@ -14,7 +14,7 @@ class Tenant < ApplicationRedisRecord
   # Shared secrets for making API requests for this tenant (: separated)
   application_redis_attr :secrets
 
-  # Shared secrets for making API requests for this tenant (: separated)
+  # Default presentations for this tenant (Sceme: URL->name;URL2->name2)
   application_redis_attr :default_presentations
 
   def save!
