@@ -50,7 +50,7 @@ ActiveRecord::Schema.define(version: 2023_06_27_141045) do
     t.datetime "endtime"
     t.datetime "deleted_at"
     t.boolean "protected", default: false, null: false
-    t.boolean "publish_updated", default: false
+    t.boolean "publish_updated", default: false, null: false
     t.index ["meeting_id"], name: "index_recordings_on_meeting_id"
     t.index ["record_id"], name: "index_recordings_on_record_id", unique: true
   end
