@@ -3,6 +3,10 @@
 require 'rails_helper'
 
 RSpec.describe RecordingReadyNotifierService, type: :service do
+  before do
+    Rails.configuration.x.multitenancy_enabled = false
+  end
+
   let!(:recording) { create(:recording) }
   let(:url) { 'https://test-1.example.com/bigbluebutton/api/' }
   let!(:callback_data) do
@@ -17,7 +21,7 @@ RSpec.describe RecordingReadyNotifierService, type: :service do
       .to_return(status: 200, body: '', headers: {})
 
     allow(JWT).to receive(:encode).and_return('eyJhbGciOiJIUzI1NiJ9.eyJtZWV0aW5nX2lkIjoibWVldGluZzE5In0.Jlw1ND63QJ3j9TT0mgp_5fpmPA82FhMT_-mPU25PEFY')
-    return_val = RecordingReadyNotifierService.execute(recording.id)
+    return_val = described_class.execute(recording.id)
 
     expect(return_val).to be true
   end
@@ -26,7 +30,7 @@ RSpec.describe RecordingReadyNotifierService, type: :service do
     stub_request(:post, url).to_timeout
 
     allow(JWT).to receive(:encode).and_return('eyJhbGciOiJIUzI1NiJ9.eyJtZWV0aW5nX2lkIjoibWVldGluZzE5In0.Jlw1ND63QJ3j9TT0mgp_5fpmPA82FhMT_-mPU25PEFY')
-    return_val = RecordingReadyNotifierService.execute(recording.id)
+    return_val = described_class.execute(recording.id)
 
     expect(return_val).to be false
   end
@@ -44,9 +48,9 @@ RSpec.describe RecordingReadyNotifierService, type: :service do
       stub_request(:post, url)
         .to_return(status: 200, body: '', headers: {})
 
-      expect(JWT).to receive(:encode).and_return(JWT.encode({ meeting_id: recording.meeting_id, record_id: recording.id }, tenant.secrets_array[0]))
+      expect(JWT).to receive(:encode).with({ meeting_id: recording.meeting_id, record_id: recording.record_id }, tenant.secrets_array[0])
 
-      RecordingReadyNotifierService.execute(recording.id)
+      described_class.execute(recording.id)
     end
   end
 end
