@@ -5,6 +5,8 @@ require 'net/http'
 
 class RecordingReadyNotifierService
   class << self
+    include ApiHelper
+
     def execute(recording_id)
       recording = Recording.find(recording_id)
       meeting_id = recording.meeting_id
