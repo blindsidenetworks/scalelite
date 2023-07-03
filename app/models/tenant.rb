@@ -111,7 +111,7 @@ class Tenant < ApplicationRedisRecord
       redis.multi do |transaction|
         transaction.del(key)
         transaction.del(name_key)
-        transaction.srem('tenants', id)
+        transaction.srem?('tenants', id)
       end
     end
 

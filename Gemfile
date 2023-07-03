@@ -18,7 +18,7 @@ gem 'puma', '~> 6.2', '>= 6.2.1'
 # Redis connection setup for live session (server and meeting) tracking
 gem 'connection_pool', '~> 2.4.0'
 gem 'redis', '~> 4.8.0'
-gem 'redis-namespace', '~> 1.10.0'
+gem 'redis-namespace', '~> 1.11.0'
 
 # Use postgresql as the database for Active Record
 gem 'pg', '~> 1.4.4'

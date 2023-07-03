@@ -200,7 +200,7 @@ RSpec.describe Server, redis: true do
       context 'with lowest load and state as enabled' do
         before do
           RedisStore.with_connection do |redis|
-            redis.flushall
+            redis.redis.flushall
             redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                                state: 'enabled')
             redis.sadd?('servers', 'test-1')

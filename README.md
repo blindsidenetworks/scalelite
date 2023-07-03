@@ -49,6 +49,7 @@ An example Scalelite deployment will look like this:
 For the Scalelite Server, the minimum recommended server requirements are:
 - 4 CPU Cores
 - 8 GB Memory
+- Latest version of Docker (ScaleLite will no run on docker 19.x)
 
 For **each** BigBlueButton server, the minimum requirements can be found [here](https://docs.bigbluebutton.org/administration/install#minimum-server-requirements).
 

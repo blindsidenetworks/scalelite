@@ -118,7 +118,7 @@ class Meeting < ApplicationRedisRecord
     with_connection do |redis|
       redis.multi do |transaction|
         transaction.del(key)
-        transaction.srem('meetings', id)
+        transaction.srem?('meetings', id)
         transaction.hdel('voice_bridges', voice_bridge) unless voice_bridge.nil?
       end
     end
