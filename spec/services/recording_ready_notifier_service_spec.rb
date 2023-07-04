@@ -40,8 +40,7 @@ RSpec.describe RecordingReadyNotifierService, type: :service do
 
     before do
       Rails.configuration.x.multitenancy_enabled = true
-
-      allow_any_instance_of(ApiHelper).to receive(:fetch_secrets).and_return(tenant.secrets_array)
+      create(:metadatum, recording: recording, key: 'tenant-id', value: tenant.id)
     end
 
     it 'encodes the payload using the tenants secret' do

@@ -14,20 +14,24 @@ class RecordingReadyNotifierService
       return if callback_data.nil?
 
       callback_url = callback_data.callback_attributes[:recording_ready_url]
-      notify(callback_url, meeting_id, recording.record_id) if callback_url
+
+      tenant_id = Metadatum.find_by(recording_id: recording.id, key: 'tenant-id')&.value
+      tenant_name = tenant_id.present? ? Tenant.find(tenant_id)&.name : nil
+
+      notify(callback_url, meeting_id, recording.record_id, tenant_name) if callback_url
     end
 
-    def encoded_payload(meeting_id, record_id)
-      secret = fetch_secrets[0]
+    def encoded_payload(meeting_id, record_id, tenant_name)
+      secret = fetch_secrets(tenant_name: tenant_name)[0]
       payload = { meeting_id: meeting_id, record_id: record_id }
       JWT.encode(payload, secret)
     end
 
-    def notify(callback_url, meeting_id, record_id)
+    def notify(callback_url, meeting_id, record_id, tenant_name)
       logger.info("Recording Ready Notify for [#{meeting_id}] starts")
       logger.info('Making callback for recording ready notification')
 
-      payload = encoded_payload(meeting_id, record_id)
+      payload = encoded_payload(meeting_id, record_id, tenant_name)
       uri = URI.parse(callback_url)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = (uri.scheme == 'https')

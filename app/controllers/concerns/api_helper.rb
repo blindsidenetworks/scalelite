@@ -18,7 +18,7 @@ module ApiHelper
   # @param [boolean] force_loadbalancer_secret. Set true for API endpoints (such as the tenants API)
   #     which should be accessed only by superadmins.
   def verify_checksum(force_loadbalancer_secret = false)
-    secrets = fetch_secrets(force_loadbalancer_secret)
+    secrets = fetch_secrets(force_loadbalancer_secret: force_loadbalancer_secret)
 
     raise ChecksumError if params[:checksum].blank?
     raise ChecksumError if secrets.empty?
@@ -51,10 +51,10 @@ module ApiHelper
     raise ChecksumError
   end
 
-  def fetch_secrets(force_loadbalancer_secret = false)
+  def fetch_secrets(tenant_name: nil, force_loadbalancer_secret: false)
     return Rails.configuration.x.loadbalancer_secrets if force_loadbalancer_secret || !Rails.configuration.x.multitenancy_enabled
 
-    tenant = fetch_tenant
+    tenant = fetch_tenant(name: tenant_name)
     if tenant.present?
       tenant.secrets_array
     else
@@ -66,10 +66,10 @@ module ApiHelper
     request.host.split(".").first
   end
 
-  def fetch_tenant
+  def fetch_tenant(name: nil)
     return nil unless Rails.configuration.x.multitenancy_enabled
 
-    tenant_name = fetch_tenant_name_from_url
+    tenant_name = name.presence || fetch_tenant_name_from_url
     tenant = Tenant.find_by_name(tenant_name)
     raise ChecksumError if tenant.blank?
 
