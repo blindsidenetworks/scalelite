@@ -1,0 +1,63 @@
+#!/usr/bin/python3
+
+# register-download-format
+#
+# Determines test or production env from second argument or hostname,
+# opens corresponding database connection and adds Download format, if
+# Video format is present for a given recording id
+#
+
+import os
+import re
+import sys
+import socket
+
+import psycopg2
+
+def create_download_link(conn, meetingid):
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM recordings WHERE record_id = %s;", (meetingid,))
+    recordingid = cur.fetchall()
+    if not recordingid:
+        sys.exit("No record found for meeting " + str(meetingid))
+    else:
+        cur.execute("SELECT * FROM playback_formats WHERE format = 'download' and recording_id = %s;", (recordingid[0][0],))
+        download = cur.fetchall()
+        cur.execute("SELECT length FROM playback_formats WHERE format = 'video' and recording_id = %s;", (recordingid[0][0],))
+        length = cur.fetchall()
+        if length and not download:
+            published_dir="/var/bigbluebutton/published/video/"+meetingid
+            if os.path.isfile(published_dir+"/video-0.mp4"):
+                video_url="/video/"+meetingid+"/video-0.mp4"
+            elif os.path.isfile(published_dir+"/video-0.m4v"):
+                video_url="/video/"+meetingid+"/video-0.m4v"
+            else:
+                print("/video/"+meetingid+"/video-0.mp4 does not exist. Exiting.")
+                sys.exit()
+            print("INSERT INTO playback_formats (recording_id, format, url, length) VALUES ("+str(recordingid[0][0])+", 'download', '"+video_url+"', "+str(length[0][0])+")")
+            cur.execute("INSERT INTO playback_formats (recording_id, format, url, length) VALUES (%s, 'download', %s, %s);", (recordingid[0][0], video_url, length[0][0]))
+            conn.commit()
+            sys.exit()
+
+
+meetingid = sys.argv[1]
+if (len(sys.argv) > 2):
+    bbb_env = str(sys.argv[2])
+else: # if BBB environment type (test/prod) is not given as argument deduce it from hostname
+    hname = socket.gethostname()
+    hnsplit0 = hname.split("-")[0]
+    if (hnsplit0 == "bbbtest"):
+        bbb_env = "test"
+    elif (hnsplit0 == "scalelite"):
+        bbb_env = "prod"
+    else:
+        sys.exit("Could not determine bbb_env from hostname: " + str(hname))
+
+if (bbb_env == "test"):
+    conn = psycopg2.connect("dbname=scalelite user=DB_USER password=DB_PASSWD host=DB_HOST")
+elif (bbb_env == "prod"):
+    conn = psycopg2.connect("dbname=scalelite user=DB_USER password=DB_PASSWD host=DB_HOST")
+else:
+    sys.exit("Could not determine Scalelite DB to use from bbb_env: " + bbb_env)
+
+create_download_link(conn, meetingid)

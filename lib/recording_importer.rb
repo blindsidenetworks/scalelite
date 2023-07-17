@@ -57,6 +57,7 @@ class RecordingImporter
 
     FileUtils.rm(filename)
     PostImporterScripts.run(recording.id)
+    DownloadFormatImporter.run(recording.record_id)
   rescue ActiveRecord::StatementInvalid
     ActiveRecord::Base.establish_connection
     retry_attempts += 1
