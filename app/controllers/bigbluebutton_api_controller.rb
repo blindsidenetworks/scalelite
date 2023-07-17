@@ -337,7 +337,6 @@ class BigBlueButtonApiController < ApplicationController
     if @tenant.present?
       tenant_recs = Metadatum.where(key: 'tenant-id', value: @tenant.id).pluck(:recording_id)
       query = query.where(id: tenant_recs)
-      #     query = query.where(metadata: { key: 'tenant-id', value: @tenant.id })
     end
 
     query = if params[:state].present?
