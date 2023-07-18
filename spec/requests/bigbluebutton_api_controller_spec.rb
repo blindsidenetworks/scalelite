@@ -1802,6 +1802,21 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         expect(xml_response.at_xpath("//response/returncode").text).to eq("SUCCESS")
         expect(xml_response.xpath("//response/recordings/recording").count).to eq(1)
       end
+
+      it 'returns all metadata' do
+        r1 = create(:recording, state: 'published')
+        create(:metadatum, recording: r1, key: "tenant-id", value: tenant.id)
+        create(:metadatum, recording: r1, key: "test-key", value: 'test-value')
+
+        params = encode_bbb_params("getRecordings", { recordID: r1.record_id })
+
+        get bigbluebutton_api_get_recordings_url, params: params
+
+        expect(response).to have_http_status(:success)
+        xml_response = Nokogiri::XML(response.body)
+        expect(xml_response.xpath("//response/recordings/recording/metadata/tenant-id")).to be_present
+        expect(xml_response.xpath("//response/recordings/recording/metadata/test-key")).to be_present
+      end
     end
   end
 
