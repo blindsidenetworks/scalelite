@@ -107,7 +107,7 @@ module Scalelite
     config.x.recording_import_unpublished = ENV.fetch('RECORDING_IMPORT_UNPUBLISHED', 'false').casecmp?('true')
 
     # Multitenancy values
-    config.x.multitenancy_enabled = ENV.fetch('MULTITENANCY_ENABLED', nil)
+    config.x.multitenancy_enabled = ENV.fetch('MULTITENANCY_ENABLED', 'false').casecmp?('true')
 
     # Scalelite Host name
     config.x.url_host = ENV.fetch('URL_HOST', nil)
