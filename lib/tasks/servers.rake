@@ -56,6 +56,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Remove a BigBlueButton server'
@@ -65,6 +66,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Mark a BigBlueButton server as available for scheduling new meetings'
@@ -75,6 +77,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Mark a BigBlueButton server as cordoned to stop scheduling new meetings but consider for
@@ -86,6 +89,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Mark a BigBlueButton server as unavailable to stop scheduling new meetings'
@@ -117,6 +121,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Mark a BigBlueButton server as unavailable, and clear all meetings from it'
@@ -142,6 +147,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Set the load-multiplier of a BigBlueButton server'
@@ -160,6 +166,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Adds multiple BigBlueButton servers defined in a YAML file passed as an argument'
