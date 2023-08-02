@@ -26,6 +26,12 @@ namespace :servers do
       puts('Error: Please input at least a URL and a secret!')
       exit(1)
     end
+
+    unless args.url.start_with?('http://', 'https://')
+      puts('Error: Server URL must start with http:// or https://')
+      exit(1)
+    end
+
     tmp_load_multiplier = 1.0
     unless args.load_multiplier.nil?
       tmp_load_multiplier = args.load_multiplier.to_d
