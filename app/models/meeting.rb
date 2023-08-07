@@ -277,13 +277,8 @@ class Meeting < ApplicationRedisRecord
         hash = redis.hgetall(key(id))
         next if hash.blank?
 
-        if tenant_id.present?
-          # Only fetch meetings for particular Tenant
-          next if tenant_id != hash['tenant_id']
-        elsif hash['tenant_id'].present?
-          next
-        end
-        # Only fetch meetings without Tenant
+        # If tenant_id given, only fetch meetings for particular Tenant
+        next if tenant_id.present? && hash['tenant_id'] != tenant_id
 
         hash[:id] = id
         meetings << new.init_with_attributes(hash)
