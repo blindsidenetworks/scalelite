@@ -136,7 +136,11 @@ module Api
     def panic_server
       begin
         keep_state = (server_panic_params[:keep_state].presence || false)
-        meetings = Meeting.all.select { |m| m.server_id == @server.id }
+        if tenant_id.present?
+          meetings = Meeting.all(@tenant_id).select { |m| m.server_id == @server.id }
+        else
+          meetings = Meeting.all.select { |m| m.server_id == @server.id }
+        end
         meetings.each do |meeting|
           moderator_pw = meeting.try(:moderator_pw)
           meeting.destroy!

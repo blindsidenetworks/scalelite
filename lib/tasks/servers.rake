@@ -126,17 +126,35 @@ namespace :servers do
 
     server = Server.find(args.id)
 
-    meetings = Meeting.all.select { |m| m.server_id == server.id }
-    meetings.each do |meeting|
-      puts("Clearing Meeting id=#{meeting.id}")
-      moderator_pw = meeting.try(:moderator_pw)
-      meeting.destroy!
-      get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
-    rescue ApplicationRedisRecord::RecordNotDestroyed => e
-      raise("ERROR: Could not destroy meeting id=#{meeting.id}: #{e}")
-    rescue StandardError => e
-      puts("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
+    tenants = Tenant.all
+    if tenants.present?
+      tenants.each do |tenant|
+        meetings = Meeting.all(tenant.id).select { |m| m.server_id == server.id }
+        meetings.each do |meeting|
+          puts("Clearing Meeting id=#{meeting.id}")
+          moderator_pw = meeting.try(:moderator_pw)
+          meeting.destroy!
+          get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
+        rescue ApplicationRedisRecord::RecordNotDestroyed => e
+          raise("ERROR: Could not destroy meeting id=#{meeting.id}: #{e}")
+        rescue StandardError => e
+          puts("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
+        end
+      end
+    else
+      meetings = Meeting.all.select { |m| m.server_id == server.id }
+      meetings.each do |meeting|
+        puts("Clearing Meeting id=#{meeting.id}")
+        moderator_pw = meeting.try(:moderator_pw)
+        meeting.destroy!
+        get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
+      rescue ApplicationRedisRecord::RecordNotDestroyed => e
+        raise("ERROR: Could not destroy meeting id=#{meeting.id}: #{e}")
+      rescue StandardError => e
+        puts("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
+      end
     end
+
     server.state = 'disabled' unless args.keep_state
     server.save!
     puts('OK')
