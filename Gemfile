@@ -8,7 +8,7 @@ ruby '>= 3.0.0'
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 6.1', '>= 6.1.7.3'
 # Use Puma as the app server
-gem 'puma', '~> 6.2', '>= 6.2.1'
+gem 'puma', '~> 6.3'
 
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
 # gem 'jbuilder', '~> 2.7'
