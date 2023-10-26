@@ -85,5 +85,4 @@ begin
   File.write("#{recording_dir}/status/published/#{meeting_id}-sender.done", "Published #{meeting_id}")
 
   puts('Recording transferring to Scalelite ends')
-
 end
