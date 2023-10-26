@@ -158,6 +158,15 @@ RSpec.describe ApiHelper, type: :helper do
           expect(fetched_tenant.id).to eq tenant.id
           expect(fetched_tenant.name).to eq tenant.name
         end
+
+        it 'is overriden by passed in tenant name' do
+          tenant2 = create(:tenant)
+
+          fetched_tenant = fetch_tenant(name: tenant2.name)
+
+          expect(fetched_tenant.id).to eq tenant2.id
+          expect(fetched_tenant.name).to eq tenant2.name
+        end
       end
 
       context 'without tenant in subdomain' do
@@ -210,6 +219,16 @@ RSpec.describe ApiHelper, type: :helper do
 
         it 'returns secrets from Tenant' do
           expect(fetch_secrets).to eq tenant.secrets_array
+        end
+
+        it 'overrides url lookup if name is passed' do
+          tenant2 = create(:tenant)
+
+          expect(fetch_secrets(tenant_name: tenant2.name)).to eq tenant2.secrets_array
+        end
+
+        it 'forces the loadbalancer secret if passed in' do
+          expect(fetch_secrets(force_loadbalancer_secret: true)).to eq config_secrets
         end
       end
     end

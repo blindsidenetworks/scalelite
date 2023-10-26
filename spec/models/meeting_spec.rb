@@ -167,14 +167,8 @@ RSpec.describe Meeting, redis: true do
       context 'without tenant_id param' do
         let(:meetings) { described_class.all }
 
-        it 'fetches correct nb of Meetings' do
-          expect(meetings.size).to eq 2
-        end
-
-        it 'fetches Meetings with correct tenant_id' do
-          meetings.each do |meeting|
-            expect(meeting.tenant_id).to be_nil
-          end
+        it 'fetches all Meetings' do
+          expect(meetings.size).to eq 7
         end
       end
     end
