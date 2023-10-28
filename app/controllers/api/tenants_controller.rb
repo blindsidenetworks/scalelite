@@ -84,12 +84,14 @@ module Api
     #   "id": String        # Required
     #   "tenant": {
     #     "name": String,     # include the parameter you want updated
-    #     "secrets": String
+    #     "secrets": String,
+    #     "default_presentations": String
     #   }
     # }
     def update_tenant
       @tenant.name = tenant_params[:name] if tenant_params[:name].present?
       @tenant.secrets = tenant_params[:secrets] if tenant_params[:secrets].present?
+      @tenant.default_presentations = tenant_params[:default_presentations] if tenant_params[:default_presentations].present?
       @tenant.save!
       render json: { tenant: @tenant }, status: :ok
     rescue ApplicationRedisRecord::RecordNotSaved => e
@@ -117,7 +119,7 @@ module Api
     end
 
     def tenant_params
-      params.require(:tenant).permit(:name, :secrets)
+      params.require(:tenant).permit(:name, :secrets, :default_presentations)
     end
 
     def check_multitenancy

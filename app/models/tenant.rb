@@ -3,7 +3,7 @@
 class Tenant < ApplicationRedisRecord
   SECRETS_SEPARATOR = ':'
 
-  define_attribute_methods :id, :name, :secrets
+  define_attribute_methods :id, :name, :secrets, :default_presentations
 
   # Unique ID for this tenant
   application_redis_attr :id
@@ -13,6 +13,9 @@ class Tenant < ApplicationRedisRecord
 
   # Shared secrets for making API requests for this tenant (: separated)
   application_redis_attr :secrets
+
+  # Default presentations for this tenant (Sceme: URL->name;URL2->name2)
+  application_redis_attr :default_presentations
 
   def save!
     with_connection do |redis|
@@ -34,6 +37,7 @@ class Tenant < ApplicationRedisRecord
           pipeline.del(old_names_key) if !id_changed? && name_changed? # Delete the old name key if it's not a new record and the name was updated
           pipeline.hset(id_key, 'name', name) if name_changed?
           pipeline.hset(id_key, 'secrets', secrets) if secrets_changed?
+          pipeline.hset(id_key, 'default_presentations', default_presentations) if default_presentations_changed?
           pipeline.sadd?('tenants', id) if id_changed?
         end
       end
@@ -113,6 +117,10 @@ class Tenant < ApplicationRedisRecord
 
     # Superclass bookkeeping
     super
+  end
+
+  def default_presentations_array
+    default_presentations.blank? ? [] : default_presentations.split(";").collect { |x| x.split('->') }
   end
 
   def secrets_array

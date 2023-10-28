@@ -217,3 +217,23 @@ module ApiHelper
     final_params
   end
 end
+
+def generate_tenant_presentations
+  tenant = fetch_tenant
+  if tenant.present?
+    return '' if tenant.default_presentations_array.empty?
+    doc = Nokogiri::XML('<modules></modules>')
+    module_pres = Nokogiri::XML::Node.new("module", doc)
+    module_pres['name'] = "presentation"
+    tenant.default_presentations_array.each { |x|
+      document = Nokogiri::XML::Node.new("document", doc)
+      document['url'] = x[0]
+      document['filename'] = x[1]
+      module_pres << document
+    }
+    doc.root << module_pres
+    doc.to_xml
+  else
+    ''
+  end
+end

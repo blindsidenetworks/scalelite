@@ -473,10 +473,19 @@ When you run this command, Scalelite will return a list of all tenants, along wi
 id: 9a870f45-ec23-4d29-828b-4673f3536d7b
         name: tenant1
         secrets: secret1
+        default presentations: 0
 id: 4f3e4bb8-2a4e-41a6-9af8-0678c651777f
         name: tenant2
         secrets: secret2:secret2a:secret2b
+        default presentations: 1
+                https://test.bigbluebutton.org/default.pdf -> default.pdf
 ```
+
+#### Set default presentations for a tenant
+`./bin/rake tenants:presentations[id,"http://url_to_pres.pdf->default.pdf;http://another_pres.pdf->default_2.pdf"]`
+
+To clear the default presentations, simply omit the pres-param.
+
 #### Associate Old Recordings with a Tenant
 `./bin/rake recordings:addToTenant[tenant-id]`
 
