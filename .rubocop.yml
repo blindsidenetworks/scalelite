@@ -135,6 +135,7 @@ Metrics/PerceivedComplexity:
   Exclude:
     - app/models/recording.rb
     - app/models/server.rb
+    - app/models/tenant.rb
     - lib/server_sync.rb
 
 # Avoid classes longer than 100 lines of code.
@@ -164,6 +165,7 @@ Metrics/CyclomaticComplexity:
   Exclude:
     - app/models/recording.rb
     - app/models/server.rb
+    - app/models/tenant.rb
     - lib/server_sync.rb
 
 # Checks for method parameter names that contain capital letters, end in numbers, or do not meet a minimal length.

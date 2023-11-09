@@ -957,6 +957,49 @@ RSpec.describe BigBlueButtonApiController, redis: true do
           end
         end
       end
+
+      context 'secret-lrs-payload' do
+        before do
+          tenant.lrs_endpoint = 'https://test.com'
+
+          tenant.save!
+        end
+
+        it 'makes a call to the LrsPayloadService and sets meta_secret-lrs-payload' do
+          allow_any_instance_of(LrsPayloadService).to receive(:call).and_return('test-token')
+
+          create_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
+          stub_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567",
+                          'meta_tenant-id': tenant.id, 'meta_secret-lrs-payload': 'test-token' }
+
+          stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, stub_params))
+                        .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                                        <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+          get bigbluebutton_api_create_url, params: create_params
+
+          response_xml = Nokogiri.XML(response.body)
+          expect(stub_create).to have_been_requested
+          expect(response_xml.at_xpath("/response/returncode").text).to eq("SUCCESS")
+        end
+
+        it 'does not set meta_secret-lrs-payload if the value is nil' do
+          allow_any_instance_of(LrsPayloadService).to receive(:call).and_return(nil)
+
+          create_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
+          stub_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567", 'meta_tenant-id': tenant.id }
+
+          stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, stub_params))
+                        .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                                        <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+          get bigbluebutton_api_create_url, params: create_params
+
+          response_xml = Nokogiri.XML(response.body)
+          expect(stub_create).to have_been_requested
+          expect(response_xml.at_xpath("/response/returncode").text).to eq("SUCCESS")
+        end
+      end
     end
   end
 
