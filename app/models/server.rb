@@ -133,7 +133,7 @@ class Server < ApplicationRedisRecord
     if state_changed?
       redis.zadd('cordoned_server_load', self.load, id) if self.load.present?
       redis.zrem('server_load', id)
-      redis.srem('server_enabled', id)
+      redis.srem?('server_enabled', id)
     end
     return unless load_changed?
 
@@ -147,7 +147,7 @@ class Server < ApplicationRedisRecord
   def handle_disabled_state(redis)
     return unless state_changed?
 
-    redis.srem('server_enabled', id)
+    redis.srem?('server_enabled', id)
     redis.zrem('server_load', id)
     redis.zrem('cordoned_server_load', id)
   end
@@ -157,7 +157,7 @@ class Server < ApplicationRedisRecord
       if enabled
         redis.sadd?('server_enabled', id)
       else
-        redis.srem('server_enabled', id)
+        redis.srem?('server_enabled', id)
         redis.zrem('server_load', id)
       end
     end
@@ -178,9 +178,9 @@ class Server < ApplicationRedisRecord
 
       redis.multi do |pipeline|
         pipeline.del(key)
-        pipeline.srem('servers', id)
+        pipeline.srem?('servers', id)
         pipeline.zrem('server_load', id)
-        pipeline.srem('server_enabled', id)
+        pipeline.srem?('server_enabled', id)
         pipeline.zrem('cordoned_server_load', id)
       end
     end

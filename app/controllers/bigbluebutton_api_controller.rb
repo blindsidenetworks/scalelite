@@ -331,10 +331,9 @@ class BigBlueButtonApiController < ApplicationController
       raise BBBError.new('missingParameters', 'param meetingID or recordID must be included.')
     end
 
-    query = Recording.includes(playback_formats: [:thumbnails], metadata: []).references(:metadata)
+    query = Recording.includes(playback_formats: [:thumbnails], metadata: []).left_joins(:metadata).distinct
 
-    # Filter recordings for current tenant
-    query = query.where(metadata: { key: 'tenant-id', value: @tenant.id }) if @tenant.present?
+    query = query.where(metadata: { key: "tenant-id", value: @tenant.id }) if @tenant.present?
 
     query = if params[:state].present?
               states = params[:state].split(',')
