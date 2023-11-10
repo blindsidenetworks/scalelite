@@ -198,6 +198,11 @@ class BigBlueButtonApiController < ApplicationController
 
     params[:voiceBridge] = meeting.voice_bridge
 
+    if @tenant&.lrs_endpoint.present?
+      lrs_payload = LrsPayloadService.new(tenant: @tenant, secret: server.secret).call
+      params[:'meta_secret-lrs-payload'] = lrs_payload if lrs_payload.present?
+    end
+
     logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
     params_hash = params
 
