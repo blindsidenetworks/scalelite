@@ -5,6 +5,7 @@ FactoryBot.define do
     name { Faker::Creature::Animal.name }
     secrets { "#{Faker::Crypto.sha256}:#{Faker::Crypto.sha512}" }
     lrs_endpoint { nil }
+    lrs_basic_token { nil }
     kc_token_url { nil }
     kc_client_id { nil }
     kc_client_secret { nil }
