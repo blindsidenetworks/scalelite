@@ -44,7 +44,7 @@ RSpec.describe LrsPayloadService, type: :service do
         }
 
         stub_create = stub_request(:post, tenant.kc_token_url)
-                        .with(body: payload).to_return(body: "kc_access_token")
+                      .with(body: payload).to_return(body: "kc_access_token")
 
         described_class.new(tenant: tenant, secret: 'server-secret').call
 
@@ -70,7 +70,7 @@ RSpec.describe LrsPayloadService, type: :service do
     salt = decoded_text[8, 8]
     ciphertext = decoded_text[16..]
 
-    key_iv_bytes = OpenSSL::PKCS5.pbkdf2_hmac(secret, salt, 10000, 48, 'sha256')
+    key_iv_bytes = OpenSSL::PKCS5.pbkdf2_hmac(secret, salt, 10_000, 48, 'sha256')
     key = key_iv_bytes[0, 32]
     iv = key_iv_bytes[32..]
 
@@ -81,6 +81,4 @@ RSpec.describe LrsPayloadService, type: :service do
 
     decipher.update(ciphertext) + decipher.final
   end
-
 end
-
