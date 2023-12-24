@@ -72,7 +72,7 @@ begin
   end
 
   puts("Transferring recording archive to #{spool_dir}")
-  system('rsync', '--verbose', '--protect-args', *extra_rsync_opts, archive_file, spool_dir) \
+  system('rsync', '--verbose', '--remove-source-files', '--protect-args', *extra_rsync_opts, archive_file, spool_dir) \
     || raise('Failed to transfer recording archive')
 
   # Delete recording after transfer
@@ -82,11 +82,7 @@ begin
   end
 
   puts('Create sender.done file')
-  File.open("#{recording_dir}/status/published/#{meeting_id}-sender.done", 'w') do |f|
-    f.write("Published #{meeting_id}")
-  end
+  File.write("#{recording_dir}/status/published/#{meeting_id}-sender.done", "Published #{meeting_id}")
 
   puts('Recording transferring to Scalelite ends')
-ensure
-  FileUtils.rm_f(archive_file)
 end

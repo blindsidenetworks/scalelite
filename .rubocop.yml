@@ -1,10 +1,13 @@
 require:
   - rubocop-rails
+  - rubocop-rspec
+  - rubocop-performance
 
 AllCops:
   Exclude:
   - 'bin/**/*'
   - 'db/schema.rb'
+  - 'db/migrate/*'
   - 'vendor/**/*'
   - 'vendor/bundle/**/*'
   DisabledByDefault: false
@@ -17,6 +20,8 @@ Rails/DynamicFindBy:
   AllowedReceivers:
     - Meeting
     - Server
+    - Tenant
+    - described_class
 
 Rails/CreateTableWithTimestamps:
   Enabled: false
@@ -130,6 +135,7 @@ Metrics/PerceivedComplexity:
   Exclude:
     - app/models/recording.rb
     - app/models/server.rb
+    - app/models/tenant.rb
     - lib/server_sync.rb
 
 # Avoid classes longer than 100 lines of code.
@@ -138,7 +144,7 @@ Metrics/ClassLength:
 
 # Limit lines to 80 characters.
 Layout/LineLength:
-  Max: 130
+  Max: 150
 
 # Avoid methods longer than 10 lines of code.
 Metrics/MethodLength:
@@ -159,6 +165,7 @@ Metrics/CyclomaticComplexity:
   Exclude:
     - app/models/recording.rb
     - app/models/server.rb
+    - app/models/tenant.rb
     - lib/server_sync.rb
 
 # Checks for method parameter names that contain capital letters, end in numbers, or do not meet a minimal length.
@@ -168,6 +175,8 @@ Naming/MethodParameterName:
 Naming/AccessorMethodName:
   Exclude:
     - app/controllers/bigbluebutton_api_controller.rb
+    - app/controllers/api/tenants_controller.rb
+    - app/controllers/api/servers_controller.rb
 
 Naming/PredicateName:
   Exclude:
@@ -226,3 +235,36 @@ Style/OptionalBooleanParameter:
 
 Style/SlicingWithRange:
   Enabled: true
+
+RSpec/ContextWording:
+  Enabled: false
+
+# Enable having multiple expectations per example in a spec.
+RSpec/MultipleExpectations:
+  Enabled: false
+
+# Enable having long examples
+RSpec/ExampleLength:
+  Enabled: false
+
+# Enable having arbitrary Spec path i.e. Api::V1::Controller.
+RSpec/FilePath:
+  Enabled: false
+
+RSpec/LetSetup:
+  Enabled: false
+
+RSpec/MessageSpies:
+  Enabled: false
+
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
+RSpec/NestedGroups:
+  Max: 7
+
+RSpec/AnyInstance:
+  Enabled: false
+
+RSpec/IndexedLet:
+  Enabled: false

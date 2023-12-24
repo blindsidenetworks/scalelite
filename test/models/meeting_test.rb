@@ -48,7 +48,7 @@ class MeetingTest < ActiveSupport::TestCase
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
       redis.mapped_hmset('meeting:test-meeting-2', server_id: 'test-server-2')
-      redis.sadd('meetings', %w[test-meeting-1 test-meeting-2])
+      redis.sadd?('meetings', %w[test-meeting-1 test-meeting-2])
     end
 
     all_meetings = Meeting.all
@@ -59,7 +59,7 @@ class MeetingTest < ActiveSupport::TestCase
   test 'Meeting create' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-      redis.sadd('servers', 'test-server-1')
+      redis.sadd?('servers', 'test-server-1')
     end
 
     server = Server.find('test-server-1')
@@ -79,7 +79,7 @@ class MeetingTest < ActiveSupport::TestCase
   test 'Meeting atomic create (new meeting)' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-      redis.sadd('servers', 'test-server-1')
+      redis.sadd?('servers', 'test-server-1')
     end
 
     server = Server.find('test-server-1')
@@ -102,11 +102,11 @@ class MeetingTest < ActiveSupport::TestCase
   test 'Meeting atomic create (existing meeting)' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-      redis.sadd('servers', 'test-server-1')
+      redis.sadd?('servers', 'test-server-1')
       redis.mapped_hmset('server:test-server-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2')
-      redis.sadd('servers', 'test-server-2')
+      redis.sadd?('servers', 'test-server-2')
       redis.mapped_hmset('meeting:Demo Meeting', server_id: 'test-server-1', voice_bridge: '12435687')
-      redis.sadd('meetings', 'Demo Meeting')
+      redis.sadd?('meetings', 'Demo Meeting')
       redis.hset('voice_bridges', '12435687', 'Demo Meeting')
     end
 
@@ -131,9 +131,9 @@ class MeetingTest < ActiveSupport::TestCase
   test 'Meeting update id' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-      redis.sadd('servers', 'test-server-1')
+      redis.sadd?('servers', 'test-server-1')
       redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
-      redis.sadd('meetings', 'test-meeting-1')
+      redis.sadd?('meetings', 'test-meeting-1')
     end
 
     meeting = Meeting.find('test-meeting-1')
@@ -146,11 +146,11 @@ class MeetingTest < ActiveSupport::TestCase
   test 'Meeting update server_id' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-      redis.sadd('servers', 'test-server-1')
+      redis.sadd?('servers', 'test-server-1')
       redis.mapped_hmset('server:test-server-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2')
-      redis.sadd('servers', 'test-server-2')
+      redis.sadd?('servers', 'test-server-2')
       redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
-      redis.sadd('meetings', 'test-meeting-1')
+      redis.sadd?('meetings', 'test-meeting-1')
     end
 
     meeting = Meeting.find('test-meeting-1')
@@ -167,11 +167,11 @@ class MeetingTest < ActiveSupport::TestCase
   test 'Meeting update server' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-      redis.sadd('servers', 'test-server-1')
+      redis.sadd?('servers', 'test-server-1')
       redis.mapped_hmset('server:test-server-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2')
-      redis.sadd('servers', 'test-server-2')
+      redis.sadd?('servers', 'test-server-2')
       redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
-      redis.sadd('meetings', 'test-meeting-1')
+      redis.sadd?('meetings', 'test-meeting-1')
     end
 
     meeting = Meeting.find('test-meeting-1')
@@ -188,9 +188,9 @@ class MeetingTest < ActiveSupport::TestCase
   test 'Meeting destroy' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-      redis.sadd('servers', 'test-server-1')
+      redis.sadd?('servers', 'test-server-1')
       redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
-      redis.sadd('meetings', 'test-meeting-1')
+      redis.sadd?('meetings', 'test-meeting-1')
     end
 
     meeting = Meeting.find('test-meeting-1')
@@ -205,9 +205,9 @@ class MeetingTest < ActiveSupport::TestCase
   test 'Meeting destroy with pending changes' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-      redis.sadd('servers', 'test-server-1')
+      redis.sadd?('servers', 'test-server-1')
       redis.mapped_hmset('meeting:test-meeting-1', server_id: 'test-server-1')
-      redis.sadd('meetings', 'test-meeting-1')
+      redis.sadd?('meetings', 'test-meeting-1')
     end
 
     meeting = Meeting.find('test-meeting-1')
@@ -221,7 +221,7 @@ class MeetingTest < ActiveSupport::TestCase
   test 'Meeting destroy with non-persisted object' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-      redis.sadd('servers', 'test-server-1')
+      redis.sadd?('servers', 'test-server-1')
     end
 
     meeting = Meeting.new
@@ -284,7 +284,7 @@ class MeetingTest < ActiveSupport::TestCase
   test 'cannot update voice_bridge' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-server-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1')
-      redis.sadd('servers', 'test-server-1')
+      redis.sadd?('servers', 'test-server-1')
     end
     server = Server.find('test-server-1')
     meeting = Meeting.find_or_create_with_server('Demo Meeting', server, 'mp')

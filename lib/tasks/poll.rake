@@ -34,7 +34,7 @@ namespace :poll do
     pool = Concurrent::FixedThreadPool.new(Rails.configuration.x.poller_threads.to_i - 1, name: 'sync-server-data')
     tasks = Server.all.map do |server|
       Concurrent::Promises.future_on(pool) do
-        Rails.logger.debug("Polling Server id=#{server.id}")
+        Rails.logger.debug { "Polling Server id=#{server.id}" }
         resp = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
         meetings = resp.xpath('/response/meetings/meeting')
 
@@ -96,10 +96,26 @@ namespace :poll do
         next if server.increment_unhealthy < Rails.configuration.x.server_unhealthy_threshold
 
         Rails.logger.warn("Server id=#{server.id} is unhealthy. Panicking and setting offline...")
-        Rake::Task['servers:panic'].invoke(server.id, true) # Panic server to clear meetings
+
+        meetings = Meeting.all.select { |m| m.server_id == server.id }
+        meetings.each do |meeting|
+          puts("Clearing Meeting id=#{meeting.id}")
+          moderator_pw = meeting.try(:moderator_pw)
+          meeting.destroy!
+          get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
+        rescue ApplicationRedisRecord::RecordNotDestroyed => e
+          raise("ERROR: Could not destroy meeting id=#{meeting.id}: #{e}")
+        rescue StandardError => e
+          puts("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
+        end
+
         server.reset_counters
         server.load = nil
         server.online = false
+        server.meetings = 0
+        server.users = 0
+        server.largest_meeting = 0
+        server.videos = 0
       ensure
         begin
           server.save!
@@ -130,7 +146,7 @@ namespace :poll do
     tasks = Meeting.all.map do |meeting|
       Concurrent::Promises.future_on(pool) do
         server = meeting.server
-        Rails.logger.debug("Polling Meeting id=#{meeting.id} on Server id=#{server.id}")
+        Rails.logger.debug { "Polling Meeting id=#{meeting.id} on Server id=#{server.id}" }
         get_post_req(encode_bbb_uri('getMeetingInfo', server.url, server.secret, meetingID: meeting.id))
       rescue BBBErrors::BBBError => e
         unless e.message_key == 'notFound'

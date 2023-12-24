@@ -15,6 +15,13 @@
 # it.
 #
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
+
+# Webmock is used to prevent real HTTP requests from being made during tests
+require 'webmock/rspec'
+WebMock.disable_net_connect!(allow_localhost: true)
+
+require 'fakeredis/rspec'
+
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate
   # assertion/expectation library such as wrong or the stdlib/minitest
@@ -45,6 +52,15 @@ RSpec.configure do |config|
   # inherited by the metadata hash of host groups and examples, rather than
   # triggering implicit auto-inclusion in groups with matching metadata.
   config.shared_context_metadata_behavior = :apply_to_host_groups
+
+  # This block resets FactoryBot sequences before each test.
+  # It ensures that the sequence values in factories like Meeting and Server
+  # are reset to their initial values, providing a consistent starting point
+  # for each individual spec. While this approach may not be the most
+  # performant, it helps maintain consistency across the test suite.
+  config.before do
+    FactoryBot.rewind_sequences
+  end
 
   # The settings below are suggested to provide a good initial experience
   # with RSpec, but feel free to customize to your heart's content.
