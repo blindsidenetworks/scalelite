@@ -96,10 +96,26 @@ namespace :poll do
         next if server.increment_unhealthy < Rails.configuration.x.server_unhealthy_threshold
 
         Rails.logger.warn("Server id=#{server.id} is unhealthy. Panicking and setting offline...")
-        Rake::Task['servers:panic'].invoke(server.id, true) # Panic server to clear meetings
+
+        meetings = Meeting.all.select { |m| m.server_id == server.id }
+        meetings.each do |meeting|
+          puts("Clearing Meeting id=#{meeting.id}")
+          moderator_pw = meeting.try(:moderator_pw)
+          meeting.destroy!
+          get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
+        rescue ApplicationRedisRecord::RecordNotDestroyed => e
+          raise("ERROR: Could not destroy meeting id=#{meeting.id}: #{e}")
+        rescue StandardError => e
+          puts("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
+        end
+
         server.reset_counters
         server.load = nil
         server.online = false
+        server.meetings = 0
+        server.users = 0
+        server.largest_meeting = 0
+        server.videos = 0
       ensure
         begin
           server.save!

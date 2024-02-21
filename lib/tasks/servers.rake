@@ -26,6 +26,12 @@ namespace :servers do
       puts('Error: Please input at least a URL and a secret!')
       exit(1)
     end
+
+    unless args.url.start_with?('http://', 'https://')
+      puts('Error: Server URL must start with http:// or https://')
+      exit(1)
+    end
+
     tmp_load_multiplier = 1.0
     unless args.load_multiplier.nil?
       tmp_load_multiplier = args.load_multiplier.to_d
@@ -56,6 +62,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Remove a BigBlueButton server'
@@ -65,6 +72,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Mark a BigBlueButton server as available for scheduling new meetings'
@@ -75,6 +83,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Mark a BigBlueButton server as cordoned to stop scheduling new meetings but consider for
@@ -86,6 +95,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Mark a BigBlueButton server as unavailable to stop scheduling new meetings'
@@ -117,6 +127,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Mark a BigBlueButton server as unavailable, and clear all meetings from it'
@@ -142,6 +153,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Set the load-multiplier of a BigBlueButton server'
@@ -160,6 +172,7 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
   end
 
   desc 'Adds multiple BigBlueButton servers defined in a YAML file passed as an argument'

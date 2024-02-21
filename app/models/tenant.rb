@@ -3,7 +3,8 @@
 class Tenant < ApplicationRedisRecord
   SECRETS_SEPARATOR = ':'
 
-  define_attribute_methods :id, :name, :secrets
+  define_attribute_methods :id, :name, :secrets, :lrs_endpoint, :lrs_basic_token, :kc_token_url, :kc_client_id, :kc_client_secret, :kc_username,
+:kc_password
 
   # Unique ID for this tenant
   application_redis_attr :id
@@ -13,6 +14,15 @@ class Tenant < ApplicationRedisRecord
 
   # Shared secrets for making API requests for this tenant (: separated)
   application_redis_attr :secrets
+
+  # Custom LRS work
+  application_redis_attr :lrs_endpoint
+  application_redis_attr :lrs_basic_token
+  application_redis_attr :kc_token_url
+  application_redis_attr :kc_client_id
+  application_redis_attr :kc_client_secret
+  application_redis_attr :kc_username
+  application_redis_attr :kc_password
 
   def save!
     with_connection do |redis|
@@ -34,6 +44,13 @@ class Tenant < ApplicationRedisRecord
           pipeline.del(old_names_key) if !id_changed? && name_changed? # Delete the old name key if it's not a new record and the name was updated
           pipeline.hset(id_key, 'name', name) if name_changed?
           pipeline.hset(id_key, 'secrets', secrets) if secrets_changed?
+          pipeline.hset(id_key, 'lrs_endpoint', lrs_endpoint) if lrs_endpoint_changed?
+          pipeline.hset(id_key, 'lrs_basic_token', lrs_basic_token) if lrs_basic_token_changed?
+          pipeline.hset(id_key, 'kc_token_url', kc_token_url) if kc_token_url_changed?
+          pipeline.hset(id_key, 'kc_client_id', kc_client_id) if kc_client_id_changed?
+          pipeline.hset(id_key, 'kc_client_secret', kc_client_secret) if kc_client_secret_changed?
+          pipeline.hset(id_key, 'kc_username', kc_username) if kc_username_changed?
+          pipeline.hset(id_key, 'kc_password', kc_password) if kc_password_changed?
           pipeline.sadd?('tenants', id) if id_changed?
         end
       end
