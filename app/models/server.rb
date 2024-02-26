@@ -71,7 +71,6 @@ class Server < ApplicationRedisRecord
 
       self.id = SecureRandom.uuid if id.nil?
       self.online = false if online.nil?
-      self.tag = 'default' if tag.nil?
 
       # Ignore load changes (would re-add to server_load set) if disabled
       if disabled?
@@ -281,13 +280,17 @@ class Server < ApplicationRedisRecord
   end
 
   # Find the server with the lowest load (for creating a new meeting)
-  def self.find_available(tag = 'default')
+  def self.find_available(tag = nil)
     with_connection do |redis|
       id, load, hash = 5.times do
         ids_loads = redis.zrange('server_load', 0, 0, with_scores: true)
         raise RecordNotFound.new("Couldn't find available Server", name, nil) if ids_loads.blank?
 
-        id, load = ids_loads.find { |id, load| redis.hget(key(id), 'tag') == tag }
+        if tag.nil?
+          id, load = ids_loads.first
+        else
+          id, load = ids_loads.find { |myid, _| redis.hget(key(myid), 'tag') == tag }
+        end
         hash = redis.hgetall(key(id))
         break id, load, hash if hash.present?
       end
