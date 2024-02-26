@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Server < ApplicationRedisRecord
-  define_attribute_methods :id, :url, :secret, :enabled, :load, :online, :load_multiplier, :healthy_counter,
+  define_attribute_methods :id, :url, :secret, :tag, :enabled, :load, :online, :load_multiplier, :healthy_counter,
                            :unhealthy_counter, :state, :meetings, :users, :largest_meeting, :videos
 
   # Unique ID for this server
@@ -12,6 +12,9 @@ class Server < ApplicationRedisRecord
 
   # Shared secret for making API requests to this server
   application_redis_attr :secret
+
+  # Special purpose tag for this server
+  application_redis_attr :tag
 
   # Whether the server is administratively enabled (allowed to create new meetings)
   application_redis_attr :enabled
@@ -68,6 +71,7 @@ class Server < ApplicationRedisRecord
 
       self.id = SecureRandom.uuid if id.nil?
       self.online = false if online.nil?
+      self.tag = 'default' if tag.nil?
 
       # Ignore load changes (would re-add to server_load set) if disabled
       if disabled?
@@ -91,6 +95,7 @@ class Server < ApplicationRedisRecord
         result = redis.multi do |pipeline|
           pipeline.hset(server_key, 'url', url) if url_changed?
           pipeline.hset(server_key, 'secret', secret) if secret_changed?
+          pipeline.hset(server_key, 'tag', tag) if tag_changed?
           pipeline.hset(server_key, 'online', online ? 'true' : 'false') if online_changed?
           pipeline.hset(server_key, 'load_multiplier', load_multiplier) if load_multiplier_changed?
           pipeline.hset(server_key, 'state', state) if state_changed?
@@ -276,13 +281,13 @@ class Server < ApplicationRedisRecord
   end
 
   # Find the server with the lowest load (for creating a new meeting)
-  def self.find_available
+  def self.find_available(tag = 'default')
     with_connection do |redis|
       id, load, hash = 5.times do
         ids_loads = redis.zrange('server_load', 0, 0, with_scores: true)
         raise RecordNotFound.new("Couldn't find available Server", name, nil) if ids_loads.blank?
 
-        id, load = ids_loads.first
+        id, load = ids_loads.find { |id, load| redis.hget(key(id), 'tag') == tag }
         hash = redis.hgetall(key(id))
         break id, load, hash if hash.present?
       end
