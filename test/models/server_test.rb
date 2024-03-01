@@ -130,6 +130,12 @@ class ServerTest < ActiveSupport::TestCase
     end
   end
 
+  test 'Server find_available with any tag and no available servers' do
+    assert_raises(ApplicationRedisRecord::RecordNotFound) do
+      Server.find_available('test-tag')
+    end
+  end
+
   test 'Server find_available with missing server hash' do
     # This is mostly a failsafe check
     RedisStore.with_connection do |redis|
@@ -234,6 +240,151 @@ class ServerTest < ActiveSupport::TestCase
 
     assert_raises(ApplicationRedisRecord::RecordNotFound) do
       Server.find_available
+    end
+  end
+
+  test 'Server find_available without tag returns untagged server with lowest load' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
+                                          tag: 'test-tag', enabled: 'true')
+      redis.sadd?('servers', 'test-1')
+      redis.sadd?('server_enabled', 'test-1')
+      redis.zadd('server_load', 1, 'test-1')
+      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
+                                          enabled: 'true')
+      redis.sadd?('servers', 'test-2')
+      redis.sadd?('server_enabled', 'test-2')
+      redis.zadd('server_load', 3, 'test-2')
+      redis.mapped_hmset('server:test-3', url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret',
+                                          enabled: 'true')
+      redis.sadd?('servers', 'test-3')
+      redis.sadd?('server_enabled', 'test-3')
+      redis.zadd('server_load', 2, 'test-3')
+    end
+
+    server = Server.find_available
+    assert_equal('test-3', server.id)
+    assert_equal('https://test-3.example.com/bigbluebutton/api', server.url)
+    assert_equal('test-3-secret', server.secret)
+    assert_nil(server.tag)
+    assert(server.enabled)
+    assert_nil(server.state)
+    assert_equal(2, server.load)
+  end
+
+  test 'Server find_available with optional tag returns matching tagged server with lowest load' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
+                                          enabled: 'true')
+      redis.sadd?('servers', 'test-1')
+      redis.sadd?('server_enabled', 'test-1')
+      redis.zadd('server_load', 1, 'test-1')
+      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
+                                          tag: 'test-tag', enabled: 'true')
+      redis.sadd?('servers', 'test-2')
+      redis.sadd?('server_enabled', 'test-2')
+      redis.zadd('server_load', 3, 'test-2')
+      redis.mapped_hmset('server:test-3', url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret',
+                                          tag: 'test-tag', enabled: 'true')
+      redis.sadd?('servers', 'test-3')
+      redis.sadd?('server_enabled', 'test-3')
+      redis.zadd('server_load', 2, 'test-3')
+      redis.mapped_hmset('server:test-4', url: 'https://test-4.example.com/bigbluebutton/api', secret: 'test-4-secret',
+                                          tag: 'wrong-tag', enabled: 'true')
+      redis.sadd?('servers', 'test-4')
+      redis.sadd?('server_enabled', 'test-4')
+      redis.zadd('server_load', 1, 'test-4')
+    end
+
+    server = Server.find_available('test-tag')
+    assert_equal('test-3', server.id)
+    assert_equal('https://test-3.example.com/bigbluebutton/api', server.url)
+    assert_equal('test-3-secret', server.secret)
+    assert_equal('test-tag', server.tag)
+    assert(server.enabled)
+    assert_nil(server.state)
+    assert_equal(2, server.load)
+  end
+
+  test 'Server find_available with required tag returns matching tagged server with lowest load' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
+                                          enabled: 'true')
+      redis.sadd?('servers', 'test-1')
+      redis.sadd?('server_enabled', 'test-1')
+      redis.zadd('server_load', 1, 'test-1')
+      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
+                                          tag: 'test-tag', enabled: 'true')
+      redis.sadd?('servers', 'test-2')
+      redis.sadd?('server_enabled', 'test-2')
+      redis.zadd('server_load', 3, 'test-2')
+      redis.mapped_hmset('server:test-3', url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret',
+                                          tag: 'test-tag', enabled: 'true')
+      redis.sadd?('servers', 'test-3')
+      redis.sadd?('server_enabled', 'test-3')
+      redis.zadd('server_load', 2, 'test-3')
+      redis.mapped_hmset('server:test-4', url: 'https://test-4.example.com/bigbluebutton/api', secret: 'test-4-secret',
+                                          tag: 'wrong-tag', enabled: 'true')
+      redis.sadd?('servers', 'test-4')
+      redis.sadd?('server_enabled', 'test-4')
+      redis.zadd('server_load', 1, 'test-4')
+    end
+
+    server = Server.find_available('test-tag!')
+    assert_equal('test-3', server.id)
+    assert_equal('https://test-3.example.com/bigbluebutton/api', server.url)
+    assert_equal('test-3-secret', server.secret)
+    assert_equal('test-tag', server.tag)
+    assert(server.enabled)
+    assert_nil(server.state)
+    assert_equal(2, server.load)
+  end
+
+  test 'Server find_available with optional tag returns untagged server with lowest load if no matching tagged server available' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
+                                          enabled: 'true')
+      redis.sadd?('servers', 'test-1')
+      redis.sadd?('server_enabled', 'test-1')
+      redis.zadd('server_load', 3, 'test-1')
+      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
+                                          tag: 'wrong-tag', enabled: 'true')
+      redis.sadd?('servers', 'test-2')
+      redis.sadd?('server_enabled', 'test-2')
+      redis.zadd('server_load', 1, 'test-2')
+      redis.mapped_hmset('server:test-3', url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret',
+                                          enabled: 'true')
+      redis.sadd?('servers', 'test-3')
+      redis.sadd?('server_enabled', 'test-3')
+      redis.zadd('server_load', 2, 'test-3')
+    end
+
+    server = Server.find_available('test-tag')
+    assert_equal('test-3', server.id)
+    assert_equal('https://test-3.example.com/bigbluebutton/api', server.url)
+    assert_equal('test-3-secret', server.secret)
+    assert_nil(server.tag)
+    assert(server.enabled)
+    assert_nil(server.state)
+    assert_equal(2, server.load)
+  end
+
+  test 'Server find_available with required tag raises error if no matching tagged server available' do
+    RedisStore.with_connection do |redis|
+      redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
+                                          enabled: 'true')
+      redis.sadd?('servers', 'test-1')
+      redis.sadd?('server_enabled', 'test-1')
+      redis.zadd('server_load', 2, 'test-1')
+      redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
+                                          tag: 'wrong-tag', enabled: 'true')
+      redis.sadd?('servers', 'test-2')
+      redis.sadd?('server_enabled', 'test-2')
+      redis.zadd('server_load', 1, 'test-2')
+    end
+
+    assert_raises(ApplicationRedisRecord::RecordNotFound) do
+      Server.find_available('test-tag!')
     end
   end
 
