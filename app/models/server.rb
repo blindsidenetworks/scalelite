@@ -281,19 +281,20 @@ class Server < ApplicationRedisRecord
 
   # Find the server with the lowest load (for creating a new meeting)
   def self.find_available(tag_arg = nil)
-    # check if tag is required
+    # Check if tag is required
     tag = tag_arg
     tag_required = false
     if !tag.nil? && tag[-1] == '!'
-        tag = tag[0..-2] # never returns nil, if tag not nil
+        tag = tag[0..-2] # always returns String, if tag is String
         tag_required = true
     end
 
+    # Find available&matching server with the lowest load
     with_connection do |redis|
       ids = redis.zrange('server_load', 0, 0, with_scores: false)
       if ids.none? { |myid| redis.hget(key(myid), 'tag') == tag }
         raise RecordNotFound.new("Couldn't find available Server", name, nil) if tag_required
-        tag = nil # continue to find without tag
+        tag = nil # fall back to servers without tag
       end
       id, load, hash = 5.times do
         ids_loads = redis.zrange('server_load', 0, 0, with_scores: true)
