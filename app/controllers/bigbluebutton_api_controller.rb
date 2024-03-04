@@ -160,9 +160,17 @@ class BigBlueButtonApiController < ApplicationController
     params.require(:meetingID)
 
     begin
-      server = Server.find_available(params[:'meta_server-tag'])
-    rescue ApplicationRedisRecord::RecordNotFound => e
-      raise InternalError, e.message
+      # Check if meeting is already running
+      meeting = Meeting.find(params[:meetingID], @tenant&.id)
+      server = meeting.server
+      logger.debug("Found existing meeting #{params[:meetingID]} on BigBlueButton server #{server.id}.")
+    rescue ApplicationRedisRecord::RecordNotFound
+      # Find available server to create meeting on
+      begin
+        server = Server.find_available(params[:'meta_server-tag'])
+      rescue ApplicationRedisRecord::RecordNotFound => e
+        raise InternalError, e.message
+      end
     end
 
     # Create meeting in database
