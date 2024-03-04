@@ -165,36 +165,33 @@ class BigBlueButtonApiController < ApplicationController
       server = meeting.server
       logger.debug("Found existing meeting #{params[:meetingID]} on BigBlueButton server #{server.id}.")
     rescue ApplicationRedisRecord::RecordNotFound
-      # Find available server to create meeting on
       begin
+        # Find available server and create meeting on it
         server = Server.find_available(params[:'meta_server-tag'])
+
+        # Create meeting in database
+        logger.debug("Creating meeting #{params[:meetingID]} in database.")
+        moderator_pwd = params[:moderatorPW].presence || SecureRandom.alphanumeric(8)
+        meeting = Meeting.find_or_create_with_server!(
+          params[:meetingID],
+          server,
+          moderator_pwd,
+          params[:voiceBridge],
+          @tenant&.id
+        )
+
+        # Update server if meeting (unexpectedly) already existed on a different server
+        server = meeting.server
+
+        logger.debug("Incrementing server #{server.id} load by 1")
+        server.increment_load(1)
       rescue ApplicationRedisRecord::RecordNotFound => e
         raise InternalError, e.message
       end
     end
 
-    # Create meeting in database
-    logger.debug("Creating meeting #{params[:meetingID]} in database.")
-
-    moderator_pwd = params[:moderatorPW].presence || SecureRandom.alphanumeric(8)
-    params[:moderatorPW] = moderator_pwd
-
-    meeting = Meeting.find_or_create_with_server!(
-      params[:meetingID],
-      server,
-      moderator_pwd,
-      params[:voiceBridge],
-      @tenant&.id
-    )
-
-    # Update with old server if meeting already existed in database
-    server = meeting.server
-
-    logger.debug("Incrementing server #{server.id} load by 1")
-    server.increment_load(1)
-
-    duration = params[:duration].to_i
-
+    params[:moderatorPW] = meeting.moderator_pw
+    params[:voiceBridge] = meeting.voice_bridge
     params[:'meta_tenant-id'] = @tenant.id if @tenant.present?
     if server.tag.present?
       params[:'meta_server-tag'] = server.tag
@@ -202,14 +199,14 @@ class BigBlueButtonApiController < ApplicationController
       params.delete(:'meta_server-tag')
     end
 
+    duration = params[:duration].to_i
+
     # Set/Overite duration if MAX_MEETING_DURATION is set and it's greater than params[:duration] (if passed)
     if !Rails.configuration.x.max_meeting_duration.zero? &&
        (duration.zero? || duration > Rails.configuration.x.max_meeting_duration)
       logger.debug("Setting duration to #{Rails.configuration.x.max_meeting_duration}")
       params[:duration] = Rails.configuration.x.max_meeting_duration
     end
-
-    params[:voiceBridge] = meeting.voice_bridge
 
     if @tenant&.lrs_endpoint.present?
       lrs_payload = LrsPayloadService.new(tenant: @tenant, secret: server.secret).call
