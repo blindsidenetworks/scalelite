@@ -293,18 +293,18 @@ class Server < ApplicationRedisRecord
     with_connection do |redis|
       ids = redis.zrange('server_load', 0, -1, with_scores: false)
       if !tag.nil? && ids.none? { |myid| redis.hget(key(myid), 'tag') == tag }
-        raise RecordNotFound.new("Couldn't find available Server", name, nil) if tag_required
+        raise RecordNotFound.new("Could not find any available servers with tag=#{tag}.", name, nil) if tag_required
         tag = nil # fall back to servers without tag
       end
       id, load, hash = 5.times do
         ids_loads = redis.zrange('server_load', 0, -1, with_scores: true)
-        raise RecordNotFound.new("Couldn't find available Server", name, nil) if ids_loads.blank?
+        raise RecordNotFound.new("Could not find any available servers.", name, nil) if ids_loads.blank?
 
         id, load = ids_loads.find { |myid, _| redis.hget(key(myid), 'tag') == tag }
         hash = redis.hgetall(key(id))
         break id, load, hash if hash.present?
       end
-      raise RecordNotFound.new("Couldn't find available Server", name, id) if hash.blank?
+      raise RecordNotFound.new("Could not find any available servers.", name, id) if hash.blank?
 
       hash['id'] = id
       if hash['state'].present?
