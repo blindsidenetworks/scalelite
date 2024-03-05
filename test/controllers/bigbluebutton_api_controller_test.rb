@@ -436,6 +436,24 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
   end
 
+  test 'create responds with specific InternalError if no servers with required tag are available in create' do
+    Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                  secret: 'test-1-secret', enabled: true, load: 0)
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_create_url, params: { meetingID: 'test-meeting-1',
+                                                  'meta_server-tag' => 'test-tag!' }
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    expected_error = InternalError.new('Could not find any available servers with tag=test-tag.')
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
+    assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
+    assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+  end
+
   test 'create creates the room successfully for a get request' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
@@ -558,6 +576,72 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     # Reload
     server1 = Server.find(server1.id)
     assert_equal 7, server1.load
+  end
+
+  test 'create with tag places the meeting on tagged server despite higher load' do
+    Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                  secret: 'test-1-secret', enabled: true, load: 0)
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api/',
+                            secret: 'test-2-secret', enabled: true, load: 1, tag: 'test-tag')
+
+    params = {
+      meetingID: 'test-meeting-1', moderatorPW: 'mp', 'meta_server-tag' => 'test-tag'
+    }
+
+    bbb_create = \
+      stub_request(:get, "#{server2.url}create")
+      .with(query: hash_including(params))
+      .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_create_url, params: params
+    end
+
+    assert_requested bbb_create
+
+    # Reload
+    meeting = Meeting.find(params[:meetingID])
+    server = meeting.server
+
+    response_xml = Nokogiri::XML(@response.body)
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal params[:meetingID], meeting.id
+    assert_equal server.id, meeting.server.id
+    assert_equal 2, server.load
+    assert_equal 'test-tag', server.tag
+  end
+
+  test 'create without tag places the meeting on untagged server despite higher load' do
+    Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                  secret: 'test-1-secret', enabled: true, load: 0, tag: 'test-tag')
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api/',
+                            secret: 'test-2-secret', enabled: true, load: 1)
+
+    params = {
+      meetingID: 'test-meeting-1', moderatorPW: 'mp'
+    }
+
+    bbb_create = \
+      stub_request(:get, "#{server2.url}create")
+      .with(query: hash_including(params))
+      .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_create_url, params: params
+    end
+
+    assert_requested bbb_create
+
+    # Reload
+    meeting = Meeting.find(params[:meetingID])
+    server = meeting.server
+
+    response_xml = Nokogiri::XML(@response.body)
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal params[:meetingID], meeting.id
+    assert_equal server.id, meeting.server.id
+    assert_equal 2, server.load
+    assert_nil server.tag
   end
 
   test 'create sets the duration param to MAX_MEETING_DURATION if set' do
