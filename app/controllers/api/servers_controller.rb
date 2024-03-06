@@ -18,6 +18,7 @@ module Api
     #     "id": String,
     #     "url": String,
     #     "secret": String,
+    #     "tag": String,
     #     "state": String,
     #     "load": String,
     #     "load_multiplier": String,
@@ -49,6 +50,7 @@ module Api
     #     "id": String,
     #     "url": String,
     #     "secret": String,
+    #     "tag": String,
     #     "state": String,
     #     "load": String,
     #     "load_multiplier": String,
@@ -71,6 +73,7 @@ module Api
     #     "url": String,                 # Required: URL of the BigBlueButton server
     #     "secret": String,              # Required: Secret key of the BigBlueButton server
     #     "load_multiplier": Float       # Optional: A non-zero number, defaults to 1.0 if not provided or zero
+    #     "tag": String                  # Optional: A special-purpose tag for the server (empty String to set nil)
     #   }
     # }
     def add_server
@@ -79,8 +82,10 @@ module Api
       else
         tmp_load_multiplier = server_create_params[:load_multiplier].presence&.to_d || 1.0
         tmp_load_multiplier = 1.0 if tmp_load_multiplier.zero?
+        tmp_tag = server_create_params[:tag].presence
 
-        server = Server.create!(url: server_create_params[:url], secret: server_create_params[:secret], load_multiplier: tmp_load_multiplier)
+        server = Server.create!(url: server_create_params[:url], secret: server_create_params[:secret],
+                                load_multiplier: tmp_load_multiplier, tag: tmp_tag)
         render json: server_to_json(server), status: :created
       end
     end
@@ -95,6 +100,7 @@ module Api
     #     "state": String,         # Optional: 'enable', 'cordon', or 'disable'
     #     "load_multiplier": Float # Optional: A non-zero number
     #     "secret": String         # Optional: Secret key of the BigBlueButton server
+    #     "tag": String            # Optional: A special-purpose tag for the server, empty string to remove the tag
     #   }
     # }
     def update_server
@@ -166,6 +172,7 @@ module Api
         id: server.id,
         url: server.url,
         secret: server.secret,
+        tag: server.tag.nil? ? '' : server.tag,
         state: server.state.presence || (server.enabled ? 'enabled' : 'disabled'),
         load: server.load.presence || 'unavailable',
         load_multiplier: server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d,
@@ -174,11 +181,11 @@ module Api
     end
 
     def server_create_params
-      params.require(:server).permit(:url, :secret, :load_multiplier)
+      params.require(:server).permit(:url, :secret, :load_multiplier, :tag)
     end
 
     def server_update_params
-      params.require(:server).permit(:state, :load_multiplier, :secret)
+      params.require(:server).permit(:state, :load_multiplier, :secret, :tag)
     end
 
     def server_panic_params

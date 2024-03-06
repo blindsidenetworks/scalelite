@@ -25,6 +25,7 @@ RSpec.describe Api::ServersController do
         expect(server).not_to be_nil
         expect(server_data['url']).to eq(server.url)
         expect(server_data['secret']).to eq(server.secret)
+        expect(server_data['tag']).to eq(server.tag.nil? ? '' : server.tag)
         expect(server_data['state']).to eq(if server.state.present?
                                           server.state
                                           else
@@ -48,7 +49,8 @@ RSpec.describe Api::ServersController do
       let(:valid_params) {
         { url: 'https://example.com/bigbluebutton',
           secret: 'supersecret',
-          load_multiplier: 1.5 }
+          load_multiplier: 1.5,
+          tag: 'test-tag' }
       }
 
       it 'creates a new BigBlueButton server' do
@@ -59,6 +61,7 @@ RSpec.describe Api::ServersController do
         expect(server.url).to eq(valid_params[:url])
         expect(server.secret).to eq(valid_params[:secret])
         expect(server.load_multiplier).to eq(valid_params[:load_multiplier].to_s)
+        expect(server.tag).to eq(valid_params[:tag])
       end
 
       it 'defaults load_multiplier to 1.0 if not provided' do
@@ -140,6 +143,31 @@ RSpec.describe Api::ServersController do
         post scalelite_api_update_server_url, params: { id: server.id, server: { load_multiplier: 0 } }
         expect(response).to have_http_status(:bad_request)
         expect(response.parsed_body['error']).to eq("Load-multiplier must be a non-zero number")
+      end
+    end
+
+    context 'when updating tag' do
+      it 'updates the server tag' do
+        server = create(:server)
+        post scalelite_api_update_server_url, params: { id: server.id, server: { tag: 'test-tag' } }
+        updated_server = Server.find(server.id) # Reload
+        expect(updated_server.tag).to eq("test-tag")
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body['id']).to eq(updated_server.id)
+        expect(response.parsed_body['tag']).to eq(updated_server.tag)
+      end
+
+      it 'updates the server tag back to nil' do
+        server = create(:server)
+        post scalelite_api_update_server_url, params: { id: server.id, server: { tag: 'test-tag' } }
+        updated_server = Server.find(server.id) # Reload
+        expect(updated_server.tag).to eq("test-tag")
+        post scalelite_api_update_server_url, params: { id: server.id, server: { tag: '' } }
+        updated_server = Server.find(server.id) # Reload
+        expect(updated_server.tag).to be_nil
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body['id']).to eq(updated_server.id)
+        expect(response.parsed_body['tag']).to eq('')
       end
     end
   end

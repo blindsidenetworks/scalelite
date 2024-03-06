@@ -94,7 +94,9 @@ class Server < ApplicationRedisRecord
         result = redis.multi do |pipeline|
           pipeline.hset(server_key, 'url', url) if url_changed?
           pipeline.hset(server_key, 'secret', secret) if secret_changed?
-          pipeline.hset(server_key, 'tag', tag) if tag_changed?
+          if tag_changed?
+            tag.nil? ? pipeline.hdel(server_key, 'tag') : pipeline.hset(server_key, 'tag', tag)
+          end
           pipeline.hset(server_key, 'online', online ? 'true' : 'false') if online_changed?
           pipeline.hset(server_key, 'load_multiplier', load_multiplier) if load_multiplier_changed?
           pipeline.hset(server_key, 'state', state) if state_changed?
