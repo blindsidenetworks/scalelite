@@ -289,6 +289,7 @@ class BigBlueButtonApiController < ApplicationController
       logger.info("The requested meeting #{params[:meetingID]} does not exist")
       raise MeetingNotFoundError
     end
+
     # Get list of params that should not be modified by join API call
     excluded_params = Rails.configuration.x.join_exclude_params
 

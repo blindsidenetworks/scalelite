@@ -53,7 +53,7 @@ RSpec.describe ApiHelper, type: :helper do
   end
 
   describe '.verify_checksum' do
-    let(:query_string) { 'querystring' }
+    let(:query_string) { 'querystring=test' }
     let(:action_name) { 'index' }
     let(:check_string) { action_name + query_string }
     let(:checksum_algo) { nil } # To be defined down the scope

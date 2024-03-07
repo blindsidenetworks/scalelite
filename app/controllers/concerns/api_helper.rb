@@ -36,9 +36,8 @@ module ApiHelper
 
     # Camel case (ex) get_meetings to getMeetings to match BBB server
     check_string = action_name.camelcase(:lower)
-    check_string += request.query_string.gsub(
-      /&checksum=#{params[:checksum]}|checksum=#{params[:checksum]}&|checksum=#{params[:checksum]}/, ''
-    )
+    # Generate a new query string using only allowed params (cant use .to_query because it changes the order)
+    check_string += request.query_parameters.except(:checksum).map { |k, v| "#{CGI.escape(k.to_s)}=#{CGI.escape(v)}" }.join('&')
 
     allowed_checksum_algorithms = Rails.configuration.x.loadbalancer_checksum_algorithms
     raise ChecksumError unless allowed_checksum_algorithms.include? algorithm
