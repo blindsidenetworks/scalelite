@@ -177,6 +177,17 @@ namespace :servers do
     exit(1)
   end
 
+  desc 'Set the tag of a BigBlueButton server'
+  task :tag, [:id, :tag] => :environment do |_t, args|
+    server = Server.find(args.id)
+    server.tag = args.tag.presence
+    server.save!
+    puts('OK')
+  rescue ApplicationRedisRecord::RecordNotFound
+    puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
+  end
+
   desc 'Adds multiple BigBlueButton servers defined in a YAML file passed as an argument'
   task :addAll, [:path] => :environment do |_t, args|
     servers = YAML.load_file(args.path)['servers']
