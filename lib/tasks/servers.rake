@@ -15,7 +15,7 @@ task servers: :environment do
     end
     puts("\tload: #{server.load.presence || 'unavailable'}")
     puts("\tload multiplier: #{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
-    puts("\ttag: #{server.tag}")
+    puts("\ttag: #{server.tag.nil ? '' : server.tag}")
     puts("\t#{server.online ? 'online' : 'offline'}")
   end
 end
@@ -41,7 +41,7 @@ namespace :servers do
         tmp_load_multiplier = 1.0
       end
     end
-    server = Server.create!(url: args.url, secret: args.secret, load_multiplier: tmp_load_multiplier, tag: args.tag)
+    server = Server.create!(url: args.url, secret: args.secret, load_multiplier: tmp_load_multiplier, tag: args.tag.presence)
     puts('OK')
     puts("id: #{server.id}")
   end
@@ -59,7 +59,7 @@ namespace :servers do
       end
     end
     server.load_multiplier = tmp_load_multiplier
-    server.tag = args.tag unless args.tag.nil?
+    server.tag = args.tag.presence unless args.tag.nil?
     server.save!
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound

@@ -243,7 +243,7 @@ class ServerTest < ActiveSupport::TestCase
     end
   end
 
-  test 'Server find_available without tag returns untagged server with lowest load' do
+  test 'Server find_available without or with empty tag returns untagged server with lowest load' do
     RedisStore.with_connection do |redis|
       redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
                                           tag: 'test-tag', enabled: 'true')
@@ -270,6 +270,12 @@ class ServerTest < ActiveSupport::TestCase
     assert(server.enabled)
     assert_nil(server.state)
     assert_equal(2, server.load)
+
+    server = Server.find_available('')
+    assert_equal('test-3', server.id)
+
+    server = Server.find_available('!')
+    assert_equal('test-3', server.id)
   end
 
   test 'Server find_available with optional tag returns matching tagged server with lowest load' do

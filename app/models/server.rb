@@ -95,7 +95,7 @@ class Server < ApplicationRedisRecord
           pipeline.hset(server_key, 'url', url) if url_changed?
           pipeline.hset(server_key, 'secret', secret) if secret_changed?
           if tag_changed?
-            tag.nil? ? pipeline.hdel(server_key, 'tag') : pipeline.hset(server_key, 'tag', tag)
+            tag.present? ? pipeline.hset(server_key, 'tag', tag) : pipeline.hdel(server_key, 'tag')
           end
           pipeline.hset(server_key, 'online', online ? 'true' : 'false') if online_changed?
           pipeline.hset(server_key, 'load_multiplier', load_multiplier) if load_multiplier_changed?
@@ -284,10 +284,10 @@ class Server < ApplicationRedisRecord
   # Find the server with the lowest load (for creating a new meeting)
   def self.find_available(tag_arg = nil)
     # Check if tag is required
-    tag = tag_arg
+    tag = tag_arg.presence
     tag_required = false
     if !tag.nil? && tag[-1] == '!'
-        tag = tag[0..-2] # always returns String, if tag is String
+        tag = tag[0..-2].presence # always returns String, if tag is String
         tag_required = true
     end
 

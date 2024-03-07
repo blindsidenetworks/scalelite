@@ -73,7 +73,7 @@ module Api
     #     "url": String,                 # Required: URL of the BigBlueButton server
     #     "secret": String,              # Required: Secret key of the BigBlueButton server
     #     "load_multiplier": Float       # Optional: A non-zero number, defaults to 1.0 if not provided or zero
-    #     "tag": String                  # Optional: A special-purpose tag for the server (empty String to set nil)
+    #     "tag": String                  # Optional: A special-purpose tag for the server (empty String to not set it)
     #   }
     # }
     def add_server
@@ -82,10 +82,9 @@ module Api
       else
         tmp_load_multiplier = server_create_params[:load_multiplier].presence&.to_d || 1.0
         tmp_load_multiplier = 1.0 if tmp_load_multiplier.zero?
-        tmp_tag = server_create_params[:tag].presence
 
         server = Server.create!(url: server_create_params[:url], secret: server_create_params[:secret],
-                                load_multiplier: tmp_load_multiplier, tag: tmp_tag)
+                                load_multiplier: tmp_load_multiplier, tag: server_create_params[:tag].presence)
         render json: server_to_json(server), status: :created
       end
     end
