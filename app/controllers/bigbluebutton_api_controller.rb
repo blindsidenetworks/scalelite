@@ -188,7 +188,11 @@ class BigBlueButtonApiController < ApplicationController
     duration = params[:duration].to_i
 
     params[:'meta_tenant-id'] = @tenant.id if @tenant.present?
-    params[:'meta_server-tag'] = server.tag if server.tag.present?
+    if server.tag.present?
+      params[:'meta_server-tag'] = server.tag
+    else
+      params.delete(:'meta_server-tag')
+    end
 
     # Set/Overite duration if MAX_MEETING_DURATION is set and it's greater than params[:duration] (if passed)
     if !Rails.configuration.x.max_meeting_duration.zero? &&
