@@ -15,13 +15,14 @@ task servers: :environment do
     end
     puts("\tload: #{server.load.presence || 'unavailable'}")
     puts("\tload multiplier: #{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
+    puts("\ttag: #{server.tag.nil? ? '' : server.tag}")
     puts("\t#{server.online ? 'online' : 'offline'}")
   end
 end
 
 namespace :servers do
   desc 'Add a new BigBlueButton server (it will be added disabled)'
-  task :add, [:url, :secret, :load_multiplier] => :environment do |_t, args|
+  task :add, [:url, :secret, :load_multiplier, :tag] => :environment do |_t, args|
     if args.url.nil? || args.secret.nil?
       puts('Error: Please input at least a URL and a secret!')
       exit(1)
@@ -40,13 +41,13 @@ namespace :servers do
         tmp_load_multiplier = 1.0
       end
     end
-    server = Server.create!(url: args.url, secret: args.secret, load_multiplier: tmp_load_multiplier)
+    server = Server.create!(url: args.url, secret: args.secret, load_multiplier: tmp_load_multiplier, tag: args.tag.presence)
     puts('OK')
     puts("id: #{server.id}")
   end
 
   desc 'Update a BigBlueButton server'
-  task :update, [:id, :secret, :load_multiplier] => :environment do |_t, args|
+  task :update, [:id, :secret, :load_multiplier, :tag] => :environment do |_t, args|
     server = Server.find(args.id)
     server.secret = args.secret unless args.secret.nil?
     tmp_load_multiplier = server.load_multiplier
@@ -58,6 +59,7 @@ namespace :servers do
       end
     end
     server.load_multiplier = tmp_load_multiplier
+    server.tag = args.tag.presence unless args.tag.nil?
     server.save!
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
@@ -168,6 +170,17 @@ namespace :servers do
       end
     end
     server.load_multiplier = tmp_load_multiplier
+    server.save!
+    puts('OK')
+  rescue ApplicationRedisRecord::RecordNotFound
+    puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
+  end
+
+  desc 'Set the tag of a BigBlueButton server'
+  task :tag, [:id, :tag] => :environment do |_t, args|
+    server = Server.find(args.id)
+    server.tag = args.tag.presence
     server.save!
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound

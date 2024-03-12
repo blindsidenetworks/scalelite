@@ -13,6 +13,8 @@ class ServerUpdateService
 
     update_secret if @params[:secret].present?
 
+    update_tag unless @params[:tag].nil?
+
     @server.save!
   end
 
@@ -42,5 +44,9 @@ class ServerUpdateService
 
   def update_secret
     @server.secret = @params[:secret]
+  end
+
+  def update_tag
+    @server.tag = @params[:tag].presence
   end
 end
