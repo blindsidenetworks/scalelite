@@ -278,11 +278,9 @@ class Server < ApplicationRedisRecord
   # Find the server with the lowest load (for creating a new meeting)
   def self.find_available
     with_connection do |redis|
-      id, load, hash = 5.times do
-        ids_loads = redis.zrange('server_load', 0, 0, with_scores: true)
-        raise RecordNotFound.new("Couldn't find available Server", name, nil) if ids_loads.blank?
-
-        id, load = ids_loads.first
+      ids_loads = redis.zrange('server_load', 0, -1, with_scores: true)
+      raise RecordNotFound.new("Couldn't find available Server", name, nil) if ids_loads.blank?
+      id, load, hash = ids_loads.each do |id, load|
         hash = redis.hgetall(key(id))
         break id, load, hash if hash.present?
       end
