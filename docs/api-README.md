@@ -22,6 +22,7 @@ n/a
    "id": String,
    "url": String,
    "secret": String,
+   "tag": String,
    "state": String,
    "load": String,
    "load_multiplier": String,
@@ -56,6 +57,7 @@ Returns the data associated with a single server
   "id": String,
   "url": String,
   "secret": String,
+  "tag": String,
   "state": String,
   "load": String,
   "load_multiplier": String,
@@ -83,7 +85,8 @@ Adds a new server
   "server": {
     "url": String,                 # Required: URL of the BigBlueButton server
     "secret": String,              # Required: Secret key of the BigBlueButton server
-    "load_multiplier": Float       # Optional: A non-zero number, defaults to 1.0 if not provided or zero
+    "load_multiplier": Float,      # Optional: A non-zero number, defaults to 1.0 if not provided or zero
+    "tag": String                  # Optional: A special-purpose tag for the server (empty string to not set it)
   }
 }
 ```
@@ -94,6 +97,7 @@ Adds a new server
   "id": String,
   "url": String,
   "secret": String,
+  "tag": String,
   "state": String,
   "load": String,
   "load_multiplier": String,
@@ -122,7 +126,8 @@ Updates a server
   "server": {
     "state": String,         # Optional: 'enable', 'cordon', or 'disable'
     "load_multiplier": Float # Optional: A non-zero number
-    "secret": String         # Optional: Secret key of the BigBlueButton server
+    "secret": String,        # Optional: Secret key of the BigBlueButton server
+    "tag": String            # Optional: A special-purpose tag for the server (empty string to remove the tag)
   }
 }
 ```
@@ -133,6 +138,7 @@ Updates a server
   "id": String,
   "url": String,
   "secret": String,
+  "tag": String,
   "state": String,
   "load": String,
   "load_multiplier": String,
