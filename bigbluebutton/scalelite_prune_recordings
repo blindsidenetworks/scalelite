@@ -1,6 +1,6 @@
-#!/bin/bash 
+#!/bin/bash
 
-# Place this file in /etc/cron.daily
+# Place this file in /etc/cron.daily and make sure it is executable
 #
 
 # Delete sent recording after 4 days
