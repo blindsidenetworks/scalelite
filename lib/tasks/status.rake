@@ -36,7 +36,7 @@ server.largest_meeting, server.videos, server.load, server.tag)
     t.add_column('TAG', &:tag)
   end
 
-  puts table.pack
+  puts table.pack(max_table_width: nil)
 end
 
 def status_with_state(state)
