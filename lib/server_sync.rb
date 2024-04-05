@@ -3,7 +3,7 @@
 # Tools to synchronize cluster state with a list of servers. Used by the
 # servers:sync an servers:yaml tasks.
 class ServerSync
-  SERVER_PARAMS = %w[url secret enabled load_multiplier].freeze
+  SERVER_PARAMS = %w[url secret enabled load_multiplier tag].freeze
   PARAMS_IGNORE = %w[load state online].freeze
   SYNC_MODES = %w[keep cordon force].freeze
 
@@ -29,8 +29,8 @@ class ServerSync
   # Synchronizes cluster state with a server list. The servers parameter should
   # be a hash mapping server IDs to parameters. The +secret+ parameter is
   # required, the API +url+ is auto-derived from the server id if it looks like
-  # a hostname, +enabled+ is true by defalt and +load_multiplier+ is +1.0+ by
-  # default.
+  # a hostname, +enabled+ is true by defalt, +load_multiplier+ is +1.0+ by
+  # default and +tag+ is +nil+ by default.
   # The +mode+ decides what happens to undesired servers. Valid values are
   # +keep+, +cordon+ (default) and +force+. The last option will end all
   # meetings before the server is removed.
@@ -51,6 +51,7 @@ class ServerSync
       params['url'] = "https://#{id}/bigbluebutton/api" if params['url'].nil?
       params['enabled'] = params['enabled'].nil? || !!params['enabled']
       params['load_multiplier'] = 1.0 if params['load_multiplier'].nil?
+      params['tag'] = params['tag'].presence
       bad_params = params.keys - SERVER_PARAMS - PARAMS_IGNORE
 
       raise(SyncError, "Server id=#{id} contains invalid characters") unless /^[a-zA-Z0-9_.-]+$/.match?(id)
@@ -77,7 +78,8 @@ class ServerSync
             id: id,
             url: params['url'],
             secret: params['secret'],
-            load_multiplier: params['load_multiplier']
+            load_multiplier: params['load_multiplier'],
+            tag: params['tag']
           )
         end
         logger.info("[#{id}] Server created")
@@ -95,6 +97,10 @@ class ServerSync
       unless server.load_multiplier.to_d == params['load_multiplier']
         server.load_multiplier = params['load_multiplier']
         logger.info("[#{id}] Server updated: load_multiplier=#{params['load_multiplier']}")
+      end
+      unless server.tag == params['tag']
+        server.tag = params['tag']
+        logger.info("[#{id}] Server updated: tag=#{params['tag']}")
       end
 
       if params['enabled'] && !server.enabled?
@@ -174,6 +180,7 @@ class ServerSync
         "url" => server.url,
         "secret" => server.secret,
         "load_multiplier" => server.load_multiplier.to_f || 1.0,
+        "tag" => server.tag.nil? ? '' : server.tag,
         "enabled" => server.enabled?,
       }
       if verbose

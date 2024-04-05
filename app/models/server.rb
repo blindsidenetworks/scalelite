@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Server < ApplicationRedisRecord
-  define_attribute_methods :id, :url, :secret, :enabled, :load, :online, :load_multiplier, :healthy_counter,
+  define_attribute_methods :id, :url, :secret, :tag, :enabled, :load, :online, :load_multiplier, :healthy_counter,
                            :unhealthy_counter, :state, :meetings, :users, :largest_meeting, :videos
 
   # Unique ID for this server
@@ -12,6 +12,9 @@ class Server < ApplicationRedisRecord
 
   # Shared secret for making API requests to this server
   application_redis_attr :secret
+
+  # Special purpose tag for this server
+  application_redis_attr :tag
 
   # Whether the server is administratively enabled (allowed to create new meetings)
   application_redis_attr :enabled
@@ -91,6 +94,9 @@ class Server < ApplicationRedisRecord
         result = redis.multi do |pipeline|
           pipeline.hset(server_key, 'url', url) if url_changed?
           pipeline.hset(server_key, 'secret', secret) if secret_changed?
+          if tag_changed?
+            tag.present? ? pipeline.hset(server_key, 'tag', tag) : pipeline.hdel(server_key, 'tag')
+          end
           pipeline.hset(server_key, 'online', online ? 'true' : 'false') if online_changed?
           pipeline.hset(server_key, 'load_multiplier', load_multiplier) if load_multiplier_changed?
           pipeline.hset(server_key, 'state', state) if state_changed?
@@ -276,15 +282,29 @@ class Server < ApplicationRedisRecord
   end
 
   # Find the server with the lowest load (for creating a new meeting)
-  def self.find_available
+  def self.find_available(tag_arg = nil)
+    # Check if tag is required
+    tag = tag_arg.presence
+    tag_required = false
+    if !tag.nil? && tag[-1] == '!'
+        tag = tag[0..-2].presence # always returns String, if tag is String
+        tag_required = true
+    end
+
+    # Find available&matching server with the lowest load
     with_connection do |redis|
       ids_loads = redis.zrange('server_load', 0, -1, with_scores: true)
-      raise RecordNotFound.new("Couldn't find available Server", name, nil) if ids_loads.blank?
+      raise RecordNotFound.new("Could not find any available servers.", name, nil) if ids_loads.blank?
+      if !tag.nil? && ids_loads.none? { |myid, _| redis.hget(key(myid), 'tag') == tag }
+        raise RecordNotFound.new("Could not find any available servers with tag=#{tag}.", name, nil) if tag_required
+        tag = nil # fall back to servers without tag
+      end
+      ids_loads = ids_loads.select { |myid, _| redis.hget(key(myid), 'tag') == tag }
       id, load, hash = ids_loads.each do |id, load|
         hash = redis.hgetall(key(id))
         break id, load, hash if hash.present?
       end
-      raise RecordNotFound.new("Couldn't find available Server", name, id) if hash.blank?
+      raise RecordNotFound.new("Could not find any available servers.", name, id) if hash.blank?
 
       hash['id'] = id
       if hash['state'].present?

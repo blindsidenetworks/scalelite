@@ -152,6 +152,14 @@ RSpec.describe Server, redis: true do
       end
     end
 
+    context 'with any tag and no available servers' do
+      it 'throws an error' do
+        expect {
+          described_class.find_available('test-tag')
+        }.to raise_error(ApplicationRedisRecord::RecordNotFound)
+      end
+    end
+
     context 'with missing server hash' do
       before do
         # This is mostly a failsafe check
@@ -278,6 +286,152 @@ RSpec.describe Server, redis: true do
         expect {
           described_class.find_available
         }.to raise_error(ApplicationRedisRecord::RecordNotFound)
+      end
+    end
+
+    context 'with tagged servers' do
+      before do
+        RedisStore.with_connection do |redis|
+          redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
+                                              tag: 'test-tag', enabled: 'true')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
+          redis.zadd('server_load', 1, 'test-1')
+          redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
+                                              enabled: 'true')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
+          redis.zadd('server_load', 3, 'test-2')
+          redis.mapped_hmset('server:test-3', url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret',
+                                              enabled: 'true')
+          redis.sadd?('servers', 'test-3')
+          redis.sadd?('server_enabled', 'test-3')
+          redis.zadd('server_load', 2, 'test-3')
+        end
+      end
+
+      context 'and without argument' do
+        let(:server) { described_class.find_available }
+
+        it 'returns untagged server with lowest load' do
+          expect(server.id).to eq 'test-3'
+          expect(server.url).to eq 'https://test-3.example.com/bigbluebutton/api'
+          expect(server.secret).to eq 'test-3-secret'
+          expect(server.tag).to be_nil
+          expect(server.enabled).to be true
+          expect(server.state).to be_nil
+          expect(server.load).to eq 2
+        end
+      end
+
+      context 'and with empty tag argument' do
+        let(:server) { described_class.find_available('') }
+
+        it 'returns untagged server with lowest load' do
+          expect(server.id).to eq 'test-3'
+        end
+      end
+
+      context 'and with ! tag argument' do
+        let(:server) { described_class.find_available('!') }
+
+        it 'returns untagged server with lowest load' do
+          expect(server.id).to eq 'test-3'
+        end
+      end
+    end
+
+    context 'with differently tagged servers' do
+      let(:server) { described_class.find_available('test-tag') }
+
+      before do
+        RedisStore.with_connection do |redis|
+          redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
+                                              enabled: 'true')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
+          redis.zadd('server_load', 1, 'test-1')
+          redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
+                                              tag: 'test-tag', enabled: 'true')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
+          redis.zadd('server_load', 3, 'test-2')
+          redis.mapped_hmset('server:test-3', url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret',
+                                              tag: 'test-tag', enabled: 'true')
+          redis.sadd?('servers', 'test-3')
+          redis.sadd?('server_enabled', 'test-3')
+          redis.zadd('server_load', 2, 'test-3')
+          redis.mapped_hmset('server:test-4', url: 'https://test-4.example.com/bigbluebutton/api', secret: 'test-4-secret',
+                                              tag: 'wrong-tag', enabled: 'true')
+          redis.sadd?('servers', 'test-4')
+          redis.sadd?('server_enabled', 'test-4')
+          redis.zadd('server_load', 1, 'test-4')
+        end
+      end
+
+      context 'and optional tag argument' do
+        let(:server) { described_class.find_available('test-tag') }
+
+        it 'returns matching tagged server with lowest load' do
+          expect(server.id).to eq 'test-3'
+          expect(server.url).to eq 'https://test-3.example.com/bigbluebutton/api'
+          expect(server.secret).to eq 'test-3-secret'
+          expect(server.tag).to eq 'test-tag'
+          expect(server.enabled).to be true
+          expect(server.state).to be_nil
+          expect(server.load).to eq 2
+        end
+      end
+
+      context 'and required tag argument' do
+        let(:server) { described_class.find_available('test-tag!') }
+
+        it 'returns matching tagged server with lowest load' do
+          expect(server.id).to eq 'test-3'
+          expect(server.tag).to eq 'test-tag'
+        end
+      end
+    end
+
+    context 'with no matching tagged servers' do
+      before do
+        RedisStore.with_connection do |redis|
+          redis.mapped_hmset('server:test-1', url: 'https://test-1.example.com/bigbluebutton/api', secret: 'test-1-secret',
+                                              enabled: 'true')
+          redis.sadd?('servers', 'test-1')
+          redis.sadd?('server_enabled', 'test-1')
+          redis.zadd('server_load', 3, 'test-1')
+          redis.mapped_hmset('server:test-2', url: 'https://test-2.example.com/bigbluebutton/api', secret: 'test-2-secret',
+                                              tag: 'wrong-tag', enabled: 'true')
+          redis.sadd?('servers', 'test-2')
+          redis.sadd?('server_enabled', 'test-2')
+          redis.zadd('server_load', 1, 'test-2')
+          redis.mapped_hmset('server:test-3', url: 'https://test-3.example.com/bigbluebutton/api', secret: 'test-3-secret',
+                                              enabled: 'true')
+          redis.sadd?('servers', 'test-3')
+          redis.sadd?('server_enabled', 'test-3')
+          redis.zadd('server_load', 2, 'test-3')
+        end
+      end
+
+      context 'and optional tag argument' do
+        let(:server) { described_class.find_available('test-tag') }
+
+        it 'returns untagged server with lowest load' do
+          expect(server.id).to eq 'test-3'
+          expect(server.url).to eq 'https://test-3.example.com/bigbluebutton/api'
+          expect(server.secret).to eq 'test-3-secret'
+          expect(server.tag).to be_nil
+          expect(server.enabled).to be true
+          expect(server.state).to be_nil
+          expect(server.load).to eq 2
+        end
+      end
+
+      it 'raises error with specific message' do
+        expect {
+          described_class.find_available('test-tag!')
+        }.to raise_error(ApplicationRedisRecord::RecordNotFound, "Could not find any available servers with tag=test-tag.")
       end
     end
   end
