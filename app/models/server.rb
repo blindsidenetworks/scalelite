@@ -293,16 +293,14 @@ class Server < ApplicationRedisRecord
 
     # Find available&matching server with the lowest load
     with_connection do |redis|
-      ids = redis.zrange('server_load', 0, -1, with_scores: false)
-      if !tag.nil? && ids.none? { |myid| redis.hget(key(myid), 'tag') == tag }
+      ids_loads = redis.zrange('server_load', 0, -1, with_scores: true)
+      raise RecordNotFound.new("Could not find any available servers.", name, nil) if ids_loads.blank?
+      if !tag.nil? && ids_loads.none? { |myid, _| redis.hget(key(myid), 'tag') == tag }
         raise RecordNotFound.new("Could not find any available servers with tag=#{tag}.", name, nil) if tag_required
         tag = nil # fall back to servers without tag
       end
-      id, load, hash = 5.times do
-        ids_loads = redis.zrange('server_load', 0, -1, with_scores: true)
-        raise RecordNotFound.new("Could not find any available servers.", name, nil) if ids_loads.blank?
-
-        id, load = ids_loads.find { |myid, _| redis.hget(key(myid), 'tag') == tag }
+      ids_loads = ids_loads.select { |myid, _| redis.hget(key(myid), 'tag') == tag }
+      id, load, hash = ids_loads.each do |id, load|
         hash = redis.hgetall(key(id))
         break id, load, hash if hash.present?
       end
