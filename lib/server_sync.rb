@@ -174,7 +174,7 @@ class ServerSync
         "url" => server.url,
         "secret" => server.secret,
         "load_multiplier" => server.load_multiplier.to_f || 1.0,
-        "enabled" => server.enabled,
+        "enabled" => server.enabled?,
       }
       if verbose
         info["state"] = server.state.presence || server.enabled ? 'enabled' : 'disabled'
