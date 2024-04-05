@@ -171,15 +171,15 @@ class ServerSync
   def self.dump(verbose)
     Server.all.to_h do |server|
       info = {
-        url: server.url,
-        secret: server.secret,
-        load_multiplier: server.load_multiplier.to_f || 1.0,
-        enabled: server.enabled,
+        "url" => server.url,
+        "secret" => server.secret,
+        "load_multiplier" => server.load_multiplier.to_f || 1.0,
+        "enabled" => server.enabled?,
       }
       if verbose
-        info[:state] = server.state.presence || server.enabled ? 'enabled' : 'disabled'
-        info[:load] = server.load.presence || -1.0
-        info[:online] = server.online
+        info["state"] = server.state.presence || (server.enabled? ? 'enabled' : 'disabled')
+        info["load"] = server.load.presence || -1.0
+        info["online"] = server.online
       end
       [server.id, info]
     end
