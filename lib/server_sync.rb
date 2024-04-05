@@ -177,7 +177,7 @@ class ServerSync
         "enabled" => server.enabled?,
       }
       if verbose
-        info["state"] = server.state.presence || server.enabled ? 'enabled' : 'disabled'
+        info["state"] = server.state.presence || server.enabled? ? 'enabled' : 'disabled'
         info["load"] = server.load.presence || -1.0
         info["online"] = server.online
       end
