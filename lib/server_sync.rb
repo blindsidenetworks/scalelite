@@ -4,7 +4,7 @@
 # servers:sync an servers:yaml tasks.
 class ServerSync
   SERVER_PARAMS = %w[url secret enabled load_multiplier tag].freeze
-  PARAMS_IGNORE = %w[load state online].freeze
+  PARAMS_IGNORE = %w[load state bbb_version online].freeze
   SYNC_MODES = %w[keep cordon force].freeze
 
   class SyncError < StandardError
@@ -186,6 +186,7 @@ class ServerSync
       if verbose
         info["state"] = server.state.presence || (server.enabled? ? 'enabled' : 'disabled')
         info["load"] = server.load.presence || -1.0
+        info["bbb_version"] = server.bbb_version.nil? ? '' : server.bbb_version
         info["online"] = server.online
       end
       [server.id, info]
