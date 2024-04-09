@@ -15,6 +15,7 @@ task servers: :environment do
     end
     puts("\tload: #{server.load.presence || 'unavailable'}")
     puts("\tload multiplier: #{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
+    puts("\tbbb version: #{server.bbb_version.nil? ? '' : server.bbb_version}")
     puts("\ttag: #{server.tag.nil? ? '' : server.tag}")
     puts("\t#{server.online ? 'online' : 'offline'}")
   end

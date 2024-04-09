@@ -183,8 +183,8 @@ namespace :poll do
     tasks = Server.all.map do |server|
       Concurrent::Promises.future_on(pool) do
         Rails.logger.debug { "Checking Version of id=#{server.id}" }
-        version = get_post_req(encode_bbb_uri('', server.url, server.secret)).xpath('/response/bbbVersion').text
-        puts version
+        bbb_version = get_post_req(encode_bbb_uri('', server.url, server.secret)).xpath('/response/bbbVersion').text
+        server.bbb_version = bbb_version
       rescue StandardError => e
         Rails.logger.warn("Unexpected error when checking version of server id=#{server.id}: #{e}")
       ensure
