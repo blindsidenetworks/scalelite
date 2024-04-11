@@ -71,6 +71,11 @@ To help users who are behind restrictive firewalls to send/receive media (audio,
 
 Again, [bbb-install.sh](https://github.com/bigbluebutton/bbb-install#install-a-turn-server) can automate this process for you.
 
+If you want Scalelite to infer and display the BBB version of your servers, you need to add the following line to `/etc/bigbluebutton/bbb-web.properties` on your BBB servers:
+```
+allowRevealOfBBBVersion=true
+```
+
 ### Setup a shared volume for recordings
 
 See [Setting up a shared volume for recordings](docs/sharedvolume-README.md)
