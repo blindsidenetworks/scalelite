@@ -174,6 +174,36 @@ namespace :poll do
     pool.wait_for_termination(5) || pool.kill
   end
 
+  desc 'Check the BBB version of all servers'
+  task versions: :environment do
+    include ApiHelper
+
+    Rails.logger.debug('Checking versions')
+    pool = Concurrent::FixedThreadPool.new(Rails.configuration.x.poller_threads.to_i - 1, name: 'sync-version-data')
+    tasks = Server.all.map do |server|
+      Concurrent::Promises.future_on(pool) do
+        Rails.logger.debug { "Checking Version of id=#{server.id}" }
+        bbb_version = get_post_req(encode_bbb_uri('', server.url, server.secret)).xpath('/response/bbbVersion').text
+        server.bbb_version = bbb_version
+      rescue StandardError => e
+        Rails.logger.warn("Unexpected error when checking version of server id=#{server.id}: #{e}")
+      ensure
+        begin
+          server.save!
+        rescue ApplicationRedisRecord::RecordNotSaved => e
+          Rails.logger.warn("Unable to update Server id=#{server.id}: #{e}")
+        end
+      end
+    end
+    begin
+      Concurrent::Promises.zip_futures_on(pool, *tasks).wait!(Rails.configuration.x.poller_wait_timeout)
+    rescue StandardError => e
+      Rails.logger.warn("Error #{e}")
+    end
+    pool.shutdown
+    pool.wait_for_termination(5) || pool.kill
+  end
+
   desc 'Run all pollers once'
-  multitask all: [:servers, :meetings]
+  multitask all: [:servers, :meetings, :versions]
 end

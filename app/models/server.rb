@@ -2,7 +2,7 @@
 
 class Server < ApplicationRedisRecord
   define_attribute_methods :id, :url, :secret, :tag, :enabled, :load, :online, :load_multiplier, :healthy_counter,
-                           :unhealthy_counter, :state, :meetings, :users, :largest_meeting, :videos
+                           :unhealthy_counter, :state, :meetings, :users, :largest_meeting, :videos, :bbb_version
 
   # Unique ID for this server
   application_redis_attr :id
@@ -48,6 +48,9 @@ class Server < ApplicationRedisRecord
 
   # Indicator of total video streams in this server
   application_redis_attr :videos
+
+  # Indicator of the BBB version of this server
+  application_redis_attr :bbb_version
 
   def online=(value)
     value = !!value
@@ -104,6 +107,7 @@ class Server < ApplicationRedisRecord
           pipeline.hset(server_key, 'users', users) if users_changed?
           pipeline.hset(server_key, 'largest_meeting', largest_meeting) if largest_meeting_changed?
           pipeline.hset(server_key, 'videos', videos) if videos_changed?
+          pipeline.hset(server_key, 'bbb_version', bbb_version) if bbb_version_changed?
           pipeline.sadd?('servers', id) if id_changed?
           state.present? ? save_with_state(pipeline) : save_without_state(pipeline)
         end
