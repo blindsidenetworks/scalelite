@@ -61,3 +61,7 @@ Finally (after switching back to root), set the `spool_dir` setting in `scalelit
 ### Other configurations
 
 If you need to customize the rsync command (for example, to pass the `--rsh` option to set up a tunnel), you can add extra rsync command line arguments via the `extra_rsync_opts` array in `scalelite.yml`.
+
+### Recording cleanup cronjob
+
+Copy the script `scalelite_prune_recordings` to `/etc/cron.daily` on the BBB server, to periodically clean up the local files of recordings that have been transferred to Scalelite. You may adjust the variables MAXAGE and EVENTS_MAXAGE to the number of days you would like to keep the local files on the BBB server.

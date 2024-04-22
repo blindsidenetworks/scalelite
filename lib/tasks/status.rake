@@ -7,7 +7,7 @@ task status: :environment do
   include ApiHelper
 
   servers_info = []
-  ServerInfo = Struct.new(:hostname, :state, :status, :meetings, :users, :largest, :videos, :load)
+  ServerInfo = Struct.new(:hostname, :state, :status, :meetings, :users, :largest, :videos, :load, :bbb_version, :tag)
 
   Server.all.each do |server|
     state = server.state
@@ -15,7 +15,7 @@ task status: :environment do
     state = server.state.present? ? status_with_state(state) : status_without_state(enabled)
 
     info = ServerInfo.new(URI.parse(server.url).host, state, server.online ? 'online' : 'offline', server.meetings, server.users,
-server.largest_meeting, server.videos, server.load)
+server.largest_meeting, server.videos, server.load, server.bbb_version, server.tag)
 
     # Convert to openstruct to allow dot syntax usage
     servers_info.push(info)
@@ -33,9 +33,11 @@ server.largest_meeting, server.videos, server.load)
     t.add_column('LARGEST MEETING', &:largest)
     t.add_column('VIDEOS', &:videos)
     t.add_column('LOAD', &:load)
+    t.add_column('BBB VERSION', &:bbb_version)
+    t.add_column('TAG', &:tag)
   end
 
-  puts table.pack
+  puts table.pack(max_table_width: nil)
 end
 
 def status_with_state(state)

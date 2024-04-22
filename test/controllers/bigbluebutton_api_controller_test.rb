@@ -436,6 +436,24 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
   end
 
+  test 'create responds with specific InternalError if no servers with required tag are available in create' do
+    Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                  secret: 'test-1-secret', enabled: true, load: 0)
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_create_url, params: { meetingID: 'test-meeting-1',
+                                                  'meta_server-tag' => 'test-tag!' }
+    end
+
+    response_xml = Nokogiri::XML(@response.body)
+
+    expected_error = InternalError.new('Could not find any available servers with tag=test-tag.')
+
+    assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
+    assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text
+    assert_equal expected_error.message, response_xml.at_xpath('/response/message').text
+  end
+
   test 'create creates the room successfully for a get request' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0)
@@ -558,6 +576,80 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     # Reload
     server1 = Server.find(server1.id)
     assert_equal 7, server1.load
+  end
+
+  test 'create with optional tag places the meeting on untagged server if no matching tagged server available' do
+    Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                  secret: 'test-1-secret', enabled: true, load: 0, tag: 'wrong-tag')
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api/',
+                            secret: 'test-2-secret', enabled: true, load: 1)
+
+    params = {
+      meetingID: 'test-meeting-1', moderatorPW: 'mp', 'meta_server-tag' => 'test-tag'
+    }
+
+    bbb_create = \
+      stub_request(:get, "#{server2.url}create")
+      .with(query: hash_including({}))
+      .to_return do |request|
+        request_params = URI.decode_www_form(request.uri.query)
+        assert_equal params[:meetingID], request_params.assoc('meetingID').last
+        assert_equal params[:moderatorPW], request_params.assoc('moderatorPW').last
+        assert_nil request_params.assoc('meta_server-tag')
+
+        { body: meeting_create_response(params[:meetingID], params[:moderatorPW]) }
+      end
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_create_url, params: params
+    end
+
+    assert_requested bbb_create
+
+    # Reload
+    meeting = Meeting.find(params[:meetingID])
+
+    response_xml = Nokogiri::XML(@response.body)
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal params[:meetingID], meeting.id
+    assert_equal server2.id, meeting.server.id
+    assert_equal 2, meeting.server.load
+    assert_nil meeting.server.tag
+  end
+
+  test 'create with (required) tag places the meeting on matching tagged server' do
+    Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                  secret: 'test-1-secret', enabled: true, load: 0)
+    server2 = Server.create(url: 'https://test-2.example.com/bigbluebutton/api/',
+                            secret: 'test-2-secret', enabled: true, load: 1, tag: 'test-tag')
+
+    create_params = {
+      meetingID: 'test-meeting-1', moderatorPW: 'mp', 'meta_server-tag' => 'test-tag!'
+    }
+    stub_params = {
+      meetingID: 'test-meeting-1', moderatorPW: 'mp', 'meta_server-tag' => 'test-tag'
+    }
+
+    bbb_create = \
+      stub_request(:get, "#{server2.url}create")
+      .with(query: hash_including(stub_params))
+      .to_return(body: meeting_create_response(stub_params[:meetingID], stub_params[:moderatorPW]))
+
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_create_url, params: create_params
+    end
+
+    assert_requested bbb_create
+
+    # Reload
+    meeting = Meeting.find(create_params[:meetingID])
+
+    response_xml = Nokogiri::XML(@response.body)
+    assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').text
+    assert_equal create_params[:meetingID], meeting.id
+    assert_equal server2.id, meeting.server.id
+    assert_equal 2, meeting.server.load
+    assert_equal 'test-tag', meeting.server.tag
   end
 
   test 'create sets the duration param to MAX_MEETING_DURATION if set' do
@@ -1097,6 +1189,26 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, params).to_s
+  end
+
+  test 'join increments the server load by the value of load_multiplier' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, online: true, load: 0, load_multiplier: 7.0)
+    meeting = Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
+
+    # Reload 1
+    server1 = Server.find(server1.id)
+    load_before_join = server1.load
+
+    params = { meetingID: meeting.id, moderatorPW: 'mp', fullName: 'test-name' }
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_join_url, params: params
+    end
+
+    # Reload 2
+    server1 = Server.find(server1.id)
+    expected_load = load_before_join + 7.0
+    assert_equal expected_load, server1.load
   end
 
   test 'join redirects user to the current join url with only permitted params for join' do

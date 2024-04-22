@@ -131,13 +131,15 @@ Particular information to note:
 ### Add a server
 
 ```sh
-./bin/rake servers:add[url,secret,loadMultiplier]
+./bin/rake servers:add[url,secret,loadMultiplier,tag]
 ```
 
 The `url` value is the complete URL to the BigBlueButton API endpoint of the server. The `/api` on the end is required.
 You can find the BigBlueButton server's URL and Secret by running `bbb-conf --secret` on the BigBlueButton server.
 
 The `loadMultiplier` can be used to give individual servers a higher or lower priority over other servers. A higher loadMultiplier should be placed on the weaker servers. If not passed, it defaults to a value of `1`.
+
+The `tag` can be optionally passed to assign a special-purpose tag to the server. The tag can then be referenced via a meta-parameter in the create call, to place meetings only on servers with the corresponding tag.
 
 This command will print out the ID of the newly created server, and `OK` if it was successful.
 Note that servers are added in the disabled state; see "Enable a server" below to enable it.
@@ -156,12 +158,15 @@ You should either wait for all meetings to end, or run the "Panic" function firs
 ### Update a server
 
 ```sh
-./bin/rake servers:update[id,secret,loadMultiplier]
+./bin/rake servers:update[id,secret,loadMultiplier,tag]
 ```
 
 Updates the secret and load_multiplier for a BigBlueButton server.
 
 The `loadMultiplier` can be used to give individual servers a higher or lower priority over other servers. A higher loadMultiplier should be placed on the weaker servers.
+
+The `tag` can be optionally passed to assign a special-purpose tag to the server. The tag can then be referenced via a meta-parameter in the create call, to place meetings only on servers with the corresponding tag.
+Call the task with empty tag argument as in `servers:update[id,secret,loadMultiplier,]` to untag the server.
 
 After changing the server needs to be polled at least once to see the new load.
 
@@ -222,6 +227,16 @@ Sets the load_multiplier for a BigBlueButton server.
 The `loadMultiplier` can be used to give individual servers a higher or lower priority over other servers. A higher loadMultiplier should be placed on the weaker servers.
 
 After changing the server needs to be polled at least once to see the new load.
+
+### Tag a server
+
+```sh
+./bin/rake servers:tag[id,tag]
+```
+
+Adds or removes the tag for a BigBlueButton server.
+
+The `tag` argument is used to assign a special-purpose tag to the server. The tag can then be referenced via a meta-parameter in the create call, to place meetings only on servers with the corresponding tag. Call the task with empty tag argument as in `servers:tag[id,]` to untag the server.
 
 ### Poll all servers
 
@@ -300,6 +315,7 @@ servers:
         url: <string>            # default: "https://<server-id>/bigbluebutton/api"
         enabled: <bool>          # default: true
         load_multiplier: <float> # default: 1.0, must be greater than 0
+        tag: <string>            # default: ''
 
     # Example for a simple server with default values
     bbb1.example.com:
@@ -349,9 +365,9 @@ by `servers:sync`.
 This will print a table displaying a list of all servers and some basic statistics that can be used for monitoring the overall status of the deployment
 
 ```
-     HOSTNAME        STATE   STATUS  MEETINGS  USERS  LARGEST MEETING  VIDEOS
- bbb1.example.com  enabled   online        12     25                7      15
- bbb2.example.com  enabled   online         4     14                4       5
+     HOSTNAME        STATE   STATUS  MEETINGS  USERS  LARGEST MEETING  VIDEOS  LOAD   TAG
+ bbb1.example.com  enabled   online        12     25                7      15  25.0
+ bbb2.example.com  enabled   online         4     14                4       5  14.0   test
 ```
 
 ### Manage Meetings

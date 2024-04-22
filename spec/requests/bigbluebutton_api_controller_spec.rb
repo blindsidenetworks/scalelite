@@ -504,6 +504,16 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
       end
 
+      it "responds with specific InternalError if no servers with required tag are available in create" do
+        get bigbluebutton_api_create_url, params: { meetingID: "test-meeting-1", "meta_server-tag" => "test-tag!" }
+
+        response_xml = Nokogiri.XML(response.body)
+        expected_error = BBBErrors::InternalError.new("Could not find any available servers with tag=test-tag.")
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
+        expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
+      end
+
       it "creates the meeting successfully for a get request" do
         params = { meetingID: "test-meeting-1", moderatorPW: "mp", voiceBridge: "1234567" }
 
@@ -557,6 +567,58 @@ RSpec.describe BigBlueButtonApiController, redis: true do
 
         expect(stub_create).to have_been_requested
         expect(new_server.load).to eq(7)
+      end
+
+      it "with optional tag places the meeting on untagged server if no matching tagged server available" do
+        server.tag = "wrong-tag"
+        server.save!
+        server2 = Server.create(url: "https://test-2.example.com/bigbluebutton/api/",
+                                secret: "test-2-secret", enabled: true, load: 1)
+
+        create_params = { meetingID: "test-meeting-1", moderatorPW: "mp", voiceBridge: "1234567", "meta_server-tag" => "test-tag" }
+        stub_params = { meetingID: "test-meeting-1", moderatorPW: "mp", voiceBridge: "1234567" }
+
+        stub_create = stub_request(:get, encode_bbb_uri("create", server2.url, server2.secret, stub_params))
+                      .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                                        <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+        get bigbluebutton_api_create_url, params: create_params
+
+        # Reload
+        meeting = Meeting.find(create_params[:meetingID])
+
+        response_xml = Nokogiri.XML(response.body)
+        expect(stub_create).to have_been_requested
+        expect(response_xml.at_xpath("/response/returncode").text).to eq("SUCCESS")
+        expect(meeting.id).to eq(create_params[:meetingID])
+        expect(meeting.server.id).to eq(server2.id)
+        expect(meeting.server.load).to eq(2)
+        expect(meeting.server.tag).to be_nil
+      end
+
+      it "with (required) tag places the meeting on matching tagged server" do
+        server2 = Server.create(url: "https://test-2.example.com/bigbluebutton/api/",
+                                secret: "test-2-secret", enabled: true, load: 1, tag: "test-tag")
+
+        create_params = { meetingID: "test-meeting-1", moderatorPW: "mp", voiceBridge: "1234567", "meta_server-tag" => "test-tag!" }
+        stub_params = { meetingID: "test-meeting-1", moderatorPW: "mp", voiceBridge: "1234567", "meta_server-tag" => "test-tag" }
+
+        stub_create = stub_request(:get, encode_bbb_uri("create", server2.url, server2.secret, stub_params))
+                      .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                                        <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+        get bigbluebutton_api_create_url, params: create_params
+
+        # Reload
+        meeting = Meeting.find(create_params[:meetingID])
+
+        response_xml = Nokogiri.XML(response.body)
+        expect(stub_create).to have_been_requested
+        expect(response_xml.at_xpath("/response/returncode").text).to eq("SUCCESS")
+        expect(meeting.id).to eq(create_params[:meetingID])
+        expect(meeting.server.id).to eq(server2.id)
+        expect(meeting.server.load).to eq(2)
+        expect(meeting.server.tag).to eq("test-tag")
       end
 
       it "sets the duration param to MAX_MEETING_DURATION if set" do
@@ -1160,6 +1222,25 @@ RSpec.describe BigBlueButtonApiController, redis: true do
 
         get bigbluebutton_api_join_url, params: params
         expect(response).to redirect_to(encode_bbb_uri("join", server.url, server.secret, params).to_s)
+      end
+
+      it "increments the server load by the value of load_multiplier" do
+        server.load_multiplier = 7.0
+        server.save!
+        meeting = create(:meeting, server: server)
+
+        # Reload 1
+        new_server = Server.find(server.id)
+        load_before_join = new_server.load
+
+        # Join
+        params = { meetingID: meeting.id, password: "test-password", fullName: "test-name" }
+        get bigbluebutton_api_join_url, params: params
+
+        # Reload 2
+        new_server = Server.find(server.id)
+        expected_load = load_before_join + 7.0
+        expect(new_server.load).to eq(expected_load)
       end
 
       it "redirects user to the current join url with only permitted params for join" do
