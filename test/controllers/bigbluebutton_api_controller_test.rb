@@ -1191,6 +1191,26 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, params).to_s
   end
 
+  test 'join increments the server load by the value of load_multiplier' do
+    server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
+                            secret: 'test-1-secret', enabled: true, online: true, load: 0, load_multiplier: 7.0)
+    meeting = Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
+
+    # Reload 1
+    server1 = Server.find(server1.id)
+    load_before_join = server1.load
+
+    params = { meetingID: meeting.id, moderatorPW: 'mp', fullName: 'test-name' }
+    BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
+      get bigbluebutton_api_join_url, params: params
+    end
+
+    # Reload 2
+    server1 = Server.find(server1.id)
+    expected_load = load_before_join + 7.0
+    assert_equal expected_load, server1.load
+  end
+
   test 'join redirects user to the current join url with only permitted params for join' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0, online: true)

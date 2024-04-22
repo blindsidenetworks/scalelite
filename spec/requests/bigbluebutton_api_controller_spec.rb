@@ -1224,6 +1224,25 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         expect(response).to redirect_to(encode_bbb_uri("join", server.url, server.secret, params).to_s)
       end
 
+      it "increments the server load by the value of load_multiplier" do
+        server.load_multiplier = 7.0
+        server.save!
+        meeting = create(:meeting, server: server)
+
+        # Reload 1
+        new_server = Server.find(server.id)
+        load_before_join = new_server.load
+
+        # Join
+        params = { meetingID: meeting.id, password: "test-password", fullName: "test-name" }
+        get bigbluebutton_api_join_url, params: params
+
+        # Reload 2
+        new_server = Server.find(server.id)
+        expected_load = load_before_join + 7.0
+        expect(new_server.load).to eq(expected_load)
+      end
+
       it "redirects user to the current join url with only permitted params for join" do
         meeting = create(:meeting, server: server)
         params = { meetingID: meeting.id, password: "test-password", fullName: "test-name", test1: "", test2: "" }
