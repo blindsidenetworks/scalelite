@@ -159,6 +159,7 @@ class BigBlueButtonApiController < ApplicationController
   def create
     params.require(:meetingID)
 
+    apply_config_server_tag(params)
     begin
       # Check if meeting is already running
       meeting = Meeting.find(params[:meetingID], @tenant&.id)

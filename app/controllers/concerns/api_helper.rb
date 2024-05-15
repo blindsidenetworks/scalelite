@@ -196,15 +196,18 @@ module ApiHelper
     else
       [{}, {}]
     end
+    # Server tag is handled separately in create call
+    default.delete(:'meta_server-tag')
+    override.delete(:'meta_server-tag')
 
     final_params = default&.merge(final_params)
 
     case action
     when 'create'
       # Merge with the default (bbb_params takes precedence)
-      final_params = Rails.configuration.x.default_create_params.merge(final_params)
+      final_params = Rails.configuration.x.default_create_params.except(:'meta_server-tag').merge(final_params)
       # Merge with the override (override takes precedence)
-      final_params.merge!(Rails.configuration.x.override_create_params)
+      final_params.merge!(Rails.configuration.x.override_create_params.except(:'meta_server-tag'))
     when 'join'
       # Merge with the default (bbb_params takes precedence)
       final_params = Rails.configuration.x.default_join_params.merge(final_params)
@@ -215,5 +218,18 @@ module ApiHelper
     final_params&.merge!(override)
 
     final_params
+  end
+
+  # early handling of server tag in default/override create settings
+  def apply_config_server_tag(params)
+    if Rails.configuration.x.multitenancy_enabled
+      default_tenant, override_tenant = TenantSetting.defaults_and_overrides(@tenant&.id)
+      params[:'meta_server-tag'] = default_tenant[:'meta_server-tag'] if params[:'meta_server-tag'].nil? && !default_tenant[:'meta_server-tag'].nil?
+      params[:'meta_server-tag'] = override_tenant[:'meta_server-tag'] unless override_tenant[:'meta_server-tag'].nil?
+    end
+    default = Rails.configuration.x.default_create_params
+    override = Rails.configuration.x.override_create_params
+    params[:'meta_server-tag'] = default[:'meta_server-tag'] if params[:'meta_server-tag'].nil? && !default[:'meta_server-tag'].nil?
+    params[:'meta_server-tag'] = override[:'meta_server-tag'] unless override[:'meta_server-tag'].nil?
   end
 end
