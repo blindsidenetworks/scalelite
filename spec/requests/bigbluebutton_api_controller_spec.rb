@@ -312,7 +312,9 @@ RSpec.describe BigBlueButtonApiController, redis: true do
 
           allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['test-2'])
 
-          post bigbluebutton_api_get_meeting_info_url, params: { meetingID: meeting.id, checksum: "cbf00ea96fae6ff06c2cb311bbde8b26ad66d765" }
+          check_params = { meetingID: meeting.id }
+          check_params[:checksum] = Digest::SHA1.hexdigest("getMeetingInfotest-2")
+          post(bigbluebutton_api_get_meeting_info_url, params: URI.encode_www_form(check_params))
 
           response_xml = Nokogiri::XML(response.body)
           expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
@@ -327,8 +329,9 @@ RSpec.describe BigBlueButtonApiController, redis: true do
 
           allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['test-1'])
 
-          post bigbluebutton_api_get_meeting_info_url,
-               params: { meetingID: "SHA256_meeting", checksum: "217da05b692320353e17a1b11c24e9e715caeee51ab5af35231ee5becc350d1e" }
+          check_params = { meetingID: "SHA256_meeting" }
+          check_params[:checksum] = Digest::SHA256.hexdigest("getMeetingInfotest-1")
+          post(bigbluebutton_api_get_meeting_info_url, params: URI.encode_www_form(check_params))
 
           response_xml = Nokogiri::XML(response.body)
           expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
@@ -799,11 +802,43 @@ RSpec.describe BigBlueButtonApiController, redis: true do
           voiceBridge: "123"
         }
 
-        stub_create = stub_request(:post, encode_bbb_uri("create", server.url, server.secret, params))
+        stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, params))
                       .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
                                         <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
 
         post bigbluebutton_api_create_url, params: params
+
+        # Reload
+        new_server = Server.find(server.id)
+        meeting = Meeting.find(params[:meetingID])
+
+        response_xml = Nokogiri::XML(response.body)
+        expect(stub_create).to have_been_requested
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(meeting.id).to eq(params[:meetingID])
+        expect(meeting.server.id).to eq(server.id)
+        expect(new_server.load).to eq(1)
+      end
+
+      it 'passes through preuploaded slides xml' do
+        params = {
+          meetingID: 'test-meeting-1',
+          moderatorPW: 'mp',
+          voiceBridge: "123"
+        }
+
+        body = '<modules><module name="presentation"><document url="http://example.com/sample.pdf" filename="sample.pdf"/></module></modules>'
+        url = URI(bigbluebutton_api_create_url)
+        url.query = params.to_param
+
+        stub_create =
+          stub_request(:post, encode_bbb_uri("create", server.url, server.secret, params)) \
+          .with(body: body, headers: { 'Content-Type' => 'application/xml' }) \
+          .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                            <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+        # The Moodle integration uses text/xml instead of application/xml, so check that the matching handles that.
+        post url.to_s, params: body, headers: { 'Content-Type' => 'text/xml' }
 
         # Reload
         new_server = Server.find(server.id)
@@ -1237,13 +1272,17 @@ RSpec.describe BigBlueButtonApiController, redis: true do
     end
 
     context 'POST request' do
-      it "redirects user to the correct join url for a post request" do
+      it 'is not supported' do
         meeting = create(:meeting, server: server)
         params = { meetingID: meeting.id, password: "test-password", fullName: "test-name" }
 
         post bigbluebutton_api_join_url, params: params
 
-        expect(response).to redirect_to(encode_bbb_uri("join", server.url, server.secret, params).to_s)
+        response_xml = Nokogiri.XML(response.body)
+        expected_error = BBBErrors::UnsupportedRequestError.new
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
+        expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
       end
     end
 
@@ -1356,7 +1395,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
 
   describe '#insert_document' do
     it "responds with MissingMeetingIDError if meeting ID is not passed" do
-      post bigbluebutton_api_insertDocument_url
+      post bigbluebutton_api_insert_document_url, as: :xml
 
       response_xml = Nokogiri.XML(response.body)
       expected_error = BBBErrors::MissingMeetingIDError.new
@@ -1366,7 +1405,9 @@ RSpec.describe BigBlueButtonApiController, redis: true do
     end
 
     it "responds with MeetingNotFoundError if meeting is not found in database for join" do
-      post bigbluebutton_api_insertDocument_url, params: { meetingID: "test-meeting-1" }
+      url = URI(bigbluebutton_api_insert_document_url)
+      url.query = { meetingID: 'test-meeting-1' }.to_param
+      post url.to_s, as: :xml
 
       response_xml = Nokogiri.XML(response.body)
       expected_error = BBBErrors::MeetingNotFoundError.new
@@ -1379,10 +1420,17 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       server = create(:server)
       meeting = create(:meeting, server: server)
 
-      stub_insert = stub_request(:post, encode_bbb_uri("insertDocument", server.url, server.secret, { meetingID: meeting.id }))
-                    .to_return(body: "<response><returncode>SUCCESS</returncode><message>Presentation is being uploaded</message></response>")
+      body = '<modules><module name="presentation"><document url="http://example.com/sample.pdf" filename="sample.pdf"/></module></modules>'
+      url = URI(bigbluebutton_api_insert_document_url)
+      url.query = { meetingID: meeting.id }.to_param
 
-      post bigbluebutton_api_insertDocument_url, params: { meetingID: meeting.id }
+      stub_insert =
+        stub_request(:post, encode_bbb_uri("insertDocument", server.url, server.secret, { meetingID: meeting.id })) \
+        .with(body: body, headers: { 'Content-Type' => 'application/xml' }) \
+        .to_return(body: "<response><returncode>SUCCESS</returncode><message>Presentation is being uploaded</message></response>")
+
+      # The Moodle integration uses text/xml instead of application/xml, so check that the matching handles that.
+      post url.to_s, params: body, headers: { 'Content-Type' => 'text/xml' }
 
       response_xml = Nokogiri.XML(response.body)
       expect(stub_insert).to have_been_requested
@@ -1933,38 +1981,18 @@ RSpec.describe BigBlueButtonApiController, redis: true do
     end
 
     context 'POST request' do
-      it "updates published property to true for a post request" do
+      it 'is not supported' do
         r = create(:recording, :unpublished)
 
         params = encode_bbb_params("publishRecordings", { recordID: r.record_id, publish: "true" }.to_query)
 
         post bigbluebutton_api_publish_recordings_url, params: params
 
-        expect(response).to be_successful
-        response_xml = Nokogiri::XML(response.body)
-        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
-        expect(response_xml.at_xpath('/response/published').text).to eq('true')
-
-        r.reload
-        expect(r.published).to be(true)
-      end
-
-      it "returns notFound if RECORDING_DISABLED flag is set to true for a post request" do
-        params = encode_bbb_params("publishRecordings", { publish: "true" }.to_query)
-
-        allow(Rails.configuration.x).to receive(:recording_disabled).and_return(true)
-        reload_routes!
-
-        post bigbluebutton_api_publish_recordings_url, params: params
-
-        expect(response).to be_successful
-        response_xml = Nokogiri::XML(response.body)
-        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
-        expect(response_xml.at_xpath('/response/messageKey').text).to eq('notFound')
-        expect(response_xml.at_xpath('/response/message').text).to eq('We could not find recordings')
-
-        allow(Rails.configuration.x).to receive(:recording_disabled).and_return(false)
-        reload_routes!
+        response_xml = Nokogiri.XML(response.body)
+        expected_error = BBBErrors::UnsupportedRequestError.new
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
+        expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
       end
     end
 
@@ -2329,18 +2357,17 @@ RSpec.describe BigBlueButtonApiController, redis: true do
     end
 
     context 'POST request' do
-      it 'deletes the recording from the database if passed recordID for a post request' do
+      it 'is not supported' do
         r = create(:recording)
         params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
 
         post bigbluebutton_api_delete_recordings_url, params: params
 
-        expect(response).to be_successful
-        response_xml = Nokogiri::XML(response.body)
-        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
-        expect(response_xml.at_xpath('/response/deleted').text).to eq('true')
-
-        expect(r.reload.state).to eq('deleted')
+        response_xml = Nokogiri.XML(response.body)
+        expected_error = BBBErrors::UnsupportedRequestError.new
+        expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
+        expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
+        expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
       end
     end
 

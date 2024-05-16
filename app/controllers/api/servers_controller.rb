@@ -1,12 +1,7 @@
 # frozen_string_literal: true
 
 module Api
-  class ServersController < ApplicationController
-    include ApiHelper
-
-    skip_before_action :verify_authenticity_token
-
-    before_action -> { verify_checksum(true) }
+  class ServersController < ScaleliteApiController
     before_action :set_server, only: [:get_server_info, :update_server, :delete_server, :panic_server]
 
     # Return a list of the configured BigBlueButton servers

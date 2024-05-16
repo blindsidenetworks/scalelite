@@ -52,7 +52,7 @@ RSpec.describe Api::ServersController do
       }
 
       it 'creates a new BigBlueButton server' do
-        expect { post scalelite_api_add_server_url, params: { server: valid_params } }.to change { Server.all.count }.by(1)
+        expect { post scalelite_api_add_server_url, params: { server: valid_params }, as: :json }.to change { Server.all.count }.by(1)
         expect(response).to have_http_status(:created)
         response_data = response.parsed_body
         server = Server.find(response_data['id'])
@@ -62,7 +62,7 @@ RSpec.describe Api::ServersController do
       end
 
       it 'defaults load_multiplier to 1.0 if not provided' do
-        post scalelite_api_add_server_url, params: { server: valid_params.except(:load_multiplier) }
+        post scalelite_api_add_server_url, params: { server: valid_params.except(:load_multiplier) }, as: :json
         expect(response).to have_http_status(:created)
         server = Server.find(response.parsed_body['id'])
         expect(server.load_multiplier.to_d).to eq(1.0)
@@ -71,13 +71,13 @@ RSpec.describe Api::ServersController do
 
     context 'with invalid parameters' do
       it 'renders an error message if URL is missing' do
-        post scalelite_api_add_server_url, params: { server: { url: 'https://example.com/bigbluebutton' } }
+        post scalelite_api_add_server_url, params: { server: { url: 'https://example.com/bigbluebutton' } }, as: :json
         expect(response).to have_http_status(:bad_request)
         expect(response.parsed_body['error']).to eq('Server needs a URL and a secret')
       end
 
       it 'renders an error message if secret is missing' do
-        post scalelite_api_add_server_url, params: { server: { secret: 'supersecret' } }
+        post scalelite_api_add_server_url, params: { server: { secret: 'supersecret' } }, as: :json
         expect(response).to have_http_status(:bad_request)
         expect(response.parsed_body['error']).to eq('Server needs a URL and a secret')
       end
@@ -88,7 +88,7 @@ RSpec.describe Api::ServersController do
     context 'when updating state' do
       it 'updates the server state to "enabled"' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { id: server.id, server: { state: 'enable' } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { state: 'enable' } }, as: :json
         updated_server = Server.find(server.id) # Reload
         expect(updated_server.state).to eq('enabled')
         expect(response).to have_http_status(:ok)
@@ -98,7 +98,7 @@ RSpec.describe Api::ServersController do
 
       it 'updates the server state to "cordoned"' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { id: server.id, server: { state: 'cordon' } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { state: 'cordon' } }, as: :json
         updated_server = Server.find(server.id) # Reload
         expect(updated_server.state).to eq('cordoned')
         expect(response).to have_http_status(:ok)
@@ -108,7 +108,7 @@ RSpec.describe Api::ServersController do
 
       it 'updates the server state to "disabled"' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { id: server.id, server: { state: 'disable' } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { state: 'disable' } }, as: :json
         updated_server = Server.find(server.id) # Reload
         expect(updated_server.state).to eq('disabled')
         expect(response).to have_http_status(:ok)
@@ -118,7 +118,7 @@ RSpec.describe Api::ServersController do
 
       it 'returns an error for an invalid state parameter' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { id: server.id, server: { state: 'invalid_state' } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { state: 'invalid_state' } }, as: :json
         expect(response).to have_http_status(:bad_request)
         expect(response.parsed_body['error']).to eq("Invalid state parameter: invalid_state")
       end
@@ -127,7 +127,7 @@ RSpec.describe Api::ServersController do
     context 'when updating load_multiplier' do
       it 'updates the server load_multiplier' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { id: server.id, server: { load_multiplier: '2.5' } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { load_multiplier: '2.5' } }, as: :json
         updated_server = Server.find(server.id) # Reload
         expect(updated_server.load_multiplier).to eq("2.5")
         expect(response).to have_http_status(:ok)
@@ -137,7 +137,7 @@ RSpec.describe Api::ServersController do
 
       it 'returns an error for an invalid load_multiplier parameter' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { id: server.id, server: { load_multiplier: 0 } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { load_multiplier: 0 } }, as: :json
         expect(response).to have_http_status(:bad_request)
         expect(response.parsed_body['error']).to eq("Load-multiplier must be a non-zero number")
       end
@@ -148,7 +148,7 @@ RSpec.describe Api::ServersController do
     context 'with an existing server' do
       it 'deletes the server' do
         server = create(:server)
-        expect { post scalelite_api_delete_server_url, params: { id: server.id } }.to change { Server.all.count }.by(-1)
+        expect { post scalelite_api_delete_server_url, params: { id: server.id }, as: :json }.to change { Server.all.count }.by(-1)
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body['success']).to eq("Server id=#{server.id} was destroyed")
       end
@@ -156,7 +156,7 @@ RSpec.describe Api::ServersController do
 
     context 'with a non-existent server' do
       it 'does not delete any server' do
-        post scalelite_api_delete_server_url, params: { id: 'nonexistent-id' }
+        post scalelite_api_delete_server_url, params: { id: 'nonexistent-id' }, as: :json
         expect(response).to have_http_status(:not_found)
         expect(response.parsed_body['error']).to eq("Couldn't find server with id=nonexistent-id")
       end
@@ -189,7 +189,7 @@ RSpec.describe Api::ServersController do
         .to_return(body: "<response><returncode>SUCCESS</returncode><messageKey>OK</messageKey>
                       <message>The meeting was ended successfully.</message></response>")
 
-      post scalelite_api_panic_server_url, params: { id: server.id }
+      post scalelite_api_panic_server_url, params: { id: server.id }, as: :json
 
       expect(response).to have_http_status(:ok)
       json = response.parsed_body
@@ -202,7 +202,7 @@ RSpec.describe Api::ServersController do
     it 'keeps server state if keep_state is true' do
       server = create(:server, state: 'enabled')
 
-      post scalelite_api_panic_server_url, params: { id: server.id, keep_state: true }
+      post scalelite_api_panic_server_url, params: { id: server.id, keep_state: true }, as: :json
 
       expect(response).to have_http_status(:ok)
       json = response.parsed_body
@@ -213,7 +213,7 @@ RSpec.describe Api::ServersController do
     end
 
     it 'returns an error message if the server is not found' do
-      post scalelite_api_panic_server_url, params: { id: 'nonexistent_id' }
+      post scalelite_api_panic_server_url, params: { id: 'nonexistent_id' }, as: :json
 
       expect(response).to have_http_status(:not_found)
       json = response.parsed_body
@@ -234,26 +234,42 @@ RSpec.describe Api::ServersController do
 
     it 'successfully creates a server with checksum value computed using SHA1' do
       allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['sha1-secret'])
-      post scalelite_api_add_server_url, params: { server: valid_params, checksum: 'a347310666f712cc1d5e860969aaf39bda37298d' }
+      url = URI(scalelite_api_add_server_url)
+      url.query = "checksum=#{Digest::SHA1.hexdigest('addServersha1-secret')}"
+      post(url.to_s, params: { server: valid_params }, as: :json)
       expect(response).to have_http_status(:created)
     end
 
     it 'successfully creates a server with checksum value computed using SHA256' do
       allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['sha256-secret'])
-      post scalelite_api_add_server_url,
-params: { server: valid_params, checksum: 'b6a4fd61f463c63ba8ac0696c02f87ee3f8de6d5e9f3e94cedeaded63161c73a' }
+      url = URI(scalelite_api_add_server_url)
+      url.query = "checksum=#{Digest::SHA256.hexdigest('addServersha256-secret')}"
+      post(url.to_s, params: { server: valid_params }, as: :json)
       expect(response).to have_http_status(:created)
     end
 
     it 'returns a checksum error if the wrong secret is used' do
       allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['sha1-secret'])
 
-      # a random secret was used to generate the checksum here
-      post scalelite_api_add_tenant_url, params: { server: valid_params, checksum: 'e636000e010c2effcabdfcf78bb59d0971bfb8eb' }
+      url = URI(scalelite_api_add_server_url)
+      url.query = "checksum=#{Digest::SHA1.hexdigest('addServersha1-secret-incorrect')}"
+      post(url.to_s, params: { server: valid_params }, as: :json)
 
       xml_response = Nokogiri::XML(response.body)
       expect(xml_response.at_xpath("//response/returncode").text).to eq("FAILED")
       expect(xml_response.at_xpath("//response/messageKey").text).to eq("checksumError")
+    end
+
+    it 'returns an error if the wrong content type is used' do
+      allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['sha1-secret'])
+
+      url = URI(scalelite_api_add_server_url)
+      url.query = "checksum=#{Digest::SHA1.hexdigest('addServersha1-secret')}"
+      post(url.to_s, params: { server: valid_params }, as: :url_encoded_form)
+
+      xml_response = Nokogiri::XML(response.body)
+      expect(xml_response.at_xpath('/response/returncode').content).to eq('FAILED')
+      expect(xml_response.at_xpath('/response/messageKey').content).to eq('unsupportedContentType')
     end
   end
 end

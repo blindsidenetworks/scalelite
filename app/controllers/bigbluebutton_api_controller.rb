@@ -5,6 +5,13 @@ class BigBlueButtonApiController < ApplicationController
 
   skip_before_action :verify_authenticity_token
 
+  # Check content types on endpoints that accept POST requests. For most endpoints, form data is permitted.
+  before_action :verify_content_type, except: [:create, :insert_document, :join, :publish_recordings, :delete_recordings]
+  # create allows either form data or XML
+  before_action :verify_create_content_type, only: [:create]
+  # insertDocument only allows XML
+  before_action :verify_insert_document_content_type, only: [:insert_document]
+
   before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled,
                                            :analytics_callback,]
 
@@ -198,6 +205,8 @@ class BigBlueButtonApiController < ApplicationController
 
     params[:voiceBridge] = meeting.voice_bridge
 
+    have_preuploaded_slide = request.post? && request.content_mime_type == Mime[:xml]
+
     logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
     params_hash = params
 
@@ -209,8 +218,8 @@ class BigBlueButtonApiController < ApplicationController
     uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params(excluded_params))
 
     begin
-      # Read the body if POST
-      body = request.post? ? request.body.read : ''
+      # Read the body if preuploaded slide XML is present
+      body = have_preuploaded_slide ? request.raw_post : ''
 
       # Send a GET/POST request to the server
       response = get_post_req(uri, body, **bbb_req_timeout(server))
