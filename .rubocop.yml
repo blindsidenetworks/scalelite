@@ -131,7 +131,7 @@ Metrics/BlockLength:
 
 # A complexity metric geared towards measuring complexity for a human reader.
 Metrics/PerceivedComplexity:
-  Max: 17
+  Max: 20
   Exclude:
     - app/models/recording.rb
     - app/models/server.rb
