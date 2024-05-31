@@ -6,7 +6,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '>= 3.0.0'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 6.1', '>= 6.1.7.3'
+gem 'rails', '~> 6.1', '>= 6.1.7.4'
 # Use Puma as the app server
 gem 'puma', '~> 6.4'
 
@@ -40,10 +40,10 @@ group :development, :test do
   # Allow using sqlite as the database for Active Record in development/test env
   gem 'sqlite3'
 
-  gem 'dotenv-rails'
-  gem 'factory_bot_rails'
+  gem 'dotenv-rails', '>= 3.0.0'
+  gem 'factory_bot_rails', '>= 6.3.0'
 
-  gem 'rspec-rails', '~> 5.1.2'
+  gem 'rspec-rails', '~> 6.0.0'
 
   gem 'rubocop', '~> 1.50.0', require: false
   gem 'rubocop-performance',  require: false
