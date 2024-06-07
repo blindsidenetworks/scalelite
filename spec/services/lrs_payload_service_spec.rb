@@ -5,20 +5,13 @@ require 'rails_helper'
 RSpec.describe LrsPayloadService, type: :service do
   describe '#call' do
     context 'Basic Auth' do
-      it 'uses the lrs_basic_token if set' do
-        tenant = create(:tenant, name: 'bn', lrs_endpoint: 'https://lrs_endpoint.com', lrs_basic_token: 'basic_token')
+      it 'uses the lrs_username and lrs_password if set' do
+        tenant = create(:tenant, name: 'bn', lrs_endpoint: 'https://lrs_endpoint.com', lrs_username: 'basic_username', lrs_password: 'basic_password')
 
         encrypted_value = described_class.new(tenant: tenant, secret: 'server-secret').call
 
-        expect(JSON.parse(decrypt(encrypted_value, 'server-secret'))["lrs_token"]).to eq(tenant.lrs_basic_token)
-      end
-
-      it 'logs a warning and returns nil if lrs_basic_token is not set' do
-        tenant = create(:tenant, name: 'bn', lrs_endpoint: 'https://lrs_endpoint.com')
-
-        expect(Rails.logger).to receive(:warn)
-
-        expect(described_class.new(tenant: tenant, secret: 'server-secret').call).to be_nil
+        expect(JSON.parse(decrypt(encrypted_value, 'server-secret'))["lrs_username"]).to eq(tenant.lrs_username)
+        expect(JSON.parse(decrypt(encrypted_value, 'server-secret'))["lrs_password"]).to eq(tenant.lrs_password)
       end
     end
 

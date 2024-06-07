@@ -15,7 +15,8 @@ task tenants: :environment do |_t, _args|
       puts("\tname: #{tenant.name}")
       puts("\tsecrets: #{tenant.secrets}")
       puts("\tlrs_endpoint: #{tenant.lrs_endpoint}") if tenant.lrs_endpoint.present?
-      puts("\tlrs_basic_token: #{tenant.lrs_basic_token}") if tenant.lrs_basic_token.present?
+      puts("\tlrs_username: #{tenant.lrs_username}") if tenant.lrs_username.present?
+      puts("\tlrs_password: #{tenant.lrs_password}") if tenant.lrs_password.present?
       puts("\tkc_token_url: #{tenant.kc_token_url}") if tenant.kc_token_url.present?
       puts("\tkc_client_id: #{tenant.kc_client_id}") if tenant.kc_client_id.present?
       puts("\tkc_client_secret: #{tenant.kc_client_secret}") if tenant.kc_client_secret.present?
@@ -68,20 +69,22 @@ namespace :tenants do
   end
 
   desc 'Update an existing Tenants LRS credentials with basic authentication'
-  task :update_lrs_basic, [:id, :lrs_endpoint, :lrs_basic_token] => :environment do |_t, args|
+  task :update_lrs_basic, [:id, :lrs_endpoint, :lrs_username, :lrs_password] => :environment do |_t, args|
     check_multitenancy
     id = args[:id]
     lrs_endpoint = args[:lrs_endpoint]
-    lrs_basic_token = args[:lrs_basic_token]
+    lrs_username = args[:lrs_username]
+    lrs_password = args[:lrs_password]
 
-    if id.blank? || lrs_endpoint.blank? || lrs_basic_token.blank?
-      puts('Error: id, LRS_ENDPOINT, LRS_BASIC_TOKEN are required to update a Tenant')
+    if id.blank? || lrs_endpoint.blank? || lrs_username.blank? || lrs_password.blank?
+      puts('Error: id, LRS_ENDPOINT, LRS_USERNAME, LRS_PASSWORD are required to update a Tenant')
       exit(1)
     end
 
     tenant = Tenant.find(id)
     tenant.lrs_endpoint = lrs_endpoint
-    tenant.lrs_basic_token = lrs_basic_token
+    tenant.lrs_username = lrs_username
+    tenant.lrs_password = lrs_password
 
     tenant.save!
 
