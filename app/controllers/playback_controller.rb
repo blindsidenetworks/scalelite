@@ -96,6 +96,7 @@ class PlaybackController < ApplicationController
     resource_path = request.original_fullpath
     static_resource_path = "/static-resource#{resource_path}"
     response.headers['X-Accel-Redirect'] = static_resource_path
+    response.headers['Content-Disposition'] = "attachment" unless %w[presentation video screenshare].include?(@playback_format.format)
     head(:ok)
   end
 
