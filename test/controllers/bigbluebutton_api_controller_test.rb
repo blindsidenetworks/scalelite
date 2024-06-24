@@ -447,7 +447,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     response_xml = Nokogiri::XML(@response.body)
 
-    expected_error = InternalError.new('Could not find any available servers with tag=test-tag.')
+    expected_error = ServerTagUnavailableError.new('test-tag')
 
     assert_equal 'FAILED', response_xml.at_xpath('/response/returncode').text
     assert_equal expected_error.message_key, response_xml.at_xpath('/response/messageKey').text

@@ -508,7 +508,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         get bigbluebutton_api_create_url, params: { meetingID: "test-meeting-1", "meta_server-tag" => "test-tag!" }
 
         response_xml = Nokogiri.XML(response.body)
-        expected_error = BBBErrors::InternalError.new("Could not find any available servers with tag=test-tag.")
+        expected_error = BBBErrors::ServerTagUnavailableError.new("test-tag")
         expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
         expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
         expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
