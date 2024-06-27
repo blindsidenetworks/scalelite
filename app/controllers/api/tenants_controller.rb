@@ -1,12 +1,7 @@
 # frozen_string_literal: true
 
 module Api
-  class TenantsController < ApplicationController
-    include ApiHelper
-
-    skip_before_action :verify_authenticity_token
-
-    before_action -> { verify_checksum(true) }
+  class TenantsController < ScaleliteApiController
     before_action :check_multitenancy
     before_action :set_tenant, only: [:get_tenant_info, :update_tenant, :delete_tenant]
 
