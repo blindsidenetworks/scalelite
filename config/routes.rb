@@ -3,7 +3,10 @@
 Rails.application.routes.draw do
   # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
 
-  scope 'bigbluebutton/api', as: 'bigbluebutton_api', format: false, defaults: { format: 'xml' } do
+  scope 'bigbluebutton/api', as: :bigbluebutton_api, format: false, defaults: { format: 'xml' } do
+    # See https://github.com/bigbluebutton/bigbluebutton/blob/main/bigbluebutton-web/grails-app/controllers/org/bigbluebutton/web/UrlMappings.groovy
+    # for the definitions of the routes in BigBlueButton itself. Note that both private (BBB internal) and public APIs are in that file.
+
     match '/', to: 'bigbluebutton_api#index', via: [:get, :post]
     match 'isMeetingRunning', to: 'bigbluebutton_api#is_meeting_running', as: :is_meeting_running, via: [:get, :post]
     match 'getMeetingInfo', to: 'bigbluebutton_api#get_meeting_info', as: :get_meeting_info, via: [:get, :post]
@@ -14,19 +17,19 @@ Rails.application.routes.draw do
     end
     match 'create', to: 'bigbluebutton_api#create', via: [:get, :post]
     match 'end', to: 'bigbluebutton_api#end', via: [:get, :post]
-    match 'join', to: 'bigbluebutton_api#join', via: [:get, :post]
-    post 'analytics_callback', to: 'bigbluebutton_api#analytics_callback', as: :analytics_callback
-    post 'insertDocument', to: 'bigbluebutton_api#insert_document'
+    get 'join', to: 'bigbluebutton_api#join'
+    post 'analytics_callback', to: 'bigbluebutton_api#analytics_callback'
+    post 'insertDocument', to: 'bigbluebutton_api#insert_document', as: :insert_document
     if Rails.configuration.x.recording_disabled
       match('getRecordings', to: 'bigbluebutton_api#get_recordings_disabled', as: :get_recordings, via: [:get, :post])
-      match('publishRecordings', to: 'bigbluebutton_api#recordings_disabled', as: :publish_recordings, via: [:get, :post])
+      get('publishRecordings', to: 'bigbluebutton_api#recordings_disabled', as: :publish_recordings)
       match('updateRecordings', to: 'bigbluebutton_api#recordings_disabled', as: :update_recordings, via: [:get, :post])
-      match('deleteRecordings', to: 'bigbluebutton_api#recordings_disabled', as: :delete_recordings, via: [:get, :post])
+      get('deleteRecordings', to: 'bigbluebutton_api#recordings_disabled', as: :delete_recordings)
     else
       match('getRecordings', to: 'bigbluebutton_api#get_recordings', as: :get_recordings, via: [:get, :post])
-      match('publishRecordings', to: 'bigbluebutton_api#publish_recordings', as: :publish_recordings, via: [:get, :post])
+      get('publishRecordings', to: 'bigbluebutton_api#publish_recordings', as: :publish_recordings)
       match('updateRecordings', to: 'bigbluebutton_api#update_recordings', as: :update_recordings, via: [:get, :post])
-      match('deleteRecordings', to: 'bigbluebutton_api#delete_recordings', as: :delete_recordings, via: [:get, :post])
+      get('deleteRecordings', to: 'bigbluebutton_api#delete_recordings', as: :delete_recordings)
     end
   end
 
