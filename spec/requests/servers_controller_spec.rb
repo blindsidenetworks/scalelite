@@ -149,7 +149,7 @@ RSpec.describe Api::ServersController do
     context 'when updating tag' do
       it 'updates the server tag' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { id: server.id, server: { tag: 'test-tag' } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { tag: 'test-tag' } }, as: :json
         updated_server = Server.find(server.id) # Reload
         expect(updated_server.tag).to eq("test-tag")
         expect(response).to have_http_status(:ok)
@@ -159,10 +159,10 @@ RSpec.describe Api::ServersController do
 
       it 'updates the server tag back to nil' do
         server = create(:server)
-        post scalelite_api_update_server_url, params: { id: server.id, server: { tag: 'test-tag' } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { tag: 'test-tag' } }, as: :json
         updated_server = Server.find(server.id) # Reload
         expect(updated_server.tag).to eq("test-tag")
-        post scalelite_api_update_server_url, params: { id: server.id, server: { tag: '' } }
+        post scalelite_api_update_server_url, params: { id: server.id, server: { tag: '' } }, as: :json
         updated_server = Server.find(server.id) # Reload
         expect(updated_server.tag).to be_nil
         expect(response).to have_http_status(:ok)
