@@ -55,6 +55,7 @@ RSpec.describe ApiHelper, type: :helper do
   describe '.verify_checksum' do
     let(:query_string) { 'querystring' }
     let(:action_name) { 'index' }
+    let(:method) { :get }
     let(:check_string) { action_name + query_string }
     let(:checksum_algo) { nil } # To be defined down the scope
     let(:secret) { 'IAmSecret' }
@@ -63,10 +64,19 @@ RSpec.describe ApiHelper, type: :helper do
     before do
       controller.action_name = action_name
       allow(request).to receive(:query_string).and_return(query_string)
+      allow(request).to receive(:request_method_symbol).and_return(method)
       Rails.configuration.x.loadbalancer_secrets = [secret]
+      if hash.present?
+        case method
+        when :get then request.query_parameters[:checksum] = hash
+        when :post then request.request_parameters[:checksum] = hash
+        end
+      end
     end
 
     context 'without params[:checksum]' do
+      let(:hash) { nil }
+
       it 'throws an error' do
         expect {
           verify_checksum
@@ -78,19 +88,11 @@ RSpec.describe ApiHelper, type: :helper do
       context 'with SHA1' do
         let(:checksum_algo) { 'SHA1' }
 
-        before do
-          params[:checksum] = hash
-        end
-
         include_examples 'proper verify_checksum behavior'
       end
 
       context 'with SHA256' do
         let(:checksum_algo) { 'SHA256' }
-
-        before do
-          params[:checksum] = hash
-        end
 
         include_examples 'proper verify_checksum behavior'
       end
@@ -98,19 +100,12 @@ RSpec.describe ApiHelper, type: :helper do
       context 'with SHA512' do
         let(:checksum_algo) { 'SHA512' }
 
-        before do
-          params[:checksum] = hash
-        end
-
         include_examples 'proper verify_checksum behavior'
       end
 
       context 'with incorrect checksum' do
         let(:checksum_algo) { 'MD5' }
-
-        before do
-          params[:checksum] = 'totallyNotAHash'
-        end
+        let(:hash) { 'totallyNotAHash' }
 
         it 'throws an error' do
           expect {

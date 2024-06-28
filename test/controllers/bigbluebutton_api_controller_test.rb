@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'test_helper'
+
 class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   include BBBErrors
   include ApiHelper
@@ -83,9 +85,10 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, url)
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>SHA1_meeting</meetingID></response>')
+    check_params = { meetingID: 'SHA1_meeting' }
+    check_params[:checksum] = Digest::SHA256.hexdigest("getMeetingInfotest-2")
     Rails.configuration.x.stub(:loadbalancer_secrets, ['test-2']) do
-      post bigbluebutton_api_get_meeting_info_url, params: { meetingID: 'SHA1_meeting',
-                                                             checksum: 'cbf00ea96fae6ff06c2cb311bbde8b26ad66d765', }
+      post(bigbluebutton_api_get_meeting_info_url, params: URI.encode_www_form(check_params))
     end
     response_xml = Nokogiri::XML(@response.body)
 
@@ -101,10 +104,10 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
 
     stub_request(:get, url)
       .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>SHA256_meeting</meetingID></response>')
+    check_params = { meetingID: 'SHA256_meeting' }
+    check_params[:checksum] = Digest::SHA256.hexdigest("getMeetingInfotest-1")
     Rails.configuration.x.stub(:loadbalancer_secrets, ['test-1']) do
-      post bigbluebutton_api_get_meeting_info_url,
-           params: { meetingID: 'SHA256_meeting',
-                     checksum: '217da05b692320353e17a1b11c24e9e715caeee51ab5af35231ee5becc350d1e', }
+      post(bigbluebutton_api_get_meeting_info_url, params: URI.encode_www_form(check_params))
     end
     response_xml = Nokogiri::XML(@response.body)
     assert_equal 'SUCCESS', response_xml.at_xpath('/response/returncode').content
@@ -1177,7 +1180,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, params).to_s
   end
 
-  test 'join redirects user to the corrent join url for a post request' do
+  test 'join does not support POST requests' do
     server1 = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/',
                             secret: 'test-1-secret', enabled: true, load: 0, online: true)
     meeting = Meeting.find_or_create_with_server('test-meeting-1', server1, 'mp')
@@ -1188,7 +1191,12 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       post bigbluebutton_api_join_url, params: params
     end
 
-    assert_redirected_to encode_bbb_uri('join', server1.url, server1.secret, params).to_s
+    assert_response :success
+    response_xml = Nokogiri.XML(response.body)
+    expected_error = BBBErrors::UnsupportedRequestError.new
+    assert_equal(response_xml.at_xpath('/response/returncode').text, 'FAILED')
+    assert_equal(response_xml.at_xpath('/response/messageKey').text, expected_error.message_key)
+    assert_equal(response_xml.at_xpath('/response/message').text, expected_error.message)
   end
 
   test 'join increments the server load by the value of load_multiplier' do
@@ -1736,7 +1744,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert_equal r.published, true
   end
 
-  test 'publishRecordings updates published property to true for a post request' do
+  test 'publishRecordings does not support POST requests' do
     r = create(:recording, :unpublished)
     assert_equal r.published, false
 
@@ -1745,12 +1753,14 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       post bigbluebutton_api_publish_recordings_url, params: params
     end
 
-    assert_response :success
-    assert_select 'response>returncode', 'SUCCESS'
-    assert_select 'response>published', 'true'
+    response_xml = Nokogiri.XML(response.body)
+    expected_error = BBBErrors::UnsupportedRequestError.new
+    assert_equal('FAILED', response_xml.at_xpath('/response/returncode').text)
+    assert_equal(expected_error.message_key, response_xml.at_xpath('/response/messageKey').text)
+    assert_equal(expected_error.message, response_xml.at_xpath('/response/message').text)
 
     r.reload
-    assert_equal r.published, true
+    assert_equal r.published, false
   end
 
   test 'publishRecordings returns error if no recording found' do
@@ -1949,17 +1959,22 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     assert r.reload.state.eql?('deleted')
   end
 
-  test 'deleteRecordings deletes the recording from the database if passed recordID for a post request' do
+  test 'deleteRecordings does not support POST requests' do
     r = create(:recording)
 
     params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
     BigBlueButtonApiController.stub_any_instance(:verify_checksum, nil) do
       post bigbluebutton_api_delete_recordings_url, params: params
     end
+
     assert_response :success
-    assert_select 'response>returncode', 'SUCCESS'
-    assert_select 'response>deleted', 'true'
-    assert r.reload.state.eql?('deleted')
+    response_xml = Nokogiri.XML(response.body)
+    expected_error = BBBErrors::UnsupportedRequestError.new
+    assert_equal('FAILED', response_xml.at_xpath('/response/returncode').text)
+    assert_equal(expected_error.message_key, response_xml.at_xpath('/response/messageKey').text)
+    assert_equal(expected_error.message, response_xml.at_xpath('/response/message').text)
+    r.reload
+    assert_not_equal('deleted', r.state)
   end
 
   test 'deleteRecordings handles multiple recording IDs passed' do
@@ -2022,15 +2037,18 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     reload_routes!
   end
 
-  test 'publishRecordings returns notFound if RECORDING_DISABLED flag is set to true for a post request' do
+  test 'publishRecordings does not support POST requests if RECORDING_DISABLED flag is set to true' do
     params = encode_bbb_params('publishRecordings', { publish: 'true' }.to_query)
     Rails.configuration.x.recording_disabled = true
     reload_routes!
     post 'http://www.example.com/bigbluebutton/api/publishRecordings', params: params
+
     assert_response :success
-    assert_select 'response>returncode', 'FAILED'
-    assert_select 'response>messageKey', 'notFound'
-    assert_select 'response>message', 'We could not find recordings'
+    response_xml = Nokogiri.XML(response.body)
+    expected_error = BBBErrors::UnsupportedRequestError.new
+    assert_equal('FAILED', response_xml.at_xpath('/response/returncode').text)
+    assert_equal(expected_error.message_key, response_xml.at_xpath('/response/messageKey').text)
+    assert_equal(expected_error.message, response_xml.at_xpath('/response/message').text)
     Rails.configuration.x.recording_disabled = false
     reload_routes!
   end
@@ -2075,16 +2093,18 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     reload_routes!
   end
 
-  test 'deleteRecordings returns notFound if RECORDING_DISABLED flag is set to TRUE for a post request' do
+  test 'deleteRecordings does not support POST requests if RECORDING_DISABLED flag is set to TRUE' do
     r = create(:recording)
     params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
     Rails.configuration.x.recording_disabled = true
     reload_routes!
     post 'http://www.example.com/bigbluebutton/api/deleteRecordings', params: params
     assert_response :success
-    assert_select 'response>returncode', 'FAILED'
-    assert_select 'response>messageKey', 'notFound'
-    assert_select 'response>message', 'We could not find recordings'
+    response_xml = Nokogiri.XML(response.body)
+    expected_error = BBBErrors::UnsupportedRequestError.new
+    assert_equal('FAILED', response_xml.at_xpath('/response/returncode').text)
+    assert_equal(expected_error.message_key, response_xml.at_xpath('/response/messageKey').text)
+    assert_equal(expected_error.message, response_xml.at_xpath('/response/message').text)
     Rails.configuration.x.recording_disabled = false
     reload_routes!
   end

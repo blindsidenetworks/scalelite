@@ -40,6 +40,12 @@ module BBBErrors
     end
   end
 
+  class UnsupportedContentType < BBBErrors::BBBError
+    def initialize
+      super('unsupportedContentType', 'POST request Content-Type is missing or unsupported')
+    end
+  end
+
   class InternalError < BBBError
     def initialize(error)
       super('internalError', error)
