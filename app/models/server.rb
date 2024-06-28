@@ -300,7 +300,7 @@ class Server < ApplicationRedisRecord
       ids_loads = redis.zrange('server_load', 0, -1, with_scores: true)
       raise RecordNotFound.new("Could not find any available servers.", name, nil) if ids_loads.blank?
       if !tag.nil? && ids_loads.none? { |myid, _| redis.hget(key(myid), 'tag') == tag }
-        raise RecordNotFound.new("Could not find any available servers with tag=#{tag}.", name, nil) if tag_required
+        raise BBBErrors::ServerTagUnavailableError, tag if tag_required
         tag = nil # fall back to servers without tag
       end
       ids_loads = ids_loads.select { |myid, _| redis.hget(key(myid), 'tag') == tag }

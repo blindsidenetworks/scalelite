@@ -431,7 +431,7 @@ RSpec.describe Server, redis: true do
       it 'raises error with specific message' do
         expect {
           described_class.find_available('test-tag!')
-        }.to raise_error(ApplicationRedisRecord::RecordNotFound, "Could not find any available servers with tag=test-tag.")
+        }.to raise_error(BBBErrors::ServerTagUnavailableError)
       end
     end
   end

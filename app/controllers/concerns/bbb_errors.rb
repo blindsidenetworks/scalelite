@@ -57,4 +57,10 @@ module BBBErrors
       super('serverUnavailable', 'The server for this meeting is disabled/offline.')
     end
   end
+
+  class ServerTagUnavailableError < BBBError
+    def initialize(tag)
+      super('serverTagUnavailable', "There is no available server with the required tag=#{tag}.")
+    end
+  end
 end
