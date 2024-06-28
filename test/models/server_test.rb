@@ -359,7 +359,7 @@ class ServerTest < ActiveSupport::TestCase
       redis.zadd('server_load', 1, 'test-2')
     end
 
-    assert_raises(ApplicationRedisRecord::RecordNotFound, "Could not find any available servers with tag=test-tag.") do
+    assert_raises(BBBErrors::ServerTagUnavailableError) do
       Server.find_available('test-tag!')
     end
   end

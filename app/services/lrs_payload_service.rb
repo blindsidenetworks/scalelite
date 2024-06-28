@@ -7,17 +7,23 @@ class LrsPayloadService
   end
 
   def call
-    token = @tenant.kc_token_url.present? ? fetch_token_from_keycloak : @tenant.lrs_basic_token
-
-    if token.nil?
-      Rails.logger.warn("LRS Token not found")
-      return nil
-    end
-
     lrs_payload = {
       lrs_endpoint: @tenant.lrs_endpoint,
-      lrs_token: token
     }
+
+    if @tenant.lrs_username.present?
+      lrs_payload[:lrs_username] = @tenant.lrs_username
+      lrs_payload[:lrs_password] = @tenant.lrs_password
+    else
+      token = fetch_token_from_keycloak
+
+      if token.nil?
+        Rails.logger.warn("LRS Token not found")
+        return nil
+      end
+
+      lrs_payload[:lrs_token] = token
+    end
 
     # Generate a random salt
     salt = SecureRandom.random_bytes(8)

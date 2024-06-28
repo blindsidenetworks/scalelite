@@ -40,6 +40,12 @@ module BBBErrors
     end
   end
 
+  class UnsupportedContentType < BBBErrors::BBBError
+    def initialize
+      super('unsupportedContentType', 'POST request Content-Type is missing or unsupported')
+    end
+  end
+
   class InternalError < BBBError
     def initialize(error)
       super('internalError', error)
@@ -49,6 +55,12 @@ module BBBErrors
   class ServerUnavailableError < BBBError
     def initialize
       super('serverUnavailable', 'The server for this meeting is disabled/offline.')
+    end
+  end
+
+  class ServerTagUnavailableError < BBBError
+    def initialize(tag)
+      super('serverTagUnavailable', "There is no available server with the required tag=#{tag}.")
     end
   end
 end

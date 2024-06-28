@@ -19,36 +19,37 @@ module ApiHelper
   #     which should be accessed only by superadmins.
   def verify_checksum(force_loadbalancer_secret = false)
     secrets = fetch_secrets(force_loadbalancer_secret: force_loadbalancer_secret)
-
-    raise ChecksumError if params[:checksum].blank?
     raise ChecksumError if secrets.empty?
 
-    algorithm = case params[:checksum].length
-                   when CHECKSUM_LENGTH_SHA1
-                     'SHA1'
-                   when CHECKSUM_LENGTH_SHA256
-                     'SHA256'
-                   when CHECKSUM_LENGTH_SHA512
-                     'SHA512'
-                   else
-                     raise ChecksumError
-                   end
+    checksum = request.params[:checksum]
+    raise ChecksumError if checksum.blank?
 
-    # Camel case (ex) get_meetings to getMeetings to match BBB server
-    check_string = action_name.camelcase(:lower)
-    check_string += request.query_string.gsub(
-      /&checksum=#{params[:checksum]}|checksum=#{params[:checksum]}&|checksum=#{params[:checksum]}/, ''
-    )
-
+    algorithm = guess_checksum_digest_algorithm(checksum)
     allowed_checksum_algorithms = Rails.configuration.x.loadbalancer_checksum_algorithms
-    raise ChecksumError unless allowed_checksum_algorithms.include? algorithm
+    raise ChecksumError unless allowed_checksum_algorithms.include?(algorithm)
 
-    secrets.each do |secret|
-      return true if ActiveSupport::SecurityUtils.secure_compare(get_checksum(check_string + secret, algorithm),
-                                                                 params[:checksum])
+    check_string = action_name.camelcase(:lower) + query_string_remove_checksum(checksum)
+    return true if secrets.any? do |secret|
+      ActiveSupport::SecurityUtils.secure_compare(get_checksum(check_string + secret, algorithm), checksum)
     end
 
     raise ChecksumError
+  end
+
+  # Remove the checksum from the request query string. This is done as string manipulation, rather than decoding then re-encoding the parameters,
+  # since there's multiple possible valid encodings for query parameters, and the one used by Ruby might not match.
+  def query_string_remove_checksum(checksum)
+    checksum = Regexp.escape(checksum)
+    request.query_string.gsub(/&checksum=#{checksum}|checksum=#{checksum}&|checksum=#{checksum}/, '')
+  end
+
+  def guess_checksum_digest_algorithm(checksum)
+    case checksum.length
+    when CHECKSUM_LENGTH_SHA1 then 'SHA1'
+    when CHECKSUM_LENGTH_SHA256 then 'SHA256'
+    when CHECKSUM_LENGTH_SHA512 then 'SHA512'
+    else raise ChecksumError
+    end
   end
 
   def fetch_secrets(tenant_name: nil, force_loadbalancer_secret: false)
@@ -96,6 +97,27 @@ module ApiHelper
     else
       "SHA1"
     end
+  end
+
+  # Verify that the Content-Type of POST requests is a "form data" type (applies to most APIs)
+  def verify_content_type
+    return unless request.post? && request.content_length.positive?
+    raise UnsupportedContentType unless request.form_data?
+  end
+
+  # Verify that the Content-Type of a POST request is a format permitted by the create API.
+  # This can either be form data containing params, or an XML document for pre-uploaded slides
+  CREATE_PERMITTED_CONTENT_TYPES = Set.new([Mime[:url_encoded_form], Mime[:multipart_form], Mime[:xml]]).freeze
+  def verify_create_content_type
+    return unless request.post? && request.content_length.positive?
+    raise UnsupportedContentType unless CREATE_PERMITTED_CONTENT_TYPES.include?(request.content_mime_type)
+  end
+
+  # Verify that the Content-Type of a POST request is a format permitted by the insertDocument API.
+  # Only an XML document for pre-uploaded slides (same format as create) is permitted.
+  def verify_insert_document_content_type
+    return unless request.post? && request.content_length.positive?
+    raise UnsupportedContentType unless request.content_mime_type == Mime[:xml]
   end
 
   # Encode URI and append checksum
