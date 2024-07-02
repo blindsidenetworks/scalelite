@@ -248,9 +248,11 @@ module ApiHelper
     override = Rails.configuration.x.override_create_params
     default_tenant, override_tenant = TenantSetting.defaults_and_overrides(@tenant&.id)
 
-    params[:'meta_server-tag'] = default_tenant[:'meta_server-tag'] if params[:'meta_server-tag'].nil? && !default_tenant[:'meta_server-tag'].nil?
-    params[:'meta_server-tag'] = default[:'meta_server-tag'] if params[:'meta_server-tag'].nil? && !default[:'meta_server-tag'].nil?
-    params[:'meta_server-tag'] = override[:'meta_server-tag'] unless override[:'meta_server-tag'].nil?
-    params[:'meta_server-tag'] = override_tenant[:'meta_server-tag'] unless override_tenant[:'meta_server-tag'].nil?
+    params[:'meta_server-tag'] =
+      override_tenant[:'meta_server-tag'].presence ||
+      override[:'meta_server-tag'].presence ||
+      params[:'meta_server-tag'].presence ||
+      default_tenant[:'meta_server-tag'].presence ||
+      default[:'meta_server-tag'].presence
   end
 end
