@@ -25,11 +25,11 @@ RUN apk add --no-cache nginx tini gettext \
     && ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log
 RUN rm /etc/nginx/http.d/default.conf
-COPY --from=bbb-playback /usr/share/bigbluebutton/nginx/ /etc/bigbluebutton/nginx/
 COPY --from=bbb-playback /var/bigbluebutton/playback /var/bigbluebutton/playback/
 COPY nginx/start /etc/nginx/start
 COPY nginx/dhparam.pem /etc/nginx/dhparam.pem
 COPY nginx/conf.d /etc/nginx/http.d/
+COPY nginx/playback /etc/bigbluebutton/nginx/
 EXPOSE 80
 EXPOSE 443
 ENV NGINX_HOSTNAME=localhost

@@ -221,11 +221,6 @@ class BigBlueButtonApiController < ApplicationController
       params[:'meta_secret-lrs-payload'] = lrs_payload if lrs_payload.present?
     end
 
-    if @tenant&.lrs_endpoint.present?
-      lrs_payload = LrsPayloadService.new(tenant: @tenant, secret: server.secret).call
-      params[:'meta_secret-lrs-payload'] = lrs_payload if lrs_payload.present?
-    end
-
     have_preuploaded_slide = request.post? && request.content_mime_type == Mime[:xml]
 
     logger.debug("Creating meeting #{params[:meetingID]} on BigBlueButton server #{server.id}")
