@@ -1,0 +1,3 @@
+location ~ "/recording/screenshare/(.*)$" {
+        return 307 /screenshare/$1;
+}

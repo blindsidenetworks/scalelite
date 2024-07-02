@@ -1,0 +1,4 @@
+location ~ "/playback/video/(.*)$" {
+	return 307 /video/$1;
+}
+
