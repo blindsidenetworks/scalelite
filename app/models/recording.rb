@@ -43,6 +43,10 @@ class Recording < ApplicationRecord
     recording_params[:participants] = participants.to_i if participants.present?
     state = recording_xml.at_xpath('state')&.text
     recording_params[:state] = state if state.present?
+    rawSize = recording_xml.at_xpath('raw_size')&.text
+    recording_params[:rawSize] = rawSize.to_i if rawSize.present?
+    size = recording_xml.at_xpath('size')&.text
+    recording_params[:size] = size.to_i if size.present?
     # Workaround screenshare state bug
     recording_params[:state] = 'published' if recording_params[:state] == 'available'
     start_time = recording_xml.at_xpath('start_time')&.text

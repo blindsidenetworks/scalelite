@@ -15,6 +15,8 @@ xml.response do
         xml.startTime((recording.starttime.to_r * 1000).to_i)
         xml.endTime((recording.endtime.to_r * 1000).to_i)
         xml.participants recording.participants unless recording.participants.nil?
+        xml.rawSize recording.rawSize unless recording.rawSize.nil?
+        xml.size recording.size unless recording.size.nil?
         xml.metadata do
           recording.metadata.each do |metadatum|
             if metadatum.value.blank?
