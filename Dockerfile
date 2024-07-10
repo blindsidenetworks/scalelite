@@ -1,4 +1,4 @@
-FROM alpine:3.16 AS alpine
+FROM alpine:3.17 AS alpine
 
 FROM ubuntu:20.04 AS bbb-playback
 ENV DEBIAN_FRONTEND=noninteractive
@@ -45,8 +45,8 @@ RUN apk add --no-cache \
     shared-mime-info
 # ruby-start.
 # Install Ruby from sources since Scalelite does not use the version shipped with Apline.
-ARG RUBY_RELEASE="https://cache.ruby-lang.org/pub/ruby/3.1/ruby-3.1.4.tar.gz"
-ARG RUBY="ruby-3.1.4"
+ARG RUBY_RELEASE="https://cache.ruby-lang.org/pub/ruby/3.1/ruby-3.1.6.tar.gz"
+ARG RUBY="ruby-3.1.6"
 RUN apk add --no-cache git make gcc g++ libc-dev pkgconfig \
     libxml2-dev libxslt-dev postgresql-dev coreutils curl wget bash \
     gnupg tar linux-headers bison readline-dev readline zlib-dev \
