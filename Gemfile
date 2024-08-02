@@ -45,10 +45,10 @@ group :development, :test do
 
   gem 'rspec-rails', '~> 5.1.2'
 
-  gem 'rubocop', '~> 1.50.0', require: false
-  gem 'rubocop-performance',  require: false
-  gem 'rubocop-rails', '~> 2.19.0', require: false
-  gem 'rubocop-rspec', '~> 2.20', require: false
+  gem 'rubocop', '~> 1.50.2', require: false
+  gem 'rubocop-performance', '>= 1.18.0', require: false
+  gem 'rubocop-rails', '~> 2.19.1', require: false
+  gem 'rubocop-rspec', '~> 2.21', '>= 2.21.0', require: false
 end
 
 group :development do
@@ -62,7 +62,7 @@ group :test do
   gem 'fakeredis', '~> 0.8'
   gem 'minitest-stub_any_instance'
   gem 'rails-controller-testing'
-  gem 'webmock'
+  gem 'webmock', '>= 3.19.0'
 end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
