@@ -94,7 +94,7 @@ GEM
     hashdiff (1.0.1)
     i18n (1.12.0)
       concurrent-ruby (~> 1.0)
-    json (2.6.3)
+    json (2.7.2)
     jwt (2.7.0)
     listen (3.8.0)
       rb-fsevent (~> 0.10, >= 0.10.3)
@@ -127,9 +127,10 @@ GEM
     nokogiri (1.16.5)
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
-    parallel (1.22.1)
-    parser (3.2.2.0)
+    parallel (1.26.2)
+    parser (3.3.4.2)
       ast (~> 2.4.1)
+      racc
     pg (1.4.6)
     public_suffix (5.0.1)
     puma (6.4.2)
@@ -176,9 +177,9 @@ GEM
     redis (4.8.1)
     redis-namespace (1.11.0)
       redis (>= 4)
-    regexp_parser (2.7.0)
-    rexml (3.2.8)
-      strscan (>= 3.0.9)
+    regexp_parser (2.9.2)
+    rexml (3.3.5)
+      strscan
     rspec-core (3.12.1)
       rspec-support (~> 3.12.0)
     rspec-expectations (3.12.2)
@@ -196,7 +197,7 @@ GEM
       rspec-mocks (~> 3.10)
       rspec-support (~> 3.10)
     rspec-support (3.12.0)
-    rubocop (1.50.1)
+    rubocop (1.50.2)
       json (~> 2.3)
       parallel (~> 1.10)
       parser (>= 3.2.0.0)
@@ -206,8 +207,8 @@ GEM
       rubocop-ast (>= 1.28.0, < 2.0)
       ruby-progressbar (~> 1.7)
       unicode-display_width (>= 2.4.0, < 3.0)
-    rubocop-ast (1.28.0)
-      parser (>= 3.2.1.0)
+    rubocop-ast (1.32.0)
+      parser (>= 3.3.1.0)
     rubocop-capybara (2.18.0)
       rubocop (~> 1.41)
     rubocop-performance (1.17.1)
@@ -243,7 +244,7 @@ GEM
     tty-screen (0.8.1)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
-    unicode-display_width (2.4.2)
+    unicode-display_width (2.5.0)
     webmock (3.18.1)
       addressable (>= 2.8.0)
       crack (>= 0.3.2)
@@ -273,7 +274,7 @@ DEPENDENCIES
   redis (~> 4.8.0)
   redis-namespace (~> 1.11.0)
   rspec-rails (~> 5.1.2)
-  rubocop (~> 1.50.0)
+  rubocop (~> 1.50.2)
   rubocop-performance
   rubocop-rails (~> 2.19.0)
   rubocop-rspec (~> 2.20)
@@ -283,3 +284,9 @@ DEPENDENCIES
   tabulo (~> 2.8.1)
   tzinfo-data
   webmock
+
+RUBY VERSION
+   ruby 3.0.0p0
+
+BUNDLED WITH
+   2.2.3
