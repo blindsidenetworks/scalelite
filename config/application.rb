@@ -25,7 +25,7 @@ Bundler.require(*Rails.groups)
 module Scalelite
   class Application < Rails::Application
     # Initialize configuration defaults
-    config.load_defaults 7.0
+    config.load_defaults 7.1
 
     config.eager_load_paths << Rails.root.join('lib')
 
@@ -162,5 +162,8 @@ module Scalelite
 
     # Maximum amount of time to allow bridged calls to stay connected for. Defaults to same as max meeting duration.
     config.x.fsapi_max_duration = ENV.fetch('FSAPI_MAX_DURATION', config.x.max_meeting_duration).to_i
+
+    # Restore default serializer from Rails defaults < 7.1
+    config.active_record.default_column_serializer = YAML
   end
 end
