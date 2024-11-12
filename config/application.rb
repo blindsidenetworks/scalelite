@@ -24,8 +24,8 @@ Bundler.require(*Rails.groups)
 
 module Scalelite
   class Application < Rails::Application
-    # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 6.0
+    # Initialize configuration defaults
+    config.load_defaults 7.0
 
     config.eager_load_paths << Rails.root.join('lib')
 
