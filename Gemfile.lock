@@ -135,7 +135,6 @@ GEM
     minitest (5.25.1)
     minitest-stub_any_instance (1.0.3)
     msgpack (1.7.0)
-    mutex_m (0.2.0)
     net-imap (0.4.17)
       date
       net-protocol
@@ -263,7 +262,6 @@ GEM
       spring (>= 1.2, < 3.0)
     sqlite3 (1.6.2)
       mini_portile2 (~> 2.8.0)
-    stringio (3.1.1)
     strscan (3.1.0)
     tabulo (2.8.2)
       tty-screen (= 0.8.1)
@@ -299,7 +297,7 @@ DEPENDENCIES
   minitest-stub_any_instance
   pg (~> 1.4.4)
   puma (~> 6.4)
-  rails (~> 7.0, >= 7.0.0)
+  rails (~> 7.1, >= 7.1.4.1)
   rails-controller-testing
   redis (~> 4.8.0)
   redis-namespace (~> 1.11.0)
@@ -314,9 +312,3 @@ DEPENDENCIES
   tabulo (~> 2.8.1)
   tzinfo-data
   webmock
-
-RUBY VERSION
-   ruby 3.0.0p0
-
-BUNDLED WITH
-   2.2.3
