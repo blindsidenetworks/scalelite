@@ -785,7 +785,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
         { body: meeting_create_response(params[:meetingID], params[:moderatorPW]) }
       end
 
-    mocked_method = MiniTest::Mock.new
+    mocked_method = Minitest::Mock.new
     return_value = { 'meetingID' => 'test-meeting-1' }
 
     Rails.configuration.x.stub(:create_exclude_params, %w[test4 test2]) do
@@ -823,7 +823,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       .with(query: hash_including(params))
       .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
 
-    mocked_method = MiniTest::Mock.new
+    mocked_method = Minitest::Mock.new
     return_value = { meetingID: 'test-meeting-1', test4: '', test2: '' }
 
     Rails.configuration.x.stub(:create_exclude_params, []) do

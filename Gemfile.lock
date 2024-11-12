@@ -106,7 +106,7 @@ GEM
       i18n (>= 1.8.11, < 2)
     fakeredis (0.8.0)
       redis (~> 4.1)
-    ffi (1.15.5)
+    ffi (1.17.0)
     globalid (1.2.1)
       activesupport (>= 6.1)
     hashdiff (1.0.1)
@@ -118,7 +118,7 @@ GEM
       reline (>= 0.4.2)
     json (2.6.3)
     jwt (2.7.0)
-    listen (3.8.0)
+    listen (3.9.0)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
     loofah (2.22.0)
@@ -203,7 +203,7 @@ GEM
     rainbow (3.1.1)
     rake (13.2.1)
     rb-fsevent (0.11.2)
-    rb-inotify (0.10.1)
+    rb-inotify (0.11.1)
       ffi (~> 1.0)
     rdoc (6.7.0)
       psych (>= 4.0.0)
@@ -257,10 +257,10 @@ GEM
       rubocop (~> 1.33)
       rubocop-capybara (~> 2.17)
     ruby-progressbar (1.13.0)
-    spring (2.1.1)
-    spring-watcher-listen (2.0.1)
+    spring (4.2.1)
+    spring-watcher-listen (2.1.0)
       listen (>= 2.7, < 4.0)
-      spring (>= 1.2, < 3.0)
+      spring (>= 4)
     sqlite3 (1.6.2)
       mini_portile2 (~> 2.8.0)
     stringio (3.1.1)
@@ -296,6 +296,7 @@ DEPENDENCIES
   faker
   fakeredis (~> 0.8)
   jwt (~> 2.7.0)
+  minitest
   minitest-stub_any_instance
   pg (~> 1.4.4)
   puma (~> 6.4)
@@ -309,7 +310,7 @@ DEPENDENCIES
   rubocop-rails (~> 2.19.0)
   rubocop-rspec (~> 2.20)
   spring
-  spring-watcher-listen (~> 2.0.1)
+  spring-watcher-listen (~> 2.1.0)
   sqlite3
   tabulo (~> 2.8.1)
   tzinfo-data

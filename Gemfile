@@ -60,6 +60,7 @@ end
 group :test do
   gem 'faker'
   gem 'fakeredis', '~> 0.8'
+  gem 'minitest'
   gem 'minitest-stub_any_instance'
   gem 'rails-controller-testing'
   gem 'webmock'
