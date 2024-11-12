@@ -320,7 +320,7 @@ class BigBlueButtonApiController < ApplicationController
 
     # Redirect the user to the join url
     logger.debug("Redirecting user to join url: #{uri}")
-    redirect_to(uri.to_s)
+    redirect_to(uri.to_s, allow_other_host: true)
   end
 
   def insert_document
