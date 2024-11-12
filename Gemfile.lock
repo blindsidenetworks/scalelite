@@ -135,6 +135,7 @@ GEM
     minitest (5.25.1)
     minitest-stub_any_instance (1.0.3)
     msgpack (1.7.0)
+    mutex_m (0.2.0)
     net-imap (0.4.17)
       date
       net-protocol
@@ -152,7 +153,7 @@ GEM
     parser (3.2.2.0)
       ast (~> 2.4.1)
     pg (1.4.6)
-    psych (5.1.2)
+    psych (5.2.0)
       stringio
     public_suffix (5.0.1)
     puma (6.4.2)
@@ -262,6 +263,7 @@ GEM
       spring (>= 1.2, < 3.0)
     sqlite3 (1.6.2)
       mini_portile2 (~> 2.8.0)
+    stringio (3.1.1)
     strscan (3.1.0)
     tabulo (2.8.2)
       tty-screen (= 0.8.1)
@@ -297,7 +299,7 @@ DEPENDENCIES
   minitest-stub_any_instance
   pg (~> 1.4.4)
   puma (~> 6.4)
-  rails (~> 7.1, >= 7.1.4.1)
+  rails (~> 7.1)
   rails-controller-testing
   redis (~> 4.8.0)
   redis-namespace (~> 1.11.0)
