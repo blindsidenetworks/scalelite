@@ -29,14 +29,13 @@ module Scalelite
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w(bin docs dockerfiles images log nginx public systemd tmp vendor))
+    config.autoload_lib(ignore: %w(tasks))
 
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    config.eager_load_paths << Rails.root.join('lib')
 
     # Read the file config/redis_store.yml as per-environment configuration with erb
     config.x.redis_store = config_for(:redis_store)
