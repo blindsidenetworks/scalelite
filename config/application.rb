@@ -14,7 +14,6 @@ require 'action_controller/railtie'
 # require 'action_text/engine'
 require 'action_view/railtie'
 # require 'action_cable/engine'
-# require 'sprockets/railtie'
 require 'rails/test_unit/railtie'
 require 'active_support/time'
 
@@ -24,15 +23,19 @@ Bundler.require(*Rails.groups)
 
 module Scalelite
   class Application < Rails::Application
-    # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 6.0
+    # Initialize configuration defaults
+    config.load_defaults 7.1
 
-    config.eager_load_paths << Rails.root.join('lib')
+    # Please, add to the `ignore` list any other `lib` subdirectories that do
+    # not contain `.rb` files, or that should not be reloaded or eager loaded.
+    # Common ones are `templates`, `generators`, or `middleware`, for example.
+    config.autoload_lib(ignore: %w(tasks))
 
-    # Settings in config/environments/* take precedence over those specified here.
-    # Application configuration can go into files in config/initializers
-    # -- all .rb files in that directory are automatically loaded after loading
-    # the framework and any gems in your application.
+    # Configuration for the application, engines, and railties goes here.
+    #
+    # These settings can be overridden in specific environments using the files
+    # in config/environments, which are processed later.
+    #
 
     # Read the file config/redis_store.yml as per-environment configuration with erb
     config.x.redis_store = config_for(:redis_store)
@@ -162,5 +165,8 @@ module Scalelite
 
     # Maximum amount of time to allow bridged calls to stay connected for. Defaults to same as max meeting duration.
     config.x.fsapi_max_duration = ENV.fetch('FSAPI_MAX_DURATION', config.x.max_meeting_duration).to_i
+
+    # Restore default serializer from Rails defaults < 7.1
+    config.active_record.default_column_serializer = YAML
   end
 end

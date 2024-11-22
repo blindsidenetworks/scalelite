@@ -5,8 +5,8 @@ require_relative '../config/environment'
 require 'rails/test_help'
 require 'fakeredis/minitest'
 require 'webmock/minitest'
+require 'minitest/autorun'
 require 'minitest/stub_any_instance'
-require 'minitest/mock'
 
 module ActiveSupport
   class TestCase
