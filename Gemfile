@@ -43,7 +43,7 @@ group :development, :test do
   gem 'dotenv-rails'
   gem 'factory_bot_rails'
 
-  gem 'rspec-rails', '~> 5.1.2'
+  gem 'rspec-rails', '~> 7.1'
 
   gem 'rubocop', '~> 1.50.0', require: false
   gem 'rubocop-performance',  require: false
