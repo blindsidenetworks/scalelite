@@ -168,5 +168,8 @@ module Scalelite
 
     # Restore default serializer from Rails defaults < 7.1
     config.active_record.default_column_serializer = YAML
+
+    # continue using config/secrets.yml for secrets
+    config.secrets = config_for(:secrets)
   end
 end

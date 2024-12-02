@@ -57,7 +57,7 @@ class PlaybackController < ApplicationController
       'sub' => resource_path,
       'exp' => expires,
     }
-    secret = Rails.application.secret_key_base
+    secret = Rails.configuration.secrets.secret_key_base
     token = JWT.encode(payload, secret, 'HS256')
 
     cookies[cookie_name] = {
@@ -74,7 +74,7 @@ class PlaybackController < ApplicationController
     raise RecordingNotFoundError if cookie.blank?
 
     resource_path = "/#{@playback_format.format}/#{@recording.record_id}"
-    secret = Rails.application.secret_key_base
+    secret = Rails.configuration.secrets.secret_key_base
     JWT.decode(
       cookie,
       secret,
