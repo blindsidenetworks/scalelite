@@ -286,24 +286,36 @@ class Server < ApplicationRedisRecord
   end
 
   # Find the server with the lowest load (for creating a new meeting)
-  def self.find_available(tag_arg = nil)
-    # Check if tag is required
-    tag = tag_arg.presence
-    tag_required = false
-    if !tag.nil? && tag[-1] == '!'
-        tag = tag[0..-2].presence # always returns String, if tag is String
-        tag_required = true
+  def self.find_available(tags_arg = nil)
+    # Check if passed tags are required
+    tags_arg = tags_arg.presence
+    tags_required = false
+    if !tags_arg.nil? && tags_arg[-1] == '!'
+        tags_arg = tags_arg[0..-2].presence # always returns String, if tag is String
+        tags_required = true
     end
+    tags = tags_arg&.split(',')
 
     # Find available&matching server with the lowest load
     with_connection do |redis|
       ids_loads = redis.zrange('server_load', 0, -1, with_scores: true)
       raise RecordNotFound.new("Could not find any available servers.", name, nil) if ids_loads.blank?
-      if !tag.nil? && ids_loads.none? { |myid, _| redis.hget(key(myid), 'tag') == tag }
-        raise BBBErrors::ServerTagUnavailableError, tag if tag_required
-        tag = nil # fall back to servers without tag
+
+      # build a list of matching tagged servers, otherwise fall back to untagged
+      unless tags.nil?
+        ids_loads_tagged = []
+        tags.each do |tag|
+          ids_loads_tagged.concat ids_loads.select { |myid, _| redis.hget(key(myid), 'tag') == tag }
+        end
+        if ids_loads_tagged.blank?
+          raise BBBErrors::ServerTagUnavailableError, tags_arg if tags_required
+          tags = nil # fall back to servers without tag
+          ids_loads_tagged = ids_loads.select { |myid, _| redis.hget(key(myid), 'tag').nil? }
+        end
+        ids_loads = ids_loads_tagged
       end
-      ids_loads = ids_loads.select { |myid, _| redis.hget(key(myid), 'tag') == tag }
+
+      # try to select the server with lowest load
       id, load, hash = ids_loads.each do |id, load|
         hash = redis.hgetall(key(id))
         break id, load, hash if hash.present?
