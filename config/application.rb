@@ -24,12 +24,12 @@ Bundler.require(*Rails.groups)
 module Scalelite
   class Application < Rails::Application
     # Initialize configuration defaults
-    config.load_defaults 7.1
+    config.load_defaults 7.2
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w(tasks))
+    config.autoload_lib(ignore: %w[tasks])
 
     # Configuration for the application, engines, and railties goes here.
     #
@@ -168,5 +168,8 @@ module Scalelite
 
     # Restore default serializer from Rails defaults < 7.1
     config.active_record.default_column_serializer = YAML
+
+    # continue using config/secrets.yml for secrets
+    config.secrets = config_for(:secrets)
   end
 end
