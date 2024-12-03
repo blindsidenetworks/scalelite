@@ -292,7 +292,7 @@ class Server < ApplicationRedisRecord
     tags_required = false
     if !tags_arg.nil? && tags_arg[-1] == '!'
         tags_arg = tags_arg[0..-2].presence # always returns String, if tag is String
-        tags_required = true
+        tags_required = true unless tags_arg.nil?
     end
     tags = tags_arg&.split(',')
 
@@ -307,14 +307,14 @@ class Server < ApplicationRedisRecord
         tags.each do |tag|
           ids_loads_tagged.concat ids_loads.select { |myid, _| redis.hget(key(myid), 'tag') == tag }
         end
-        ids_loads_tagged.sort_by { |id_load| id_load[1] }
-        if ids_loads_tagged.blank?
-          raise BBBErrors::ServerTagUnavailableError, tags_arg if tags_required
-          tags = nil # fall back to servers without tag
-          ids_loads_tagged = ids_loads.select { |myid, _| redis.hget(key(myid), 'tag').nil? }
-        end
-        ids_loads = ids_loads_tagged
+        ids_loads_tagged.sort_by! { |id_load| id_load[1] }
       end
+      if ids_loads_tagged.blank?
+        raise BBBErrors::ServerTagUnavailableError, tags_arg if tags_required
+        tags = nil # fall back to servers without tag
+        ids_loads_tagged = ids_loads.select { |myid, _| redis.hget(key(myid), 'tag').nil? }
+      end
+      ids_loads = ids_loads_tagged
 
       # try to select the server with lowest load
       id, load, hash = ids_loads.each do |id, load|
