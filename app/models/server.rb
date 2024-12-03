@@ -307,6 +307,7 @@ class Server < ApplicationRedisRecord
         tags.each do |tag|
           ids_loads_tagged.concat ids_loads.select { |myid, _| redis.hget(key(myid), 'tag') == tag }
         end
+        ids_loads_tagged.sort_by { |id_load| id_load[1] }
         if ids_loads_tagged.blank?
           raise BBBErrors::ServerTagUnavailableError, tags_arg if tags_required
           tags = nil # fall back to servers without tag
