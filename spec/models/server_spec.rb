@@ -339,6 +339,22 @@ RSpec.describe Server, redis: true do
           expect(server.id).to eq 'test-3'
         end
       end
+
+      context 'and with none tag argument' do
+        let(:server) { described_class.find_available('none') }
+
+        it 'returns untagged server with lowest load' do
+          expect(server.id).to eq 'test-3'
+        end
+      end
+
+      context 'and with none! tag argument' do
+        let(:server) { described_class.find_available('none!') }
+
+        it 'returns untagged server with lowest load' do
+          expect(server.id).to eq 'test-3'
+        end
+      end
     end
 
     context 'with differently tagged servers' do
@@ -366,6 +382,11 @@ RSpec.describe Server, redis: true do
           redis.sadd?('servers', 'test-4')
           redis.sadd?('server_enabled', 'test-4')
           redis.zadd('server_load', 1, 'test-4')
+          redis.mapped_hmset('server:test-5', url: 'https://test-5.example.com/bigbluebutton/api', secret: 'test-5-secret',
+                                              tag: 'test-tag2', enabled: 'true')
+          redis.sadd?('servers', 'test-5')
+          redis.sadd?('server_enabled', 'test-5')
+          redis.zadd('server_load', 1, 'test-5')
         end
       end
 
@@ -389,6 +410,29 @@ RSpec.describe Server, redis: true do
         it 'returns matching tagged server with lowest load' do
           expect(server.id).to eq 'test-3'
           expect(server.tag).to eq 'test-tag'
+        end
+      end
+
+      context 'and optional tag list argument' do
+        let(:server) { described_class.find_available('test-tag,test-tag2') }
+
+        it 'returns matching tagged server with lowest load' do
+          expect(server.id).to eq 'test-5'
+          expect(server.url).to eq 'https://test-5.example.com/bigbluebutton/api'
+          expect(server.secret).to eq 'test-5-secret'
+          expect(server.tag).to eq 'test-tag2'
+          expect(server.enabled).to be true
+          expect(server.state).to be_nil
+          expect(server.load).to eq 1
+        end
+      end
+
+      context 'and required tag list argument' do
+        let(:server) { described_class.find_available('test-tag,test-tag2!') }
+
+        it 'returns matching tagged server with lowest load' do
+          expect(server.id).to eq 'test-5'
+          expect(server.tag).to eq 'test-tag2'
         end
       end
     end
