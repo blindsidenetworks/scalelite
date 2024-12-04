@@ -48,7 +48,6 @@ RSpec.describe RecordingReadyNotifierService, type: :service do
     expect(return_val).to be true
   end
 
-
   it 'returns false if recording ready notification fails' do
     stub_request(:post, url).to_timeout
 
