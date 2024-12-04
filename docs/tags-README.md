@@ -12,7 +12,7 @@ This works for all supported ways of adding servers: Per `rake servers:add` task
 
 ## Create call with server-tag metaparameter
 
-A create API call with a meta feature is supposed to work as follows:
+A create API call using this feature is supposed to work as follows:
 
 1) When making a "create" API call towards Scalelite, you can optionally pass a meta_server-tag parameter with a string value. The string can be a single tag or a comma-separated list of tags and may additionally contain a '!' as last character. It will be handled as follows:
 2) If the last character of meta_server-tag is not a '!', the tags will will be intepreted as *optional*. The meeting will be created on the least loaded server with a tag matching one of the passed tags (the special tag 'none' will match untagged servers), if any is available, or on the least loaded untagged server otherwise.
