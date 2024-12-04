@@ -34,7 +34,7 @@ RSpec.describe RecordingReadyNotifierService, type: :service do
         { status: 200, body: '', headers: {} }  # Third secret succeeds
       )
 
-    allow_any_instance_of(ApiHelper).to receive(:fetch_secrets).and_return(["secret1", "secret2", "secret3"])
+    allow_any_instance_of(ApiHelper).to receive(:fetch_secrets).and_return(%w[secret1 secret2 secret3])
 
     allow(JWT).to receive(:encode).and_return('eyJhbGciOiJIUzI1NiJ9.eyJtZWV0aW5nX2lkIjoibWVldGluZzE5In0')
 
