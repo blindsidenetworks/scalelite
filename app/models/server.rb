@@ -305,7 +305,7 @@ class Server < ApplicationRedisRecord
       unless tags.nil?
         ids_loads_tagged = []
         tags.each do |tag|
-          ids_loads_tagged.concat ids_loads.select { |myid, _| redis.hget(key(myid), 'tag') == tag }
+          ids_loads_tagged.concat ids_loads.select { |myid, _| (redis.hget(key(myid), 'tag') || "none") == tag }
         end
         ids_loads_tagged.sort_by! { |id_load| id_load[1] }
       end
