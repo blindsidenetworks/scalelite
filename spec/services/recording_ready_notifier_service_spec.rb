@@ -26,6 +26,28 @@ RSpec.describe RecordingReadyNotifierService, type: :service do
     expect(return_val).to be true
   end
 
+  it 'retries with different secrets if multiple secrets are set' do
+    stub_request(:post, url)
+      .to_return(
+        { status: 401, body: '', headers: {} }, # First secret fails
+        { status: 401, body: '', headers: {} }, # Second secret fails
+        { status: 200, body: '', headers: {} }  # Third secret succeeds
+      )
+
+    allow_any_instance_of(ApiHelper).to receive(:fetch_secrets).and_return(%w[secret1 secret2 secret3])
+
+    allow(JWT).to receive(:encode).and_return('eyJhbGciOiJIUzI1NiJ9.eyJtZWV0aW5nX2lkIjoibWVldGluZzE5In0')
+
+    allow(Rails.logger).to receive(:info).and_call_original # Allow all other logger calls to pass through
+
+    expect(Rails.logger).to receive(:info).with("Callback HTTP request failed: 401  (code 401)").twice
+    expect(Rails.logger).to receive(:info).with("Recording notifier successful: #{recording.meeting_id} (code #{200})").once
+
+    return_val = described_class.execute(recording.id)
+
+    expect(return_val).to be true
+  end
+
   it 'returns false if recording ready notification fails' do
     stub_request(:post, url).to_timeout
 
