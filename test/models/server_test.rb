@@ -346,7 +346,7 @@ class ServerTest < ActiveSupport::TestCase
       redis.zadd('server_load', 1, 'test-4')
     end
 
-    server = Server.find_available('test-tag,test-tag2')
+    server = Server.find_available('test-tag;test-tag2')
     assert_equal('test-3', server.id)
     assert_equal('https://test-3.example.com/bigbluebutton/api', server.url)
     assert_equal('test-3-secret', server.secret)
@@ -355,7 +355,7 @@ class ServerTest < ActiveSupport::TestCase
     assert_nil(server.state)
     assert_equal(2, server.load)
 
-    server = Server.find_available('test-tag,test-tag2!')
+    server = Server.find_available('test-tag;test-tag2!')
     assert_equal('test-3', server.id)
     assert_equal('test-tag2', server.tag)
   end

@@ -294,7 +294,7 @@ class Server < ApplicationRedisRecord
         tags_arg = tags_arg[0..-2].presence # always returns String, if tag is String
         tags_required = true unless tags_arg.nil?
     end
-    tags = tags_arg&.split(',')
+    tags = tags_arg&.split(';')
 
     # Find available&matching server with the lowest load
     with_connection do |redis|

@@ -414,7 +414,7 @@ RSpec.describe Server, redis: true do
       end
 
       context 'and optional tag list argument' do
-        let(:server) { described_class.find_available('test-tag,test-tag2') }
+        let(:server) { described_class.find_available('test-tag;test-tag2') }
 
         it 'returns matching tagged server with lowest load' do
           expect(server.id).to eq 'test-5'
@@ -428,7 +428,7 @@ RSpec.describe Server, redis: true do
       end
 
       context 'and required tag list argument' do
-        let(:server) { described_class.find_available('test-tag,test-tag2!') }
+        let(:server) { described_class.find_available('test-tag;test-tag2!') }
 
         it 'returns matching tagged server with lowest load' do
           expect(server.id).to eq 'test-5'

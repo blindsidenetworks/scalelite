@@ -14,7 +14,7 @@ This works for all supported ways of adding servers: Per `rake servers:add` task
 
 A create API call using this feature is supposed to work as follows:
 
-1) When making a "create" API call towards Scalelite, you can optionally pass a meta_server-tag parameter with a string value. The string can be a single tag or a comma-separated list of tags and may additionally contain a '!' as last character. It will be handled as follows:
+1) When making a "create" API call towards Scalelite, you can optionally pass a meta_server-tag parameter with a string value. The string can be a single tag or a semicolon-separated list of tags and may additionally contain a '!' as last character. It will be handled as follows:
 2) If the last character of meta_server-tag is not a '!', the tags will will be intepreted as *optional*. The meeting will be created on the least loaded server with a tag matching one of the passed tags (the special tag 'none' will match untagged servers), if any is available, or on the least loaded untagged server otherwise.
 3) If the last character of meta_server-tag is a '!', this character will be stripped and the remaining tags will be interpreted as *required*. The meeting will be created on the least loaded server with a tag matching one of the passed tags (the special tag 'none' will match untagged servers) or *fail* to be created (with a specific error message), if no matching server is available.
 
@@ -35,7 +35,7 @@ HOSTNAME   STATE   STATUS  MEETINGS  USERS  LARGEST MEETING  VIDEOS  LOAD   BBB 
 Now, consider the following examples of `meta_server-tag` parameters:
 - Passing `meta_server-tag=` or `meta_server-tag=!` or omitting the parameter altogether are all equivalent and will place the meeting on `bbb-3` (least loaded untagged).
 - Passing `meta_server-tag=test` or `meta_server-tag=test!` will place the meeting on `bbb-1` (the only match).
-- Passing `meta_server-tag=test,test2` or `meta_server-tag=test,test2!` will place the meeting on `bbb-4` (least loaded match).
+- Passing `meta_server-tag=test;test2` or `meta_server-tag=test;test2!` will place the meeting on `bbb-4` (least loaded match).
 - Passing `meta_server-tag=none` or `meta_server-tag=none!` will place the meeting on `bbb-3` ) (least loaded match).
 - Passing `meta_server-tag=test3` will place the meeting on `bbb-3` (fallback to least loaded untagged).
 - Passing `meta_server-tag=test3!` will place the meeting on `bbb-3` (fallback to least loaded untagged).
