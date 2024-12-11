@@ -13,14 +13,14 @@ module CookieSameSiteCompat
 
   private
 
-  IOS_VERSION_REGEXP = %r{\(iP.+; CPU .*OS (\d+)[_\d]*.*\) AppleWebKit/}.freeze
-  MACOS_VERSION_REGEXP = %r{\(Macintosh;.*Mac OS X (\d+)_(\d+)[_\d]*.*\) AppleWebKit/}.freeze
-  SAFARI_REGEXP = %r{Version/.* Safari/}.freeze
-  CHROMIUM_BASED_REGEXP = /Chrom(?:e|ium)/.freeze
-  CHROMIUM_VERSION_REGEXP = %r{Chrom[^ /]+/(\d+)[.\d]* }.freeze
-  MAC_EMBEDDED_REGEXP = %r{^Mozilla/[.\d]+ \(Macintosh;.*Mac OS X [_\d]+\) AppleWebKit/[.\d]+ \(KHTML, like Gecko\)$}.freeze
-  UC_BROWSER_REGEXP = %r{UCBrowser/}.freeze
-  UC_BROWSER_VERSION_REGEXP = %r{UCBrowser/(\d+)\.(\d+)\.(\d+)[.\d]* }.freeze
+  IOS_VERSION_REGEXP = %r{\(iP.+; CPU .*OS (\d+)[_\d]*.*\) AppleWebKit/}
+  MACOS_VERSION_REGEXP = %r{\(Macintosh;.*Mac OS X (\d+)_(\d+)[_\d]*.*\) AppleWebKit/}
+  SAFARI_REGEXP = %r{Version/.* Safari/}
+  CHROMIUM_BASED_REGEXP = /Chrom(?:e|ium)/
+  CHROMIUM_VERSION_REGEXP = %r{Chrom[^ /]+/(\d+)[.\d]* }
+  MAC_EMBEDDED_REGEXP = %r{^Mozilla/[.\d]+ \(Macintosh;.*Mac OS X [_\d]+\) AppleWebKit/[.\d]+ \(KHTML, like Gecko\)$}
+  UC_BROWSER_REGEXP = %r{UCBrowser/}
+  UC_BROWSER_VERSION_REGEXP = %r{UCBrowser/(\d+)\.(\d+)\.(\d+)[.\d]* }
 
   def webkit_same_site_bug?(useragent)
     return true if ios_version?(12, useragent)
