@@ -48,15 +48,24 @@ CMD [ "/etc/nginx/start", "-g", "daemon off;" ]
 
 FROM amazonlinux-base AS base
 # Install Node.js (needed for yarn)
-RUN yum -y install gcc-c++ make
+RUN yum -y install git gcc-c++ make libyaml-devel libffi-devel glibc-devel readline-devel openssl-devel
 RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash -
 RUN yum -y install nodejs
 # Install Ruby & Rails
 RUN curl -sL -o /etc/yum.repos.d/yarn.repo https://dl.yarnpkg.com/rpm/yarn.repo
-RUN amazon-linux-extras enable ruby3.0 postgresql14 \
-    && yum -y install git tar gzip yarn shared-mime-info libxslt zlib-devel sqlite-devel mariadb-devel libpq-devel ruby-devel rubygems-devel rubygem-bundler rubygem-io-console rubygem-irb rubygem-json rubygem-minitest rubygem-power_assert rubygem-rake rubygem-test-unit rubygem-bigdecimal
+RUN amazon-linux-extras enable postgresql14 \
+    && yum -y install tar gzip yarn shared-mime-info libxslt zlib-devel sqlite-devel mariadb-devel libpq-devel
+RUN git clone https://github.com/rbenv/rbenv.git ~/.rbenv && \
+    echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc && \
+    echo 'eval "$(rbenv init -)"' >> ~/.bashrc && \
+    git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build && \
+    ~/.rbenv/bin/rbenv install 3.3.6 && \
+    ~/.rbenv/bin/rbenv global 3.3.6 && \
+    ~/.rbenv/bin/rbenv rehash
+ENV PATH="/root/.rbenv/shims:/root/.rbenv/bin:$PATH"
 RUN yum -y install python3 python3-pip shadow-utils
-RUN gem install bundler -v '2.1.4'
+RUN gem install bundler -v '~> 2.5'
+
 RUN groupadd scalelite --gid 1000 && \
     useradd -u 1000 -d /srv/scalelite -g scalelite scalelite
 RUN groupadd scalelite-spool --gid 2000 && \
