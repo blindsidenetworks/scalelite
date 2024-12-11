@@ -146,8 +146,8 @@ class ApplicationRedisRecord
   end
   delegate :connection_pool, to: 'self.class'
 
-  def self.with_connection(&block)
-    RedisStore.with_connection(&block)
+  def self.with_connection(&)
+    RedisStore.with_connection(&)
   end
   delegate :with_connection, to: 'self.class'
 
