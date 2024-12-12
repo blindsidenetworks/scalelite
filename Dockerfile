@@ -1,5 +1,3 @@
-FROM alpine:3.20 AS alpine
-
 FROM ubuntu:20.04 AS bbb-playback
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
@@ -35,7 +33,7 @@ EXPOSE 443
 ENV NGINX_HOSTNAME=localhost
 CMD [ "/etc/nginx/start", "-g", "daemon off;" ]
 
-FROM alpine AS base
+FROM ruby:3.3.6-alpine AS base
 RUN apk add --no-cache \
     libpq \
     libxml2 \
@@ -43,31 +41,14 @@ RUN apk add --no-cache \
     tini \
     tzdata \
     shared-mime-info
-# ruby-start.
-# Install Ruby from sources since Scalelite does not necessarily use the version shipped with Apline.
-ARG RUBY_RELEASE="https://cache.ruby-lang.org/pub/ruby/3.3/ruby-3.3.6.tar.gz"
-ARG RUBY="ruby-3.3.6"
-RUN apk add --no-cache git make gcc g++ libc-dev pkgconfig \
-    libxml2-dev libxslt-dev postgresql-dev coreutils curl wget bash \
-    gnupg tar linux-headers bison readline-dev readline zlib-dev \
-    zlib yaml-dev autoconf ncurses-dev curl-dev apache2-dev \
-    libx11-dev libffi-dev tcl-dev tk-dev
-RUN wget --no-verbose -O ruby.tar.gz ${RUBY_RELEASE} && \
-    tar -xf ruby.tar.gz && \
-    cd /${RUBY} && \
-    ac_cv_func_isnan=yes ac_cv_func_isinf=yes \
-    ./configure --disable-install-doc && \
-    make && \
-    make test && \
-    make install
-RUN cd / && \
-    rm ruby.tar.gz && \
-    rm -rf ${RUBY_NAME}
-# ruby-end.
 RUN addgroup scalelite --gid 1000 && \
     adduser -u 1000 -h /srv/scalelite -G scalelite -D scalelite
 RUN addgroup scalelite-spool --gid 2000 && \
     addgroup scalelite scalelite-spool
+ENV RAILS_ENV=production
+ENV RAILS_LOG_TO_STDOUT=true
+ENV BUNDLE_APP_CONFIG=/srv/scalelite/.bundle
+ENV PATH /usr/local/bundle/bin:/usr/local/bundle/gems/bin:$PATH
 WORKDIR /srv/scalelite
 
 FROM base as builder
@@ -90,7 +71,6 @@ RUN rm -rf nginx
 
 FROM base AS application
 USER scalelite:scalelite
-ENV RAILS_ENV=production RAILS_LOG_TO_STDOUT=true
 COPY --from=builder --chown=scalelite:scalelite /srv/scalelite ./
 
 ARG BUILD_NUMBER
