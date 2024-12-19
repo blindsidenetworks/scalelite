@@ -203,6 +203,7 @@ class Meeting < ApplicationRedisRecord
   def self.allocate_voice_bridge(meeting_id, voice_bridge = nil)
     voice_bridge_len = Rails.configuration.x.voice_bridge_len
     use_external_voice_bridge = Rails.configuration.x.use_external_voice_bridge
+    test_voice_bridge = "99999" # default value in BBB, must be avoided
 
     # In order to make consistent random pin numbers, use the provided meeting as the seed. Ruby's 'Random' PRNG takes a 128bit
     # integer as seed. Create one from a truncated hash of the meeting id.
@@ -225,6 +226,7 @@ class Meeting < ApplicationRedisRecord
         end
         tries += 1
         logger.debug { "Trying to allocate voice bridge number #{voice_bridge}, try #{tries}" }
+        next if voice_bridge == test_voice_bridge # avoid special voice bridge number
 
         _created, allocated_meeting_id = redis.multi do |transaction|
           transaction.hsetnx('voice_bridges', voice_bridge, meeting_id)
