@@ -11,7 +11,7 @@ AllCops:
   - 'vendor/**/*'
   - 'vendor/bundle/**/*'
   DisabledByDefault: false
-  TargetRubyVersion: 2.7
+  TargetRubyVersion: 3.3
 
   NewCops: enable
 
@@ -235,6 +235,9 @@ Style/OptionalBooleanParameter:
 
 Style/SlicingWithRange:
   Enabled: true
+
+Style/HashSyntax:
+  EnforcedShorthandSyntax: either
 
 RSpec/ContextWording:
   Enabled: false

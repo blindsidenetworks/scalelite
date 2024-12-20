@@ -1,5 +1,5 @@
 env:
-  RUBY_VERSION: 2.7.x
+  RUBY_VERSION: 3.3.6
 
 name: CI Build Push
 on:
@@ -18,7 +18,7 @@ jobs:
       DOCKER_BUILD_ENABLED: ${{ secrets.DOCKER_BUILD_ENABLED }}
       DOCKER_BUILD_ALTERNATE_ENABLED: ${{ secrets.DOCKER_BUILD_ALTERNATE_ENABLED }}
       DOCKER_BUILD_ON_PUSH_DISABLED: ${{ secrets.DOCKER_BUILD_ON_PUSH_DISABLED }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check preconditions
         id: preconditions
