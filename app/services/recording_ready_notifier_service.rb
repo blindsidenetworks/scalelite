@@ -21,8 +21,7 @@ class RecordingReadyNotifierService
       notify(callback_url, meeting_id, recording.record_id, tenant_name) if callback_url
     end
 
-    def encoded_payload(meeting_id, record_id, tenant_name)
-      secret = fetch_secrets(tenant_name: tenant_name)[0]
+    def encoded_payload(meeting_id, record_id, secret)
       payload = { meeting_id: meeting_id, record_id: record_id }
       JWT.encode(payload, secret)
     end
@@ -31,27 +30,38 @@ class RecordingReadyNotifierService
       logger.info("Recording Ready Notify for [#{meeting_id}] starts")
       logger.info('Making callback for recording ready notification')
 
-      payload = encoded_payload(meeting_id, record_id, tenant_name)
-      uri = URI.parse(callback_url)
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = (uri.scheme == 'https')
-      logger.info("Sending request to #{uri.scheme}://#{uri.host}#{uri.request_uri}")
-      request = Net::HTTP::Post.new(uri.request_uri)
-      request.set_form_data(signed_parameters: payload)
+      secrets = fetch_secrets(tenant_name: tenant_name)
+      success = false
 
-      response = http.request(request)
-      code = response.code.to_i
+      secrets.each do |secret|
+        payload = encoded_payload(meeting_id, record_id, secret)
 
-      if code == 410
-        logger.info("Notified for deleted meeting: #{meeting_id}")
-      elsif code == 404
-        logger.info("404 error when notifying for recording: #{meeting_id}, ignoring")
-      elsif code < 200 || code >= 300
-        logger.info("Callback HTTP request failed: #{response.code} #{response.message} (code #{code})")
-      else
-        logger.info("Recording notifier successful: #{meeting_id} (code #{code})")
+        uri = URI.parse(callback_url)
+        http = Net::HTTP.new(uri.host, uri.port)
+        http.use_ssl = (uri.scheme == 'https')
+        logger.info("Sending request to #{uri.scheme}://#{uri.host}#{uri.request_uri}")
+        request = Net::HTTP::Post.new(uri.request_uri)
+        request.set_form_data(signed_parameters: payload)
+
+        response = http.request(request)
+        code = response.code.to_i
+
+        if code == 410
+          logger.info("Notified for deleted meeting: #{meeting_id}")
+          break
+        elsif code == 404
+          logger.info("404 error when notifying for recording: #{meeting_id}, ignoring")
+          break
+        elsif code < 200 || code >= 300
+          logger.info("Callback HTTP request failed: #{response.code} #{response.message} (code #{code})")
+        else
+          logger.info("Recording notifier successful: #{meeting_id} (code #{code})")
+          success = true
+          break
+        end
       end
-      true
+
+      success
     rescue StandardError => e
       logger.info('Rescued')
       logger.info(e.to_s)

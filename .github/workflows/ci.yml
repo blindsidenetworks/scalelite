@@ -1,5 +1,5 @@
 env:
-  RUBY_VERSION: 3.1.0
+  RUBY_VERSION: 3.3.6
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
 
 name: CI
@@ -15,7 +15,7 @@ on:
 jobs:
   test:
     name: Rubocop + Rails Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     services:
       postgres:
@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Ruby ${{ env.RUBY_VERSION }}
-        uses: ruby/setup-ruby@v1.126.0
+        uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ env.RUBY_VERSION }}
 

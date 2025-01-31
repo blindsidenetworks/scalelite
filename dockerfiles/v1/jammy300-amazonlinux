@@ -1,4 +1,5 @@
-FROM amazonlinux:2.0.20230320.0 AS amazonlinux
+FROM amazonlinux:2.0.20240620.0 AS amazonlinux
+SHELL ["/bin/bash", "-c"]
 
 FROM ubuntu:22.04 AS bbb-playback
 ENV DEBIAN_FRONTEND=noninteractive
@@ -46,37 +47,45 @@ ENV NGINX_HOSTNAME=localhost
 CMD [ "/etc/nginx/start", "-g", "daemon off;" ]
 
 FROM amazonlinux-base AS base
+# Install basic packages
+RUN yum -y install git gcc-c++ make libyaml-devel libffi-devel glibc-devel readline-devel openssl-devel
 # Install Node.js (needed for yarn)
-RUN yum -y install gcc-c++ make
 RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash -
 RUN yum -y install nodejs
-# Install Ruby & Rails
+# Install other packages
 RUN curl -sL -o /etc/yum.repos.d/yarn.repo https://dl.yarnpkg.com/rpm/yarn.repo
-RUN amazon-linux-extras enable ruby3.0 postgresql14 \
-    && yum -y install git tar gzip yarn shared-mime-info libxslt zlib-devel sqlite-devel mariadb-devel libpq-devel ruby-devel rubygems-devel rubygem-bundler rubygem-io-console rubygem-irb rubygem-json rubygem-minitest rubygem-power_assert rubygem-rake rubygem-test-unit rubygem-bigdecimal
-RUN yum -y install python3 python3-pip shadow-utils
-RUN gem install bundler -v '2.1.4'
+RUN amazon-linux-extras enable postgresql14 \
+    && yum -y install tar gzip yarn shared-mime-info libxslt zlib-devel sqlite-devel mariadb-devel libpq-devel python3 python3-pip shadow-utils
+# Setup user scalelite
 RUN groupadd scalelite --gid 1000 && \
     useradd -u 1000 -d /srv/scalelite -g scalelite scalelite
 RUN groupadd scalelite-spool --gid 2000 && \
     usermod -a -G scalelite-spool scalelite
+USER scalelite:scalelite
+# Install Ruby
+RUN git clone https://github.com/rbenv/rbenv.git ~/.rbenv && \
+    git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build && \
+    ~/.rbenv/bin/rbenv install 3.3.6 && \
+    ~/.rbenv/bin/rbenv global 3.3.6 && \
+    ~/.rbenv/bin/rbenv rehash
+ENV PATH="~/.rbenv/shims:~/.rbenv/bin:$PATH"
+RUN echo 'export PATH="~/.rbenv/bin:$PATH"' >> ~/.bashrc && \
+    echo 'eval "$(rbenv init -)"' >> ~/.bashrc
+RUN gem install bundler -v '~> 2.5'
 WORKDIR /srv/scalelite
 
 FROM base as builder
-RUN rm -rf nginx
-USER scalelite:scalelite
 COPY --chown=scalelite:scalelite Gemfile* ./
-RUN bundle --version
-RUN bundle config build.nokogiri --use-system-libraries
-RUN bundle config set --local deployment 'true'
-RUN bundle config set --local without 'development:test'
-RUN bundle install -j4
-RUN rm -rf vendor/bundle/ruby/*/cache
-RUN find vendor/bundle/ruby/*/gems/ \( -name '*.c' -o -name '*.o' \) -delete
+RUN source ~/.bashrc && bundle --version && \
+    bundle config build.nokogiri --use-system-libraries && \
+    bundle config set --local deployment 'true' && \
+    bundle config set --local without 'development:test' && \
+    bundle install -j4 && \
+    rm -rf vendor/bundle/ruby/*/cache && \
+    find vendor/bundle/ruby/*/gems/ \( -name '*.c' -o -name '*.o' \) -delete
 COPY --chown=scalelite:scalelite . ./
 
 FROM base AS application
-USER scalelite:scalelite
 ENV RAILS_ENV=production RAILS_LOG_TO_STDOUT=true
 COPY --from=builder --chown=scalelite:scalelite /srv/scalelite ./
 
