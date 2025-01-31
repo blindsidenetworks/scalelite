@@ -6,8 +6,8 @@
 # Delete sent recording after 4 days
 MAXAGE=4
 
-# Delete events files after 4 days
-EVENTS_MAXAGE=4
+# Delete raw files after 4 days
+RAW_MAXAGE=4
 
 LOGFILE=/var/log/bigbluebutton/bbb-sender-cleanup.log
 
@@ -31,12 +31,12 @@ for donefile in /var/bigbluebutton/recording/status/published/*-sender.done ; do
         fi
 done
 
-echo "$(date --rfc-3339=seconds) Deleting events files older than ${EVENTS_MAXAGE}"
+echo "$(date --rfc-3339=seconds) Deleting raw files older than ${RAW_MAXAGE}"
 for eventsfile in /var/bigbluebutton/recording/raw/*/events.xml ; do
         MTIME=$(stat -c %Y "${eventsfile}")
-        if [ $(( ( $NOW - $MTIME ) / 86400 )) -gt $EVENTS_MAXAGE ]; then
-                EVENTS_DIR="${eventsfile%/*}"
-                rm -rv "${EVENTS_DIR}" >>"${LOGFILE}" 2>&1
+        if [ $(( ( $NOW - $MTIME ) / 86400 )) -gt $RAW_MAXAGE ]; then
+                RAW_DIR="${eventsfile%/*}"
+                rm -rv "${RAW_DIR}" >>"${LOGFILE}" 2>&1
         fi
 done
 
