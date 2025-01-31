@@ -32,7 +32,7 @@ for donefile in /var/bigbluebutton/recording/status/published/*-sender.done ; do
 done
 
 echo "$(date --rfc-3339=seconds) Deleting events files older than ${EVENTS_MAXAGE}"
-for eventsfile in /var/bigbluebutton/events/*/events.xml ; do
+for eventsfile in /var/bigbluebutton/recording/raw/*/events.xml ; do
         MTIME=$(stat -c %Y "${eventsfile}")
         if [ $(( ( $NOW - $MTIME ) / 86400 )) -gt $EVENTS_MAXAGE ]; then
                 EVENTS_DIR="${eventsfile%/*}"
