@@ -1,7 +1,7 @@
 FROM amazonlinux:2.0.20240620.0 AS amazonlinux
 SHELL ["/bin/bash", "-c"]
 
-FROM ubuntu:20.04 AS bbb-playback
+FROM ubuntu:22.04 AS bbb-playback
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y language-pack-en \
@@ -9,12 +9,11 @@ RUN apt-get update \
 ENV LANG=en_US.UTF-8
 RUN apt-get update \
     && apt-get install -y software-properties-common curl net-tools nginx
-RUN add-apt-repository -y ppa:bigbluebutton/support
-
-RUN apt-get update \
+RUN add-apt-repository -y ppa:rmescandon/yq \
+    && apt-get update \
     && apt-get install -y yq
 RUN curl -sL https://ubuntu.bigbluebutton.org/repo/bigbluebutton.asc | apt-key add - \
-    && echo "deb https://ubuntu.bigbluebutton.org/focal-260 bigbluebutton-focal main" >/etc/apt/sources.list.d/bigbluebutton.list
+    && echo "deb https://ubuntu.bigbluebutton.org/jammy-300 bigbluebutton-jammy main" >/etc/apt/sources.list.d/bigbluebutton.list
 RUN useradd --system --user-group --home-dir /var/bigbluebutton bigbluebutton
 RUN touch /.dockerenv
 RUN apt-get update \
