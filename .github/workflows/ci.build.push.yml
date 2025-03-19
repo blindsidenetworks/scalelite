@@ -131,10 +131,10 @@ jobs:
         if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v3
         with:
-          file: dockerfiles/v1/focal260-alpine
+          file: dockerfiles/v1/jammy300-alpine
           push: true
           target: nginx
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-focal260-alpine-nginx"
+          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-jammy300-alpine-nginx"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -142,12 +142,12 @@ jobs:
         if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v3
         with:
-          file: dockerfiles/v1/focal260-alpine
+          file: dockerfiles/v1/jammy300-alpine
           push: true
           target: api
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-focal260-alpine"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-focal260-alpine-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-jammy300-alpine"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-jammy300-alpine-api"
           build-args: "BUILD_NUMBER=${{ steps.ci_branch_name.outputs.branch }}-${{ steps.ci_commit_short_sha.outputs.short_sha }}"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
@@ -156,10 +156,10 @@ jobs:
         if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v3
         with:
-          file: dockerfiles/v1/focal260-alpine
+          file: dockerfiles/v1/jammy300-alpine
           push: true
           target: poller
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-focal260-alpine-poller"
+          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-jammy300-alpine-poller"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -167,10 +167,10 @@ jobs:
         if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v3
         with:
-          file: dockerfiles/v1/focal260-alpine
+          file: dockerfiles/v1/jammy300-alpine
           push: true
           target: recording-importer
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-focal260-alpine-recording-importer"
+          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-jammy300-alpine-recording-importer"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -179,10 +179,10 @@ jobs:
         if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v3
         with:
-          file: dockerfiles/v1/focal260-amazonlinux
+          file: dockerfiles/v1/jammy300-amazonlinux
           push: true
           target: nginx
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-focal260-amazonlinux-nginx"
+          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-jammy300-amazonlinux-nginx"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -190,12 +190,12 @@ jobs:
         if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v3
         with:
-          file: dockerfiles/v1/focal260-amazonlinux
+          file: dockerfiles/v1/jammy300-amazonlinux
           push: true
           target: api
           tags: |
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-focal260-amazonlinux"
-            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-focal260-amazonlinux-api"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-jammy300-amazonlinux"
+            "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-jammy300-amazonlinux-api"
           build-args: "BUILD_NUMBER=${{ steps.ci_branch_name.outputs.branch }}-${{ steps.ci_commit_short_sha.outputs.short_sha }}"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
@@ -204,10 +204,10 @@ jobs:
         if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v3
         with:
-          file: dockerfiles/v1/focal260-amazonlinux
+          file: dockerfiles/v1/jammy300-amazonlinux
           push: true
           target: poller
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-focal260-amazonlinux-poller"
+          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-jammy300-amazonlinux-poller"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
@@ -215,10 +215,10 @@ jobs:
         if: ${{ steps.preconditions.outputs.build && steps.preconditions.outputs.build_alternate }}
         uses: docker/build-push-action@v3
         with:
-          file: dockerfiles/v1/focal260-amazonlinux
+          file: dockerfiles/v1/jammy300-amazonlinux
           push: true
           target: recording-importer
-          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-focal260-amazonlinux-recording-importer"
+          tags: "${{ steps.ci_docker_repository.outputs.repository }}:${{ steps.ci_branch_name.outputs.branch }}-jammy300-amazonlinux-recording-importer"
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
