@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Server, redis: true do
+RSpec.describe Server, :redis do
   describe '.find' do
     context 'with non-existent id' do
       it 'raises error' do

@@ -63,8 +63,7 @@ RSpec.describe ApiHelper, type: :helper do
 
     before do
       controller.action_name = action_name
-      allow(request).to receive(:query_string).and_return(query_string)
-      allow(request).to receive(:request_method_symbol).and_return(method)
+      allow(request).to receive_messages(query_string: query_string, request_method_symbol: method)
       Rails.configuration.x.loadbalancer_secrets = [secret]
       if hash.present?
         case method

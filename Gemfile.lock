@@ -125,6 +125,7 @@ GEM
       reline (>= 0.4.2)
     json (2.10.2)
     jwt (2.7.1)
+    language_server-protocol (3.17.0.4)
     listen (3.9.0)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
@@ -255,22 +256,23 @@ GEM
       rspec-mocks (~> 3.13)
       rspec-support (~> 3.13)
     rspec-support (3.13.2)
-    rubocop (1.50.2)
+    rubocop (1.61.0)
       json (~> 2.3)
+      language_server-protocol (>= 3.17.0)
       parallel (~> 1.10)
-      parser (>= 3.2.0.0)
+      parser (>= 3.3.0.2)
       rainbow (>= 2.2.2, < 4.0)
       regexp_parser (>= 1.8, < 3.0)
       rexml (>= 3.2.5, < 4.0)
-      rubocop-ast (>= 1.28.0, < 2.0)
+      rubocop-ast (>= 1.30.0, < 2.0)
       ruby-progressbar (~> 1.7)
       unicode-display_width (>= 2.4.0, < 3.0)
     rubocop-ast (1.40.0)
       parser (>= 3.3.1.0)
     rubocop-capybara (2.21.0)
       rubocop (~> 1.41)
-    rubocop-factory_bot (2.26.0)
-      rubocop (~> 1.41)
+    rubocop-factory_bot (2.26.1)
+      rubocop (~> 1.61)
     rubocop-performance (1.23.1)
       rubocop (>= 1.48.1, < 2.0)
       rubocop-ast (>= 1.31.1, < 2.0)
@@ -283,8 +285,8 @@ GEM
       rubocop-capybara (~> 2.17)
       rubocop-factory_bot (~> 2.22)
       rubocop-rspec_rails (~> 2.28)
-    rubocop-rspec_rails (2.29.0)
-      rubocop (~> 1.40)
+    rubocop-rspec_rails (2.29.1)
+      rubocop (~> 1.61)
     ruby-progressbar (1.13.0)
     securerandom (0.4.1)
     spring (4.3.0)
@@ -348,7 +350,7 @@ DEPENDENCIES
   redis (~> 4.8.0)
   redis-namespace (~> 1.11.0)
   rspec-rails (~> 7.1)
-  rubocop (~> 1.50.0)
+  rubocop (~> 1.61.0)
   rubocop-performance
   rubocop-rails (~> 2.19.0)
   rubocop-rspec (~> 2.20)
@@ -358,3 +360,9 @@ DEPENDENCIES
   tabulo (~> 2.8.1)
   tzinfo-data
   webmock
+
+RUBY VERSION
+   ruby 3.3.6p108
+
+BUNDLED WITH
+   2.5.22

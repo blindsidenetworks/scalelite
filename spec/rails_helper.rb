@@ -14,7 +14,7 @@ require 'rspec/rails'
 
 require 'redis'
 # contains helper methods that could be used with any test framework
-require_relative './support/test_helper'
+require_relative 'support/test_helper'
 
 # Requires supporting ruby files with custom matchers and macros, etc, in
 # spec/support/ and its subdirectories. Files matching `spec/**/*_spec.rb` are

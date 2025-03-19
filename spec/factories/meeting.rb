@@ -2,8 +2,7 @@
 
 FactoryBot.define do
   factory :meeting do
-    sequence(:id) { |n| "test-meeting-#{n}" }
-    association :server
+    server
     moderator_pw { 'pw' }
 
     # Tenant is optional by default

@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Meeting, redis: true do
+RSpec.describe Meeting, :redis do
   describe '.find' do
     context 'with non-existent ID' do
       it 'raises proper exception' do
