@@ -19,9 +19,10 @@ class RecordingImporter
 
     Dir.mktmpdir(nil, Rails.configuration.x.recording_work_dir) do |tmpdir|
       FileUtils.cd(tmpdir) do
+        # rubocop:disable Style/RedundantLineContinuation
         system('tar', '--verbose', '--extract', '--file', filename) \
           || raise(RecordingImporterError, "Failed to extract tar file: #{filename}")
-
+        # rubocop:enable Style/RedundantLineContinuation
         Dir.glob('*/*/metadata.xml').each do |metadata_xml|
           Recording.transaction do
             logger.info("Found metadata file: #{metadata_xml}")

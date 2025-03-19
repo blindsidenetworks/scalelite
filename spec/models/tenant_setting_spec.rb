@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe TenantSetting, redis: true do
+RSpec.describe TenantSetting, :redis do
   let(:tenant) { create(:tenant) }
 
   describe '.find' do

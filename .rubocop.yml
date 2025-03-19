@@ -271,3 +271,6 @@ RSpec/AnyInstance:
 
 RSpec/IndexedLet:
   Enabled: false
+
+RSpec/SpecFilePathFormat:
+  Enabled: false

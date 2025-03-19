@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Tenant, redis: true do
+RSpec.describe Tenant, :redis do
   describe '.find' do
     context 'with non-existent id' do
       it 'raises error' do

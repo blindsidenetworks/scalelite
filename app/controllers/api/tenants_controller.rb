@@ -116,7 +116,7 @@ module Api
     end
 
     def check_multitenancy
-      return render json: { message: "Multitenancy is disabled" }, status: :precondition_failed unless Rails.configuration.x.multitenancy_enabled
+      render json: { message: "Multitenancy is disabled" }, status: :precondition_failed unless Rails.configuration.x.multitenancy_enabled
     end
   end
 end

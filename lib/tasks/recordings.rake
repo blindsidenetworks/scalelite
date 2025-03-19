@@ -17,7 +17,6 @@ namespace :recordings do
       end
       sleep(args.latency.to_f)
     end
-
   rescue SignalException => e
     Rails.logger.info("Exiting recording importer on signal: #{e}")
   end

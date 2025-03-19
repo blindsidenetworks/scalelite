@@ -465,7 +465,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       meetingID: 'test-meeting-1', moderatorPW: 'mp',
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server1.url}create")
       .with(query: hash_including(params))
       .to_return do |request|
@@ -501,7 +501,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       meetingID: 'test-meeting-1', moderatorPW: 'mp',
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:post, "#{server1.url}create")
       .with(query: hash_including({}))
       .to_return do |request|
@@ -540,7 +540,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       meetingID: 'test-meeting-1', moderatorPW: 'mp',
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server1.url}create")
       .with(query: hash_including(params))
       .to_timeout
@@ -565,7 +565,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       meetingID: 'test-meeting-1', moderatorPW: 'mp',
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server1.url}create")
       .with(query: hash_including(params))
       .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
@@ -591,7 +591,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       meetingID: 'test-meeting-1', moderatorPW: 'mp', 'meta_server-tag' => 'test-tag'
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server2.url}create")
       .with(query: hash_including({}))
       .to_return do |request|
@@ -633,7 +633,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       meetingID: 'test-meeting-1', moderatorPW: 'mp', 'meta_server-tag' => 'test-tag'
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server2.url}create")
       .with(query: hash_including(stub_params))
       .to_return(body: meeting_create_response(stub_params[:meetingID], stub_params[:moderatorPW]))
@@ -664,7 +664,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       moderatorPW: 'test-password',
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server1.url}create")
       .with(query: hash_including(params.merge(duration: '3600')))
       .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
@@ -691,7 +691,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       moderatorPW: 'test-password',
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server1.url}create")
       .with(query: hash_including(params.merge(duration: '3600')))
       .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
@@ -718,7 +718,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       moderatorPW: 'test-password',
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server1.url}create")
       .with(query: hash_including(params.merge(duration: '3600')))
       .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
@@ -745,7 +745,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       moderatorPW: 'test-password',
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server1.url}create")
       .with(query: hash_including(params))
       .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
@@ -770,7 +770,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       meetingID: 'test-meeting-1', test4: '', test2: '', moderatorPW: 'test-password',
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server1.url}create")
       .with(query: hash_including({}))
       .to_return do |request|
@@ -818,7 +818,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       meetingID: 'test-meeting-1', test4: '', test2: '', moderatorPW: 'test-password',
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server1.url}create")
       .with(query: hash_including(params))
       .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
@@ -856,7 +856,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       'meta_bn-recording-ready-url' => 'https://test-2.example.com/recording-ready/',
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server1.url}create")
       .with(query: hash_including({}))
       .to_return do |request|
@@ -892,11 +892,11 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
     }
 
     Rails.configuration.x.stub(:url_host, 'test.scalelite.com') do
-      bbb_create = \
+      bbb_create =
         stub_request(:get, "#{server1.url}create")
         .with(query: hash_including(
           params.merge(
-            'meta_analytics-callback-url' => \
+            'meta_analytics-callback-url' =>
               "https://#{Rails.configuration.x.url_host}#{bigbluebutton_api_analytics_callback_path}"
           )
         ))
@@ -926,7 +926,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       param2: 'param2',
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server.url}create")
       .with(query: hash_including(default_params.merge(params)))
       .to_return(body: meeting_create_response(params[:meetingID]))
@@ -951,7 +951,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
       param2: 'param2',
     }
 
-    bbb_create = \
+    bbb_create =
       stub_request(:get, "#{server.url}create")
       .with(query: hash_including(params.merge(override_params)))
       .to_return(body: meeting_create_response(params[:meetingID]))
@@ -1541,7 +1541,7 @@ class BigBlueButtonApiControllerTest < ActionDispatch::IntegrationTest
   test 'getRecordings does prefix match on recording id' do
     create_list(:recording, 5, state: 'published')
     r = create(:recording, meeting_id: 'bulk-prefix-match', state: 'published')
-    create_list(:recording, 19, meeting_id: 'bulk-prefix-match', state: 'published')
+    create_list(:recording, 19, meeting_id: 'bulk-prefix-match', state: 'published') # rubocop:disable FactoryBot/ExcessiveCreateList
     params = encode_bbb_params('getRecordings', { recordID: r.record_id[0, 40] }.to_query)
     get bigbluebutton_api_get_recordings_url, params: params
     assert_response :success

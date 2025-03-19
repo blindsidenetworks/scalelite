@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe BigBlueButtonApiController, redis: true do
+RSpec.describe BigBlueButtonApiController, :redis do
   include BBBErrors
   include ApiHelper
   include TestHelper
@@ -894,8 +894,8 @@ RSpec.describe BigBlueButtonApiController, redis: true do
         url.query = params.to_param
 
         stub_create =
-          stub_request(:post, encode_bbb_uri("create", server.url, server.secret, params)) \
-          .with(body: body, headers: { 'Content-Type' => 'application/xml' }) \
+          stub_request(:post, encode_bbb_uri("create", server.url, server.secret, params))
+          .with(body: body, headers: { 'Content-Type' => 'application/xml' })
           .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
                             <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
 
@@ -1549,8 +1549,8 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       url.query = { meetingID: meeting.id }.to_param
 
       stub_insert =
-        stub_request(:post, encode_bbb_uri("insertDocument", server.url, server.secret, { meetingID: meeting.id })) \
-        .with(body: body, headers: { 'Content-Type' => 'application/xml' }) \
+        stub_request(:post, encode_bbb_uri("insertDocument", server.url, server.secret, { meetingID: meeting.id }))
+        .with(body: body, headers: { 'Content-Type' => 'application/xml' })
         .to_return(body: "<response><returncode>SUCCESS</returncode><message>Presentation is being uploaded</message></response>")
 
       # The Moodle integration uses text/xml instead of application/xml, so check that the matching handles that.
@@ -1786,7 +1786,7 @@ RSpec.describe BigBlueButtonApiController, redis: true do
       it "does prefix match on recording id" do
         create_list(:recording, 5, state: "published")
         r = create(:recording, meeting_id: "bulk-prefix-match", state: "published")
-        create_list(:recording, 19, meeting_id: "bulk-prefix-match", state: "published")
+        create_list(:recording, 19, meeting_id: "bulk-prefix-match", state: "published") # rubocop:disable  FactoryBot/ExcessiveCreateList
         params = encode_bbb_params("getRecordings", { recordID: r.record_id[0, 40] }.to_query)
 
         get bigbluebutton_api_get_recordings_url, params: params

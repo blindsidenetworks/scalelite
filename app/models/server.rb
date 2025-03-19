@@ -64,7 +64,7 @@ class Server < ApplicationRedisRecord
 
       # Default values
       if id.nil?
-        self.id = \
+        self.id =
           if Rails.configuration.x.server_id_is_hostname
             URI.parse(url).host.downcase(:ascii)
           else
@@ -121,7 +121,7 @@ class Server < ApplicationRedisRecord
   end
 
   def save_with_state(redis)
-    public_send("handle_#{state}_state", redis)
+    public_send(:"handle_#{state}_state", redis)
   end
 
   def handle_enabled_state(redis)
