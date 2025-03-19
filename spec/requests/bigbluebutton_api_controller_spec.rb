@@ -1786,7 +1786,7 @@ RSpec.describe BigBlueButtonApiController, :redis do
       it "does prefix match on recording id" do
         create_list(:recording, 5, state: "published")
         r = create(:recording, meeting_id: "bulk-prefix-match", state: "published")
-        create_list(:recording, 19, meeting_id: "bulk-prefix-match", state: "published")
+        create_list(:recording, 19, meeting_id: "bulk-prefix-match", state: "published") # rubocop:disable  FactoryBot/ExcessiveCreateList
         params = encode_bbb_params("getRecordings", { recordID: r.record_id[0, 40] }.to_query)
 
         get bigbluebutton_api_get_recordings_url, params: params
