@@ -2,6 +2,7 @@
 
 FactoryBot.define do
   factory :meeting do
+    sequence(:id) { |n| "test-meeting-#{n}" } # rubocop:disable FactoryBot/IdSequence
     server
     moderator_pw { 'pw' }
 
