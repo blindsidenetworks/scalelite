@@ -1066,29 +1066,60 @@ RSpec.describe BigBlueButtonApiController, :redis do
   end
 
   describe '#analytics_callback' do
-    it "analytics_callback makes a callback to the specific meetings analytics_callback_url stored in callback_attributes table" do
-      params = {
-        meetingID: 'test-meeting-1111', test4: '', test2: '', moderatorPW: 'test-password',
-        'meta_analytics-callback-url' => 'https://callback.example.com/analytics_callback',
-      }
+    let!(:params) { { meetingID: 'test-meeting-1111', 'meta_analytics-callback-url' => 'https://callback.example.com/analytics_callback' } }
+    let!(:callback_data) {
+ create(:callback_data, meeting_id: params[:meetingID], callback_attributes: { analytics_callback_url: params['meta_analytics-callback-url'] })
+    }
 
-      stub_request(:get, "#{server.url}create")
-        .with(query: hash_including({}))
-        .to_return(body: meeting_create_response(params[:meetingID], params[:moderatorPW]))
-
-      callback = stub_request(:post, params['meta_analytics-callback-url'])
-                 .to_return(status: :ok, body: '', headers: {})
-
+    before do
       allow_any_instance_of(described_class).to receive(:valid_token?).and_return(true)
-      allow(Rails.configuration.x).to receive(:url_host).and_return('test.scalelite.com')
+    end
 
-      get bigbluebutton_api_create_url, params: params
-      post bigbluebutton_api_analytics_callback_url, params: { meeting_id: 'test-meeting-1111' }, headers: { 'HTTP_AUTHORIZATION' => 'Bearer ABCD' }
+    it "makes a callback to the specific meetings analytics_callback_url stored in callback_attributes table" do
+      allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['test-2'])
+
+      callback = stub_request(:post, params['meta_analytics-callback-url']).to_return(status: :ok, body: '', headers: {})
+
+      post bigbluebutton_api_analytics_callback_url, params: { meeting_id: params[:meetingID] }, headers: { 'HTTP_AUTHORIZATION' => 'Bearer ABCD' }
 
       expect(response).to have_http_status(:no_content)
       expect(callback).to have_been_requested
       callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
       expect(callback_data.callback_attributes).to eq({ analytics_callback_url: params['meta_analytics-callback-url'] })
+    end
+
+    it "cycles through all the secrets until one of them succeeds" do
+      allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(%w[test-1 test-2 test-3])
+
+      callback = stub_request(:post, params['meta_analytics-callback-url']).to_return(status: :bad_request, body: '', headers: {})
+
+      post bigbluebutton_api_analytics_callback_url, params: { meeting_id: params[:meetingID] }, headers: { 'HTTP_AUTHORIZATION' => 'Bearer ABCD' }
+
+      expect(callback).to have_been_requested.times(3)
+    end
+
+    context 'multitenancy' do
+      let(:host_name) { 'api.rna1.blindside-dev.com' }
+      let(:host) { "bn.#{host_name}" }
+      let!(:tenant) { create(:tenant, name: 'bn') }
+      let!(:tenant1) { create(:tenant) }
+
+      before do
+        Rails.configuration.x.multitenancy_enabled = true
+
+        host! host
+      end
+
+      it "makes a callback to the specific meetings analytics_callback_url stored in callback_attributes table" do
+        callback = stub_request(:post, params['meta_analytics-callback-url']).to_return(status: :ok, body: '', headers: {})
+
+        post bigbluebutton_api_analytics_callback_url, params: { meeting_id: params[:meetingID] }, headers: { 'HTTP_AUTHORIZATION' => 'Bearer ABCD' }
+
+        expect(response).to have_http_status(:no_content)
+        expect(callback).to have_been_requested.times(2) # tenants are created with 2 secrets in the factory
+        callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
+        expect(callback_data.callback_attributes).to eq({ analytics_callback_url: params['meta_analytics-callback-url'] })
+      end
     end
   end
 
