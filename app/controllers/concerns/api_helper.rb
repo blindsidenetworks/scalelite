@@ -154,7 +154,12 @@ module ApiHelper
   end
 
   def decoded_token(token)
-    fetch_secrets.any? do |secret|
+    secrets = []
+    Server.all.each do |server|
+      secrets << server.secret
+    end
+
+    secrets.any? do |secret|
       JWT.decode(token, secret, true, algorithm: 'HS512')
     rescue JWT::DecodeError
       false
