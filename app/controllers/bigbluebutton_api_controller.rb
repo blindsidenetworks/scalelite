@@ -6,7 +6,7 @@ class BigBlueButtonApiController < ApplicationController
   skip_before_action :verify_authenticity_token
 
   # Check content types on endpoints that accept POST requests. For most endpoints, form data is permitted.
-  before_action :verify_content_type, except: [:create, :insert_document, :join, :publish_recordings, :delete_recordings]
+  before_action :verify_content_type, except: [:create, :insert_document, :join, :publish_recordings, :delete_recordings, :analytics_callback]
   # create allows either form data or XML
   before_action :verify_create_content_type, only: [:create]
   # insertDocument only allows XML
