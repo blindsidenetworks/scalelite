@@ -191,9 +191,8 @@ module ApiHelper
       if code < 200 || code >= 300
         logger.info("Analytics callback request failed: #{response.code} #{response.message} (code #{code}) .. Trying next secret...")
       else
-        logger.info("Analytics callback successful for meeting: #{meeting_id} (code #{code})")
-
-        meeting_idmeeting_idmeeting_idmeeting_id
+        logger.info("Analytics callback successful for meeting: (code #{code})")
+        #        meeting_idmeeting_idmeeting_idmeeting_id
         break
       end
     end
