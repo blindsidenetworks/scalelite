@@ -531,14 +531,7 @@ class BigBlueButtonApiController < ApplicationController
     return if analytics_callback_url.nil?
 
     uri = URI.parse(analytics_callback_url)
-    response = post_req(uri, params)
-    code = response.code.to_i
-
-    if code < 200 || code >= 300
-      logger.info("Analytics callback request failed: #{response.code} #{response.message} (code #{code})")
-    else
-      logger.info("Analytics callback successful for meeting: #{meeting_id} (code #{code})")
-    end
+    post_req(uri, params)
   rescue StandardError => e
     logger.info('Rescued')
     logger.info(e.to_s)
