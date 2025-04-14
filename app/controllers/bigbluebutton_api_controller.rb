@@ -525,13 +525,14 @@ class BigBlueButtonApiController < ApplicationController
     raise 'Token Invalid' unless valid_token?(token)
 
     meeting_id = params['meeting_id']
+    tenant = Tenant.find(Meeting.find(meeting_id).tenant_id)
     logger.info("Making analytics callback for #{meeting_id}")
     callback_data = CallbackData.find_by(meeting_id: meeting_id)
     analytics_callback_url = callback_data&.callback_attributes&.dig(:analytics_callback_url)
     return if analytics_callback_url.nil?
 
     uri = URI.parse(analytics_callback_url)
-    post_req(uri, params)
+    post_req(uri, params, tenant)
   rescue StandardError => e
     logger.info('Rescued')
     logger.info(e.to_s)
