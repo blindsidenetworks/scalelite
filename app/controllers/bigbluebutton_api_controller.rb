@@ -15,8 +15,8 @@ class BigBlueButtonApiController < ApplicationController
   before_action :verify_checksum, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled,
                                            :analytics_callback,]
 
-  before_action :set_tenant, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled,
-                                      :analytics_callback], if: -> { Rails.configuration.x.multitenancy_enabled }
+  before_action :set_tenant, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled],
+                if: -> { Rails.configuration.x.multitenancy_enabled }
 
   def index
     # Return the scalelite build number if passed as an env variable
@@ -227,7 +227,7 @@ class BigBlueButtonApiController < ApplicationController
     params_hash = params
 
     # EventHandler will handle all the events associated with the create action
-    params = EventHandler.new(params_hash, meeting.id).handle
+    params = EventHandler.new(params_hash, meeting.id, @tenant).handle
     # Get list of params that should not be modified by create API call
     excluded_params = Rails.configuration.x.create_exclude_params
     # Pass along all params except the built in rails ones and excluded_params
@@ -525,14 +525,14 @@ class BigBlueButtonApiController < ApplicationController
     raise 'Token Invalid' unless valid_token?(token)
 
     meeting_id = params['meeting_id']
-    tenant = Tenant.find(Meeting.find(meeting_id).tenant_id)
+
     logger.info("Making analytics callback for #{meeting_id}")
     callback_data = CallbackData.find_by(meeting_id: meeting_id)
     analytics_callback_url = callback_data&.callback_attributes&.dig(:analytics_callback_url)
     return if analytics_callback_url.nil?
 
     uri = URI.parse(analytics_callback_url)
-    post_req(uri, params, tenant)
+    post_req(uri, params, @tenant&.name)
   rescue StandardError => e
     logger.info('Rescued')
     logger.info(e.to_s)
