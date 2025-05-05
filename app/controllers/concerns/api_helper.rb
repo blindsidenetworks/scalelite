@@ -148,13 +148,17 @@ module ApiHelper
     {}
   end
 
-  def encoded_token(payload)
-    secret = fetch_secrets[0]
+  def encoded_token(payload, secret)
     JWT.encode(payload, secret, 'HS512', typ: 'JWT')
   end
 
   def decoded_token(token)
-    fetch_secrets.any? do |secret|
+    secrets = []
+    Server.all.each do |server|
+      secrets << server.secret
+    end
+
+    secrets.any? do |secret|
       JWT.decode(token, secret, true, algorithm: 'HS512')
     rescue JWT::DecodeError
       false
@@ -165,20 +169,32 @@ module ApiHelper
     decoded_token(token)
   end
 
-  def post_req(uri, body)
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = (uri.scheme == 'https')
-    exp = Time.now.to_i + (24 * 3600)
-    token = encoded_token(exp: exp)
-    # Setup a request and attach our JWT token
-    request = Net::HTTP::Post.new(uri.request_uri,
-                                  'Content-Type' => 'application/json',
-                                  'Authorization' => "Bearer #{token}",
-                                  'User-Agent' => 'BigBlueButton Analytics Callback')
-    # Send out data as json body
-    request.body = body.to_json
-    logger.info("Sending request to #{uri.scheme}://#{uri.host}#{uri.request_uri}")
-    http.request(request)
+  def post_req(uri, body, tenant = nil)
+    secrets = fetch_secrets(tenant_name: tenant)
+
+    secrets.each do |secret|
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = (uri.scheme == 'https')
+      payload = { exp: Time.now.to_i + (24 * 3600) }
+      token = encoded_token(payload, secret)
+      # Setup a request and attach our JWT token
+      request = Net::HTTP::Post.new(uri.request_uri,
+                                    'Content-Type' => 'application/json',
+                                    'Authorization' => "Bearer #{token}",
+                                    'User-Agent' => 'BigBlueButton Analytics Callback')
+      # Send out data as json body
+      request.body = body.to_json
+      logger.info("Sending request to #{uri.scheme}://#{uri.host}#{uri.request_uri}")
+      response = http.request(request)
+      code = response.code.to_i
+
+      if code < 200 || code >= 300
+        logger.info("Analytics callback request failed: #{response.code} #{response.message} (code #{code}) .. Trying next secret...")
+      else
+        logger.info("Analytics callback successful for meeting: #{body['meeting_id']} (code #{code})")
+        break
+      end
+    end
   end
 
   # GET/POST request
