@@ -9,7 +9,8 @@ xml.document(type: 'freeswitch/xml') do
           xml.action(application: 'sleep', data: '500')
           xml.action(
             application: 'play_and_get_digits',
-            data: '5 9 3 7000 # conference/conf-enter_conf_pin.wav conference/conf-bad-pin.wav pin \d+'
+            data: "#{Rails.configuration.x.voice_bridge_min} #{Rails.configuration.x.voice_bridge_max} " \
+                  "3 7000 # conference/conf-enter_conf_pin.wav conference/conf-bad-pin.wav pin \d+"
           )
           xml.action(application: 'transfer', data: '${pin} XML public')
         end

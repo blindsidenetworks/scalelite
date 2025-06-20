@@ -157,6 +157,12 @@ module Scalelite
     # The length (number of digits) of voice bridge numbers to allocate
     config.x.voice_bridge_len = ENV.fetch('VOICE_BRIDGE_LEN', 9).to_i
 
+    # The length (number of digits) of voice bridge numbers to allocate
+    config.x.voice_bridge_min = ENV.fetch('VOICE_BRIDGE_MIN', 5).to_i
+
+    # The length (number of digits) of voice bridge numbers to allocate
+    config.x.voice_bridge_max = ENV.fetch('VOICE_BRIDGE_MAX', 9).to_i
+
     # Whether to try to use the voice bridge number requested on the BigBlueButton create API call.
     config.x.use_external_voice_bridge = ENV.fetch('USE_EXTERNAL_VOICE_BRIDGE', 'false').casecmp?('true')
 
