@@ -79,10 +79,4 @@ class RecordingImporter
     retry_attempts += 1
     retry if retry_attempts <= Rails.configuration.x.db_connection_retry_count
   end
-
-  private
-
-  def upload_files(key:)
-
-  end
 end
