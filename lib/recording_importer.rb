@@ -50,7 +50,7 @@ class RecordingImporter
 
               files = Dir.glob("#{directory}/**/*").select { |f| File.file?(f) }
               files.each do |file|
-                object = Aws::S3::Object.new('scalelite-testing', "#{key}#{file}", client: aws_client)
+                object = Aws::S3::Object.new(ENV['S3_BUCKET_NAME'], "#{key}#{file}", client: aws_client)
                 object.upload_file(file)
               end
             else
