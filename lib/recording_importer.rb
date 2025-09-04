@@ -50,9 +50,11 @@ class RecordingImporter
 
               files = Dir.glob("#{directory}/**/*").select { |f| File.file?(f) }
               files.each do |file|
-                object = Aws::S3::Object.new(ENV['S3_BUCKET_NAME'], "#{key}#{file}", client: aws_client)
+                object = Aws::S3::Object.new(ENV.fetch('S3_BUCKET_NAME'), "#{key}#{file}", client: aws_client)
                 object.upload_file(file)
               end
+
+              FileUtils.rm_rf(directory)
             else
               publish_format_dir = "#{Rails.configuration.x.recording_publish_dir}/#{playback_format.format}"
               unpublish_format_dir = "#{Rails.configuration.x.recording_unpublish_dir}/#{playback_format.format}"
