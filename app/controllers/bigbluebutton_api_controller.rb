@@ -531,6 +531,8 @@ class BigBlueButtonApiController < ApplicationController
     analytics_callback_url = callback_data&.callback_attributes&.dig(:analytics_callback_url)
     return if analytics_callback_url.nil?
 
+    params['customer'] = @tenant&.name || 'scalelite'
+
     uri = URI.parse(analytics_callback_url)
     post_req(uri, params, @tenant&.name)
   rescue StandardError => e
