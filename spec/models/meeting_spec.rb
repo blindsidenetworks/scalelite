@@ -198,6 +198,15 @@ RSpec.describe Meeting, :redis do
       end
     end
 
+    it 'sets the ttl of the meeting for 24 hours' do
+      server = Server.find('test-server-1')
+      described_class.find_or_create_with_server('Demo Meeting', server, 'mp')
+
+      RedisStore.with_connection do |redis|
+        expect(redis.ttl('meeting:Demo Meeting')).to eq(described_class::DEFAULT_MEETING_TTL)
+      end
+    end
+
     context 'atomic create (new meeting)' do
       before do
         RedisStore.with_connection do |redis|
