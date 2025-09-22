@@ -220,9 +220,10 @@ RSpec.describe Meeting, :redis do
       end
 
       deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 5
+      true_options = [1, true]
       loop do
         exists = RedisStore.with_connection { |r| r.exists?(key) }
-        break unless [1, true].include?(exists)
+        break unless true_options.include?(exists)
         break if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
         sleep 0.05
       end
