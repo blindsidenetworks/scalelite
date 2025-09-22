@@ -198,6 +198,41 @@ RSpec.describe Meeting, :redis do
       end
     end
 
+    it 'sets the ttl of the meeting for 24 hours' do
+      server = Server.find('test-server-1')
+      described_class.find_or_create_with_server('Demo Meeting', server, 'mp')
+
+      RedisStore.with_connection do |redis|
+        expect(redis.ttl('meeting:Demo Meeting')).to eq(described_class::DEFAULT_MEETING_TTL)
+      end
+    end
+
+    it "removes the meeting after TTL expires" do
+      stub_const("#{described_class}::DEFAULT_MEETING_TTL", 1)
+
+      server = Server.find("test-server-1")
+      described_class.find_or_create_with_server("Demo Meeting", server, "mp")
+
+      key = "meeting:Demo Meeting"
+
+      RedisStore.with_connection do |redis|
+        expect(redis).to exist(key)
+      end
+
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 5
+      true_options = [1, true]
+      loop do
+        exists = RedisStore.with_connection { |r| r.exists?(key) }
+        break unless true_options.include?(exists)
+        break if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+        sleep 0.05
+      end
+
+      RedisStore.with_connection do |redis|
+        expect(redis.exists?(key)).to be false
+      end
+    end
+
     context 'atomic create (new meeting)' do
       before do
         RedisStore.with_connection do |redis|
