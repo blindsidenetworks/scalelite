@@ -216,13 +216,13 @@ RSpec.describe Meeting, :redis do
       key = "meeting:Demo Meeting"
 
       RedisStore.with_connection do |redis|
-        expect(redis.exists?(key)).to be_truthy
+        expect(redis).to exist(key)
       end
 
       deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 5
       loop do
         exists = RedisStore.with_connection { |r| r.exists?(key) }
-        break unless exists == 1 || exists == true
+        break unless [1, true].include?(exists)
         break if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
         sleep 0.05
       end
@@ -231,7 +231,6 @@ RSpec.describe Meeting, :redis do
         expect(redis.exists?(key)).to be false
       end
     end
-
 
     context 'atomic create (new meeting)' do
       before do
