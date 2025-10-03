@@ -45,8 +45,7 @@ class RecordingImporter
             directory = "#{playback_format.format}/#{recording.record_id}"
 
             if ENV['S3_RECORDING'] # Store recordings in S3
-              key = published_status ? 'published/' : 'unpublished/'
-              key << "#{playback_format.format}/#{recording.record_id}/"
+              key = "#{published_status ? 'published' : 'unpublished'}/#{playback_format.format}/#{recording.record_id}/"
 
               files = Dir.glob("#{directory}/**/*").select { |f| File.file?(f) }
               files.each do |file|
