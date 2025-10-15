@@ -7,10 +7,13 @@ namespace :recordings do
     dir = Rails.configuration.x.recording_spool_dir
     FileUtils.mkdir_p(dir)
 
+    # Setup AWS S3 Client if enabled (auto looks up the env variables it needs)
+    client = Aws::S3::Client.new if ENV['S3_RECORDING']
+
     loop do
       Dir.glob("#{dir}/*.tar").each do |file|
         Rails.logger.debug { "Found #{file}" }
-        RecordingImporter.import(file)
+        RecordingImporter.import(file, client)
       rescue StandardError => e
         Rails.logger.error("Failed to import recording: #{e}")
         sleep(args.latency.to_f)
