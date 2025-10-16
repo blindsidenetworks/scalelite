@@ -129,8 +129,15 @@ class PlaybackController < ApplicationController
     )
 
     expires_at = Time.now + (ttl.is_a?(Numeric) ? ttl : ttl.to_i)
-    cf_cookies = signer.signed_cookie("#{cf_origin}#{path_scope}", expires: expires_at.to_i)
 
+    policy_json = JSON.generate({
+                                  "Statement" => [{
+                                                    "Resource"  => "#{cf_origin}#{path_scope}",
+                                                    "Condition" => { "DateLessThan" => { "AWS:EpochTime" => expires_at.to_i } }
+                                                  }]
+                                })
+
+    cf_cookies = signer.signed_cookie(nil, policy: policy_json)
 
     parent_domain = ".#{request.domain}"
 
