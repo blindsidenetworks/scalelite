@@ -138,7 +138,7 @@ class PlaybackController < ApplicationController
       domain: parent_domain,
       path:   "/",
       httponly: true,
-      same_site: :none,
+      same_site: :lax,
       expires: expires_at
     }
 
