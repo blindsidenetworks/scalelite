@@ -49,8 +49,11 @@ class RecordingImporter
 
               files = Dir.glob("#{directory}/**/*").select { |f| File.file?(f) }
               files.each do |file|
+                content_type = Marcel::MimeType.for(Pathname(file), name: File.basename(file)) || "application/octet-stream"
+                content_disposition = %w[.pdf .ogg].include?(File.extname(file)) ? "attachment" : nil
+
                 object = Aws::S3::Object.new(ENV.fetch('S3_BUCKET_NAME'), "#{key}#{file}", client: aws_client)
-                object.upload_file(file)
+                object.upload_file(file, content_type: content_type, content_disposition: content_disposition)
               end
 
               FileUtils.rm_rf(directory)

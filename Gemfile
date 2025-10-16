@@ -35,6 +35,7 @@ gem 'tabulo', '~> 2.8.1'
 gem 'jwt', '~> 2.7.0'
 
 gem 'aws-sdk-s3', '~> 1'
+gem 'aws-sdk-cloudfront', '~> 1'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
