@@ -134,8 +134,8 @@ namespace :servers do
   end
 
   desc 'Mark a BigBlueButton server as unavailable, and clear all meetings from it'
-  task :panic, [:id, :keep_state] => :environment do |_t, args|
-    args.with_defaults(keep_state: false)
+  task :panic, [:id, :keep_state, :skip_end_calls] => :environment do |_t, args|
+    args.with_defaults(keep_state: false, skip_end_calls: false)
     include ApiHelper
 
     server = Server.find(args.id)
@@ -145,7 +145,7 @@ namespace :servers do
       puts("Clearing Meeting id=#{meeting.id}")
       moderator_pw = meeting.try(:moderator_pw)
       meeting.destroy!
-      get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
+      get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw)) unless args.skip_end_calls
     rescue ApplicationRedisRecord::RecordNotDestroyed => e
       raise("ERROR: Could not destroy meeting id=#{meeting.id}: #{e}")
     rescue StandardError => e
