@@ -98,7 +98,7 @@ class PlaybackController < ApplicationController
 
       prefix = @recording.published? ? "published" : "unpublished"
       page   = "index.html"
-      cf_url = "#{ENV.fetch("CLOUDFRONT_URL")}/#{prefix}/#{@playback_format.format}/#{@recording.record_id}/#{page}"
+      cf_url = "#{ENV.fetch('CLOUDFRONT_URL')}/#{prefix}/#{@playback_format.format}/#{@recording.record_id}/#{page}"
 
       redirect_to cf_url, allow_other_host: true, status: :temporary_redirect
     else
@@ -114,27 +114,26 @@ class PlaybackController < ApplicationController
     render "errors/recording_not_found", status: :not_found, formats: [:html]
   end
 
-  private
   def set_cf_signed_cookies!(format:, record_id:, published:, ttl: 5.minutes)
     base_prefix = published ? "published" : "unpublished"
     path_scope  = "/#{base_prefix}/#{format}/#{record_id}/*"
 
     cf_origin   = ENV.fetch("CLOUDFRONT_URL")
 
-    pem = Base64.decode64(ENV["CF_PRIVATE_KEY_B64"])
+    pem = Base64.decode64(ENV.fetch("CF_PRIVATE_KEY_B64", nil))
 
     signer = Aws::CloudFront::CookieSigner.new(
       key_pair_id: ENV.fetch("CF_KEY_PAIR_ID"),
       private_key: OpenSSL::PKey::RSA.new(pem)
     )
 
-    expires_at = Time.now + (ttl.is_a?(Numeric) ? ttl : ttl.to_i)
+    expires_at = Time.zone.now + (ttl.is_a?(Numeric) ? ttl : ttl.to_i)
 
     policy_json = JSON.generate({
                                   "Statement" => [{
-                                                    "Resource"  => "#{cf_origin}#{path_scope}",
+                                    "Resource" => "#{cf_origin}#{path_scope}",
                                                     "Condition" => { "DateLessThan" => { "AWS:EpochTime" => expires_at.to_i } }
-                                                  }]
+                                  }]
                                 })
 
     cf_cookies = signer.signed_cookie(nil, policy: policy_json)
