@@ -1,0 +1,61 @@
+env:
+  RUBY_VERSION: 3.3.6
+
+name: CI Build Release BN
+on:
+  release:
+    types: [released]
+
+jobs:
+  main:
+    name: Build Docker Image
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_PROD_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_PROD_SECRET_KEY }}
+          aws-region: ${{ secrets.AWS_PROD_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Extract Tag Release Version
+        id: ci_tag_release_version
+        shell: bash
+        run: echo "##[set-output name=tag;]$(echo ${{github.ref_name}})"
+
+      - name: Build, tag, and push scalelite-api docker image to Amazon ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: scalelite-api
+          IMAGE_TAG: ${{ steps.ci_tag_release_version.outputs.tag }}
+          TARGET: api
+        run: |
+          docker build --target $TARGET -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: Build, tag, and push scalelite-poller docker image to Amazon ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: scalelite-poller
+          IMAGE_TAG: ${{ steps.ci_tag_release_version.outputs.tag }}
+          TARGET: poller
+        run: |
+          docker build --target $TARGET -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: Build, tag, and push scalelite-recording-importer docker image to Amazon ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: scalelite-recording-importer
+          IMAGE_TAG: ${{ steps.ci_tag_release_version.outputs.tag }}
+          TARGET: recording-importer
+        run: |
+          docker build --target $TARGET -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
