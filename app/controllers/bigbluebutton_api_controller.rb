@@ -200,7 +200,12 @@ class BigBlueButtonApiController < ApplicationController
 
     params[:moderatorPW] = meeting.moderator_pw
     params[:voiceBridge] = meeting.voice_bridge
-    params[:'meta_tenant-id'] = @tenant.id if @tenant.present?
+
+    if @tenant.present?
+      params[:'meta_tenant-id'] = @tenant.id
+      params[:'meta_tenant-name'] = @tenant.name
+    end
+
     if server.tag.present?
       params[:'meta_server-tag'] = server.tag
     else
@@ -530,6 +535,8 @@ class BigBlueButtonApiController < ApplicationController
     callback_data = CallbackData.find_by(meeting_id: meeting_id)
     analytics_callback_url = callback_data&.callback_attributes&.dig(:analytics_callback_url)
     return if analytics_callback_url.nil?
+
+    params['customer'] = @tenant&.name || 'scalelite'
 
     uri = URI.parse(analytics_callback_url)
     post_req(uri, params, @tenant&.name)

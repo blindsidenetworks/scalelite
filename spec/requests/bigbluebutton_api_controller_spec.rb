@@ -929,7 +929,8 @@ RSpec.describe BigBlueButtonApiController, :redis do
 
       it 'sets the tenant-id metadata parameter' do
         create_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
-        stub_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567", 'meta_tenant-id': tenant.id }
+        stub_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567", 'meta_tenant-id': tenant.id,
+'meta_tenant-name': tenant.name }
 
         stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, stub_params))
                       .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
@@ -951,7 +952,8 @@ RSpec.describe BigBlueButtonApiController, :redis do
               meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password"
             }
             expected_params = {
-              paramx: 'paramxvalue', meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password", 'meta_tenant-id': tenant.id
+              paramx: 'paramxvalue', meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password",
+              'meta_tenant-id': tenant.id, 'meta_tenant-name': tenant.name
             }
 
             stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, expected_params))
@@ -968,7 +970,8 @@ RSpec.describe BigBlueButtonApiController, :redis do
               paramx: 'paramxnewvalue', meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password"
             }
             expected_params = {
-              paramx: 'paramxnewvalue', meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password", 'meta_tenant-id': tenant.id
+              paramx: 'paramxnewvalue', meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password",
+              'meta_tenant-id': tenant.id, 'meta_tenant-name': tenant.name
             }
 
             stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, expected_params))
@@ -989,7 +992,8 @@ RSpec.describe BigBlueButtonApiController, :redis do
               meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password"
             }
             expected_params = {
-              meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password", 'meta_tenant-id': tenant.id, paramx: 'paramxvalue'
+              meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password",
+              'meta_tenant-id': tenant.id, 'meta_tenant-name': tenant.name, paramx: 'paramxvalue'
             }
 
             stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, expected_params))
@@ -1006,7 +1010,8 @@ RSpec.describe BigBlueButtonApiController, :redis do
               paramx: 'paramxnewvalue', meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password"
             }
             expected_params = {
-              paramx: 'paramxvalue', meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password", 'meta_tenant-id': tenant.id
+              paramx: 'paramxvalue', meetingID: 'test-meeting-1', voiceBridge: "123", moderatorPW: "test-password",
+              'meta_tenant-id': tenant.id, 'meta_tenant-name': tenant.name
             }
 
             stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, expected_params))
@@ -1032,7 +1037,7 @@ RSpec.describe BigBlueButtonApiController, :redis do
 
           create_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
           stub_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567",
-                          'meta_tenant-id': tenant.id, 'meta_secret-lrs-payload': 'test-token' }
+                          'meta_tenant-id': tenant.id, 'meta_tenant-name': tenant.name, 'meta_secret-lrs-payload': 'test-token' }
 
           stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, stub_params))
                         .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
@@ -1049,7 +1054,8 @@ RSpec.describe BigBlueButtonApiController, :redis do
           allow_any_instance_of(LrsPayloadService).to receive(:call).and_return(nil)
 
           create_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567" }
-          stub_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567", 'meta_tenant-id': tenant.id }
+          stub_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "1234567", 'meta_tenant-id': tenant.id,
+'meta_tenant-name': tenant.name }
 
           stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, stub_params))
                         .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>

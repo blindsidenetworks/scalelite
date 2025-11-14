@@ -23,6 +23,8 @@ class Meeting < ApplicationRedisRecord
   # @return [Integer] ID of the tenant.
   attr_accessor :tenant_id
 
+  DEFAULT_MEETING_TTL = 24 * 60 * 60 # 24 hours in seconds
+
   def voice_bridge=(value)
     raise ArgumentError, "Voice bridge cannot be updated once set" unless @voice_bridge.nil?
 
@@ -162,6 +164,7 @@ class Meeting < ApplicationRedisRecord
           transaction.hsetnx(meeting_key, 'voice_bridge', voice_bridge)
           transaction.hsetnx(meeting_key, 'tenant_id', tenant_id)
           transaction.hgetall(meeting_key)
+          transaction.expire(meeting_key, DEFAULT_MEETING_TTL)
           transaction.sadd?('meetings', id)
         end
 

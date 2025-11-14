@@ -93,14 +93,62 @@ class PlaybackController < ApplicationController
   end
 
   def deliver_resource
-    resource_path = request.original_fullpath
-    static_resource_path = "/static-resource#{resource_path}"
-    response.headers['X-Accel-Redirect'] = static_resource_path
-    response.headers['Content-Disposition'] = "attachment" unless %w[presentation video screenshare].include?(@playback_format.format)
-    head(:ok)
+    if ENV["CLOUDFRONT_URL"].present? && request.format.html?
+      set_cf_signed_cookies!(format: @playback_format.format, record_id: @recording.record_id, published: @recording.published?)
+
+      prefix = @recording.published? ? "published" : "unpublished"
+      page   = "index.html"
+      cf_url = "#{ENV.fetch('CLOUDFRONT_URL')}/#{prefix}/#{@playback_format.format}/#{@recording.record_id}/#{page}"
+
+      redirect_to cf_url, allow_other_host: true, status: :temporary_redirect
+    else
+      resource_path = request.original_fullpath
+      static_resource_path = "/static-resource#{resource_path}"
+      response.headers['X-Accel-Redirect'] = static_resource_path
+      response.headers['Content-Disposition'] = "attachment" unless %w[presentation video screenshare].include?(@playback_format.format)
+      head(:ok)
+    end
   end
 
   def recording_not_found
     render "errors/recording_not_found", status: :not_found, formats: [:html]
+  end
+
+  def set_cf_signed_cookies!(format:, record_id:, published:, ttl: 5.minutes)
+    base_prefix = published ? "published" : "unpublished"
+    path_scope  = "/#{base_prefix}/#{format}/#{record_id}/*"
+
+    cf_origin   = ENV.fetch("CLOUDFRONT_URL")
+
+    pem = Base64.decode64(ENV.fetch("CF_PRIVATE_KEY_B64", nil))
+
+    signer = Aws::CloudFront::CookieSigner.new(
+      key_pair_id: ENV.fetch("CF_KEY_PAIR_ID"),
+      private_key: OpenSSL::PKey::RSA.new(pem)
+    )
+
+    expires_at = Time.zone.now + (ttl.is_a?(Numeric) ? ttl : ttl.to_i)
+
+    policy_json = JSON.generate({
+                                  "Statement" => [{
+                                    "Resource" => "#{cf_origin}#{path_scope}",
+                                                    "Condition" => { "DateLessThan" => { "AWS:EpochTime" => expires_at.to_i } }
+                                  }]
+                                })
+
+    cf_cookies = signer.signed_cookie(nil, policy: policy_json)
+
+    parent_domain = ".#{request.domain}"
+
+    cookie_opts = {
+      domain: parent_domain,
+      path:   "/",
+      secure: true,
+      httponly: true,
+      same_site: :none,
+      expires: expires_at
+    }
+
+    cf_cookies.each { |name, value| cookies[name] = cookie_opts.merge(value: value) }
   end
 end

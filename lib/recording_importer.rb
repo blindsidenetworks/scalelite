@@ -8,7 +8,7 @@ class RecordingImporter
     Rails.logger
   end
 
-  def self.import(filename)
+  def self.import(filename, aws_client = nil)
     return if Rails.configuration.x.recording_disabled
 
     logger.info("Importing recording from file: #{filename}")
@@ -30,8 +30,6 @@ class RecordingImporter
             recording, playback_format = Recording.create_from_metadata_xml(metadata)
             next if recording.nil?
 
-            publish_format_dir = "#{Rails.configuration.x.recording_publish_dir}/#{playback_format.format}"
-            unpublish_format_dir = "#{Rails.configuration.x.recording_unpublish_dir}/#{playback_format.format}"
             published_status = if recording.publish_updated
                                  recording.published
                                elsif recording_import_unpublished
@@ -41,14 +39,37 @@ class RecordingImporter
                                else
                                  true
                                end
-            format_dir = published_status ? publish_format_dir : unpublish_format_dir
+
             protected = Rails.configuration.x.protected_recordings_enabled
             recording.update!(published: published_status, protected: protected)
-            FileUtils.rm_rf("#{publish_format_dir}/#{recording.record_id}")
-            FileUtils.rm_rf("#{unpublish_format_dir}/#{recording.record_id}")
+            directory = "#{playback_format.format}/#{recording.record_id}"
 
-            FileUtils.mkdir_p(format_dir)
-            FileUtils.mv("#{playback_format.format}/#{recording.record_id}", format_dir, force: true)
+            if ENV['S3_RECORDING'] # Store recordings in S3
+              key = published_status ? 'published/' : 'unpublished/'
+
+              files = Dir.glob("#{directory}/**/*").select { |f| File.file?(f) }
+              files.each do |file|
+                content_type = Rack::Mime.mime_type(File.extname(file), "application/octet-stream")
+                attachment_file_types = %w[.pdf .ogg]
+                content_disposition = attachment_file_types.include?(File.extname(file)) ? "attachment" : nil
+
+                object = Aws::S3::Object.new(ENV.fetch('S3_BUCKET_NAME'), "#{key}#{file}", client: aws_client)
+                object.upload_file(file, content_type: content_type, content_disposition: content_disposition)
+              end
+
+              FileUtils.rm_rf(directory)
+            else
+              publish_format_dir = "#{Rails.configuration.x.recording_publish_dir}/#{playback_format.format}"
+              unpublish_format_dir = "#{Rails.configuration.x.recording_unpublish_dir}/#{playback_format.format}"
+
+              format_dir = published_status ? publish_format_dir : unpublish_format_dir
+
+              FileUtils.rm_rf("#{publish_format_dir}/#{recording.record_id}")
+              FileUtils.rm_rf("#{unpublish_format_dir}/#{recording.record_id}")
+
+              FileUtils.mkdir_p(format_dir)
+              FileUtils.mv(directory, format_dir, force: true)
+            end
           end
         end
         callback_data = CallbackData.find_by(meeting_id: recording.meeting_id)
