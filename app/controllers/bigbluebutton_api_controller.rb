@@ -200,7 +200,12 @@ class BigBlueButtonApiController < ApplicationController
 
     params[:moderatorPW] = meeting.moderator_pw
     params[:voiceBridge] = meeting.voice_bridge
-    params[:'meta_tenant-id'] = @tenant.id if @tenant.present?
+
+    if @tenant.present?
+      params[:'meta_tenant-id'] = @tenant.id
+      params[:'meta_tenant-name'] = @tenant.name
+    end
+
     if server.tag.present?
       params[:'meta_server-tag'] = server.tag
     else
