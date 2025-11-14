@@ -143,8 +143,9 @@ class PlaybackController < ApplicationController
     cookie_opts = {
       domain: parent_domain,
       path:   "/",
+      secure: true,
       httponly: true,
-      same_site: :lax,
+      same_site: :none,
       expires: expires_at
     }
 
