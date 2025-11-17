@@ -141,6 +141,8 @@ module Scalelite
 
     config.i18n.default_locale = ENV.fetch('DEFAULT_LOCALE', 'en')
 
+    config.x.default_presentations = ENV.fetch('DEFAULT_PRESENTATIONS', '').split(",").collect { |x| x.split('->') }
+
     # Comma separated list of create params that can be overridden by the client
     config.x.default_create_params = ENV.fetch('DEFAULT_CREATE_PARAMS', '')
                                         .split(',').to_h { |param| param.split('=', 2) }.symbolize_keys
