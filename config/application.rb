@@ -177,5 +177,7 @@ module Scalelite
 
     # continue using config/secrets.yml for secrets
     config.secrets = config_for(:secrets)
+
+    config.host_authorization = { exclude: ->(request) { request.path.include?('health_check') } }
   end
 end
