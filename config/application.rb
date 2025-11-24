@@ -174,7 +174,7 @@ module Scalelite
 
     # Default meeting TTL before redis deletes a meeting
     config.x.default_meeting_ttl = ENV.fetch('DEFAULT_MEETING_TTL', 24 * 60 * 60).to_i # 24 hours in seconds
-    
+
     # Restore default serializer from Rails defaults < 7.1
     config.active_record.default_column_serializer = YAML
 
