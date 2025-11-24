@@ -23,7 +23,7 @@ class Meeting < ApplicationRedisRecord
   # @return [Integer] ID of the tenant.
   attr_accessor :tenant_id
 
-  DEFAULT_MEETING_TTL = 24 * 60 * 60 # 24 hours in seconds
+  DEFAULT_MEETING_TTL = Rails.configuration.x.default_meeting_ttl # use env variable instead of hardcoded value
 
   def voice_bridge=(value)
     raise ArgumentError, "Voice bridge cannot be updated once set" unless @voice_bridge.nil?
