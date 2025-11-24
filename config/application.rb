@@ -172,6 +172,9 @@ module Scalelite
     # Maximum amount of time to allow bridged calls to stay connected for. Defaults to same as max meeting duration.
     config.x.fsapi_max_duration = ENV.fetch('FSAPI_MAX_DURATION', config.x.max_meeting_duration).to_i
 
+    # Default meeting TTL before redis deletes a meeting
+    config.x.default_meeting_ttl = ENV.fetch('DEFAULT_MEETING_TTL', 24 * 60 * 60).to_i # 24 hours in seconds
+    
     # Restore default serializer from Rails defaults < 7.1
     config.active_record.default_column_serializer = YAML
 
