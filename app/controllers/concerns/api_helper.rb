@@ -272,3 +272,19 @@ module ApiHelper
       default[:'meta_server-tag'].presence
   end
 end
+
+def generate_default_presentations
+  return '' if Rails.configuration.x.default_presentations.empty?
+  doc = Nokogiri::XML('<modules></modules>')
+  module_pres = Nokogiri::XML::Node.new("module", doc)
+  module_pres['name'] = "presentation"
+
+  Rails.configuration.x.default_presentations.each { |x|
+    document = Nokogiri::XML::Node.new("document", doc)
+    document['url'] = x[0]
+    document['filename'] = x[1]
+    module_pres << document
+  }
+  doc.root << module_pres
+  doc.to_xml
+end
