@@ -23,6 +23,8 @@ The call gateway server is a machine that runs FreeSWITCH and is configured to r
 
 For support from the FreeSWITCH community, installing from the [upstream Debian packaging](https://freeswitch.org/confluence/display/FREESWITCH/Debian) on a supported Debian version (currently Debian 11) is recommended.
 
+Additionally, the `mod_xml_curl` module _must_ be compiled and loaded in FreeSWITCH. For further instructions on how to do that, see the [FreeSWITCH docs](https://developer.signalwire.com/freeswitch/FreeSWITCH-Explained/Modules/mod_xml_curl_1049001/#installation).
+
 In order to configure FreeSWITCH to bridge calls into the BigBlueButton meetings, the module `xml_curl` is used to have FreeSWITCH request a dynamically generated dialplan XML from Scalelite. In a typical installation, this is configured in the file `/etc/freeswitch/autoload_configs/xml_curl.conf.xml`. An example follows, with the spots that require modification marked.
 
 ```xml
