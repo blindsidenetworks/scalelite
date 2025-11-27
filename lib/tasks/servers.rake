@@ -169,7 +169,7 @@ namespace :servers do
     puts("ERROR: No server found with id: #{args.id}")
     exit(1)
   rescue StandardError => e
-    puts "ERROR: Failed to cordon server #{args.id} - #{e}"
+    puts "ERROR: Failed to panic server #{args.id} - #{e}"
     exit(1)
   end
 
