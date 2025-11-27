@@ -34,6 +34,8 @@ namespace :servers do
       exit(1)
     end
 
+    puts "Adding server #{args.url}..."
+
     tmp_load_multiplier = 1.0
     unless args.load_multiplier.nil?
       tmp_load_multiplier = args.load_multiplier.to_d
@@ -49,6 +51,7 @@ namespace :servers do
 
   desc 'Update a BigBlueButton server'
   task :update, [:id, :secret, :load_multiplier, :tag] => :environment do |_t, args|
+    puts "Updating server #{args.id}..."
     server = Server.find(args.id)
     server.secret = args.secret unless args.secret.nil?
     tmp_load_multiplier = server.load_multiplier
@@ -70,6 +73,7 @@ namespace :servers do
 
   desc 'Remove a BigBlueButton server'
   task :remove, [:id] => :environment do |_t, args|
+    puts "Removing server #{args.id}..."
     server = Server.find(args.id)
     server.destroy!
     puts('OK')
@@ -80,6 +84,7 @@ namespace :servers do
 
   desc 'Mark a BigBlueButton server as available for scheduling new meetings'
   task :enable, [:id] => :environment do |_t, args|
+    puts "Enabling server #{args.id}..."
     server = Server.find(args.id)
     server.state = 'enabled'
     server.save!
@@ -92,6 +97,7 @@ namespace :servers do
   desc 'Mark a BigBlueButton server as cordoned to stop scheduling new meetings but consider for
         load calculation and joining existing meetings'
   task :cordon, [:id] => :environment do |_t, args|
+    puts "Cordoning server #{args.id}..."
     server = Server.find(args.id)
     server.state = 'cordoned'
     server.save!
@@ -99,11 +105,15 @@ namespace :servers do
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
     exit(1)
+  rescue StandardError => e
+    puts "ERROR: Failed to cordon server #{args.id} - #{e}"
+    exit(1)
   end
 
   desc 'Mark a BigBlueButton server as unavailable to stop scheduling new meetings'
   task :disable, [:id] => :environment do |_t, args|
     include ApiHelper
+    puts "Disabling server #{args.id}..."
     server = Server.find(args.id)
     response = true
     if server.load.to_f > 0.0
@@ -135,6 +145,7 @@ namespace :servers do
 
   desc 'Mark a BigBlueButton server as unavailable, and clear all meetings from it'
   task :panic, [:id, :keep_state, :skip_end_calls] => :environment do |_t, args|
+    puts "Panicking server #{args.id}..."
     args.with_defaults(keep_state: false, skip_end_calls: false)
     include ApiHelper
 
@@ -156,6 +167,9 @@ namespace :servers do
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
     puts("ERROR: No server found with id: #{args.id}")
+    exit(1)
+  rescue StandardError => e
+    puts "ERROR: Failed to panic server #{args.id} - #{e}"
     exit(1)
   end
 
