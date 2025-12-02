@@ -99,14 +99,14 @@ namespace :poll do
 
         meetings = Meeting.all.select { |m| m.server_id == server.id }
         meetings.each do |meeting|
-          puts("Clearing Meeting id=#{meeting.id}")
+          Rails.logger.info("Clearing Meeting id=#{meeting.id}")
           moderator_pw = meeting.try(:moderator_pw)
           meeting.destroy!
           get_post_req(encode_bbb_uri('end', server.url, server.secret, meetingID: meeting.id, password: moderator_pw))
         rescue ApplicationRedisRecord::RecordNotDestroyed => e
           raise("ERROR: Could not destroy meeting id=#{meeting.id}: #{e}")
         rescue StandardError => e
-          puts("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
+          Rails.logger.error("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
         end
 
         server.reset_counters

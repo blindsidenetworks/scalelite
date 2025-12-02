@@ -20,15 +20,20 @@ RSpec.describe 'tenants tasks', type: :task do
       tenant1 = create(:tenant)
       tenant2 = create(:tenant)
 
-      # rubocop:disable Layout/LineLength
-      expect { task.invoke }.to output(
-        "id: #{tenant2.id}\n\tname: #{tenant2.name}\n\tsecrets: #{tenant2.secrets}\nid: #{tenant1.id}\n\tname: #{tenant1.name}\n\tsecrets: #{tenant1.secrets}\nTotal number of tenants: 2\n"
-      ).to_stdout
-      # rubocop:enable Layout/LineLength
+      [tenant1, tenant2].each do |tenant|
+        expect(Rails.logger).to receive(:info).with("id: #{tenant.id}")
+        expect(Rails.logger).to receive(:info).with("\tname: #{tenant.name}")
+        expect(Rails.logger).to receive(:info).with("\tsecrets: #{tenant.secrets}")
+      end
+      expect(Rails.logger).to receive(:info).with('Total number of tenants: 2')
+
+      task.invoke
     end
 
     it 'displays a message if there are no tenants' do
-      expect { task.invoke }.to output(/Total number of tenants: 0\n/).to_stdout
+      expect(Rails.logger).to receive(:info).with('Total number of tenants: 0')
+
+      task.invoke
     end
   end
 
