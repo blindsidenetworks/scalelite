@@ -193,12 +193,14 @@ class BigBlueButtonApiController < ApplicationController
 
         logger.debug("Incrementing server #{server.id} load by 1")
         server.increment_load(1)
+
+        # Pass the generated moderatorPW only on new meeting create
+        params[:moderatorPW] = meeting.moderator_pw
       rescue ApplicationRedisRecord::RecordNotFound => e
         raise InternalError, e.message
       end
     end
 
-    params[:moderatorPW] = meeting.moderator_pw
     params[:voiceBridge] = meeting.voice_bridge
 
     if @tenant.present?
