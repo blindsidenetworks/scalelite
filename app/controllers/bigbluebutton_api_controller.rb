@@ -179,11 +179,10 @@ class BigBlueButtonApiController < ApplicationController
 
         # Create meeting in database
         logger.debug("Creating meeting #{params[:meetingID]} in database.")
-        moderator_pwd = params[:moderatorPW].presence || SecureRandom.alphanumeric(8)
         meeting = Meeting.find_or_create_with_server!(
           params[:meetingID],
           server,
-          moderator_pwd,
+          params[:moderatorPW],
           params[:voiceBridge],
           @tenant&.id
         )
@@ -198,7 +197,7 @@ class BigBlueButtonApiController < ApplicationController
       end
     end
 
-    params[:moderatorPW] = meeting.moderator_pw
+    params[:moderatorPW] = meeting.moderator_pw if meeting.moderator_pw
     params[:voiceBridge] = meeting.voice_bridge
 
     if @tenant.present?
