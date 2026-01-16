@@ -193,6 +193,9 @@ class BigBlueButtonApiController < ApplicationController
 
         logger.debug("Incrementing server #{server.id} load by 1")
         server.increment_load(1)
+
+        # Pass the generated moderatorPW only on new meeting create
+        params[:moderatorPW] = meeting.moderator_pw
       rescue ApplicationRedisRecord::RecordNotFound => e
         raise InternalError, e.message
       end
@@ -236,7 +239,7 @@ class BigBlueButtonApiController < ApplicationController
     excluded_params = Rails.configuration.x.create_exclude_params
     # Pass along all params except the built in rails ones and excluded_params
     uri = encode_bbb_uri('create', server.url, server.secret, pass_through_params(excluded_params))
-
+    byebug
     begin
       # Read the body if preuploaded slide XML is present
       body = have_preuploaded_slide ? request.raw_post : ''
