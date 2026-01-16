@@ -198,7 +198,6 @@ class BigBlueButtonApiController < ApplicationController
       end
     end
 
-    params[:moderatorPW] = meeting.moderator_pw
     params[:voiceBridge] = meeting.voice_bridge
 
     if @tenant.present?
