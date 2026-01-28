@@ -3,21 +3,21 @@
 desc('List configured BigBlueButton servers')
 task servers: :environment do
   servers = Server.all
-  Rails.logger.info('No servers are configured') if servers.empty?
+  warn('No servers are configured') if servers.empty?
   servers.each do |server|
-    Rails.logger.info("id: #{server.id}")
-    Rails.logger.info("\turl: #{server.url}")
-    Rails.logger.info("\tsecret: #{server.secret}")
+    puts("id: #{server.id}")
+    puts("\turl: #{server.url}")
+    puts("\tsecret: #{server.secret}")
     if server.state.present?
-      Rails.logger.info("\t#{server.state}")
+      puts("\t#{server.state}")
     else
-      Rails.logger.info("\t#{server.enabled ? 'enabled' : 'disabled'}")
+      puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
     end
-    Rails.logger.info("\tload: #{server.load.presence || 'unavailable'}")
-    Rails.logger.info("\tload multiplier: #{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
-    Rails.logger.info("\tbbb version: #{server.bbb_version.nil? ? '' : server.bbb_version}")
-    Rails.logger.info("\ttag: #{server.tag.nil? ? '' : server.tag}")
-    Rails.logger.info("\t#{server.online ? 'online' : 'offline'}")
+    puts("\tload: #{server.load.presence || 'unavailable'}")
+    puts("\tload multiplier: #{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
+    puts("\tbbb version: #{server.bbb_version.nil? ? '' : server.bbb_version}")
+    puts("\ttag: #{server.tag.nil? ? '' : server.tag}")
+    puts("\t#{server.online ? 'online' : 'offline'}")
   end
 end
 
@@ -25,12 +25,12 @@ namespace :servers do
   desc 'Add a new BigBlueButton server (it will be added disabled)'
   task :add, [:url, :secret, :load_multiplier, :tag] => :environment do |_t, args|
     if args.url.nil? || args.secret.nil?
-      Rails.logger.error('Error: Please input at least a URL and a secret!')
+      warn('Error: Please input at least a URL and a secret!')
       exit(1)
     end
 
     unless args.url.start_with?('http://', 'https://')
-      Rails.logger.error('Error: Server URL must start with http:// or https://')
+      warn('Error: Server URL must start with http:// or https://')
       exit(1)
     end
 
@@ -45,8 +45,8 @@ namespace :servers do
       end
     end
     server = Server.create!(url: args.url, secret: args.secret, load_multiplier: tmp_load_multiplier, tag: args.tag.presence)
-    Rails.logger.info('OK')
-    Rails.logger.info("id: #{server.id}")
+    puts('OK')
+    puts("id: #{server.id}")
   end
 
   desc 'Update a BigBlueButton server'
@@ -65,9 +65,9 @@ namespace :servers do
     server.load_multiplier = tmp_load_multiplier
     server.tag = args.tag.presence unless args.tag.nil?
     server.save!
-    Rails.logger.info('OK')
+    puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
-    Rails.logger.error("ERROR: No server found with id: #{args.id}")
+    warn("ERROR: No server found with id: #{args.id}")
     exit(1)
   end
 
@@ -76,9 +76,9 @@ namespace :servers do
     Rails.logger.info("Removing server #{args.id}...")
     server = Server.find(args.id)
     server.destroy!
-    Rails.logger.info('OK')
+    puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
-    Rails.logger.error("ERROR: No server found with id: #{args.id}")
+    warn("ERROR: No server found with id: #{args.id}")
     exit(1)
   end
 
@@ -88,9 +88,9 @@ namespace :servers do
     server = Server.find(args.id)
     server.state = 'enabled'
     server.save!
-    Rails.logger.info('OK')
+    puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
-    Rails.logger.error("ERROR: No server found with id: #{args.id}")
+    warn("ERROR: No server found with id: #{args.id}")
     exit(1)
   end
 
@@ -101,12 +101,12 @@ namespace :servers do
     server = Server.find(args.id)
     server.state = 'cordoned'
     server.save!
-    Rails.logger.info('OK')
+    puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
-    Rails.logger.error("ERROR: No server found with id: #{args.id}")
+    warn("ERROR: No server found with id: #{args.id}")
     exit(1)
   rescue StandardError => e
-    Rails.logger.error("ERROR: Failed to cordon server #{args.id} - #{e}")
+    warn("ERROR: Failed to cordon server #{args.id} - #{e}")
     exit(1)
   end
 
@@ -117,9 +117,9 @@ namespace :servers do
     server = Server.find(args.id)
     response = true
     if server.load.to_f > 0.0
-      Rails.logger.info("WARNING: You are trying to disable a server with active load. You should use the cordon option if
+      puts("WARNING: You are trying to disable a server with active load. You should use the cordon option if
           you do not want to clear all the meetings")
-      Rails.logger.info('If you still wish to continue please enter `yes`')
+      puts('If you still wish to continue please enter `yes`')
       response = $stdin.gets.chomp.casecmp('yes').zero?
       if response
         meetings = Meeting.all.select { |m| m.server_id == server.id }
@@ -131,15 +131,15 @@ namespace :servers do
         rescue ApplicationRedisRecord::RecordNotDestroyed => e
           raise("ERROR: Could not destroy meeting id=#{meeting.id}: #{e}")
         rescue StandardError => e
-          Rails.logger.error("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
+          warn("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
         end
       end
     end
     server.state = 'disabled' if response
     server.save!
-    Rails.logger.info('OK')
+    puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
-    Rails.logger.error("ERROR: No server found with id: #{args.id}")
+    warn("ERROR: No server found with id: #{args.id}")
     exit(1)
   end
 
@@ -160,16 +160,16 @@ namespace :servers do
     rescue ApplicationRedisRecord::RecordNotDestroyed => e
       raise("ERROR: Could not destroy meeting id=#{meeting.id}: #{e}")
     rescue StandardError => e
-      Rails.logger.error("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
+      warn("WARNING: Could not end meeting id=#{meeting.id}: #{e}")
     end
     server.state = 'disabled' unless args.keep_state
     server.save!
-    Rails.logger.info('OK')
+    puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
-    Rails.logger.error("ERROR: No server found with id: #{args.id}")
+    warn("ERROR: No server found with id: #{args.id}")
     exit(1)
   rescue StandardError => e
-    Rails.logger.error("ERROR: Failed to panic server #{args.id} - #{e}")
+    warn("ERROR: Failed to panic server #{args.id} - #{e}")
     exit(1)
   end
 
@@ -186,9 +186,9 @@ namespace :servers do
     end
     server.load_multiplier = tmp_load_multiplier
     server.save!
-    Rails.logger.info('OK')
+    puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
-    Rails.logger.error("ERROR: No server found with id: #{args.id}")
+    warn("ERROR: No server found with id: #{args.id}")
     exit(1)
   end
 
@@ -197,9 +197,9 @@ namespace :servers do
     server = Server.find(args.id)
     server.tag = args.tag.presence
     server.save!
-    Rails.logger.info('OK')
+    puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound
-    Rails.logger.error("ERROR: No server found with id: #{args.id}")
+    warn("ERROR: No server found with id: #{args.id}")
     exit(1)
   end
 
@@ -208,11 +208,12 @@ namespace :servers do
     servers = YAML.load_file(args.path)['servers']
     servers.each do |server|
       created = Server.create!(url: server['url'], secret: server['secret'])
-      Rails.logger.info("server: #{created.url}")
-      Rails.logger.info("id: #{created.id}")
+      puts("server: #{created.url}")
+      puts("id: #{created.id}")
     end
   rescue StandardError => e
-    Rails.logger.error(e)
+    warn(e)
+    # Should there be an exit(1) here?
   end
 
   desc 'Sync cluster state with servers defined in a YAML file'
@@ -222,13 +223,13 @@ namespace :servers do
 
     ServerSync.sync_file(args.path, args.mode, args.dryrun)
   rescue StandardError => e
-    Rails.logger.error("ERROR: #{e}")
+    warn("ERROR: #{e}")
     exit(1)
   end
 
   desc 'Return a yaml compatible with servers:sync'
   task :yaml, [:verbose] => :environment do |_t, args|
-    Rails.logger.info({ 'servers' => ServerSync.dump(!!args.verbose) }.to_yaml)
+    puts({ 'servers' => ServerSync.dump(!!args.verbose) }.to_yaml)
   end
 
   desc('List all meetings running in specific BigBlueButton servers')
@@ -245,17 +246,17 @@ namespace :servers do
     pool = Concurrent::FixedThreadPool.new(Rails.configuration.x.poller_threads.to_i - 1, name: 'sync-meeting-data')
     tasks = servers.map do |server|
       Concurrent::Promises.future_on(pool) do
-        Rails.logger.info("\nServer ID: #{server.id}")
-        Rails.logger.info("Server Url: #{server.url}")
+        puts("\nServer ID: #{server.id}")
+        puts("Server Url: #{server.url}")
         resp = get_post_req(encode_bbb_uri('getMeetings', server.url, server.secret))
         meetings = resp.xpath('/response/meetings/meeting')
         meeting_ids = meetings.map { |meeting| meeting.xpath('.//meetingName').text }
-        Rails.logger.info("MeetingIDs: \n\t#{meeting_ids.join("\n\t")}")
-        Rails.logger.info("\tNo meetings to display") if meeting_ids.empty?
+        puts("MeetingIDs: \n\t#{meeting_ids.join("\n\t")}")
+        warn("\tNo meetings to display") if meeting_ids.empty?
       rescue BBBErrors::BBBError => e
-        Rails.logger.error("\nFailed to get server id=#{server.id} status: #{e}")
+        warn("\nFailed to get server id=#{server.id} status: #{e}")
       rescue StandardError => e
-        Rails.logger.error("\nFailed to get meetings list status: #{e}")
+        warn("\nFailed to get meetings list status: #{e}")
       end
     end
     begin
