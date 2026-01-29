@@ -37,7 +37,7 @@ server.largest_meeting, server.videos, server.load, server.bbb_version, server.t
     t.add_column('TAG', &:tag)
   end
 
-  Rails.logger.info("\n#{table.pack(max_table_width: nil)}")
+  puts "\n#{table.pack(max_table_width: nil)}"
 end
 
 def status_with_state(state)

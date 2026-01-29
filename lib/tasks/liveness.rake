@@ -2,5 +2,5 @@
 
 desc('livenessProbe')
 task liveness: :environment do
-  Rails.logger.info('success')
+  puts 'success'
 end

@@ -46,11 +46,9 @@ RSpec.describe 'servers tasks', type: :task do
       task.invoke(verbose)
     end
 
-    it 'logs yaml data' do
+    it 'outputs yaml data to stdout' do
       allow(ServerSync).to receive(:dump).with(verbose).and_return([{ url: 'https://example.com', secret: 'secret' }])
-      expect(Rails.logger).to receive(:info).with(include('url: https://example.com'))
-
-      task.invoke(verbose)
+      expect { task.invoke(verbose) }.to output(%r{url: https://example.com}).to_stdout
     end
   end
 end
