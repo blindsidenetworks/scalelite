@@ -13,13 +13,13 @@ task tenantSettings: :environment do
   tenants.each do |tenant|
     settings = TenantSetting.all(tenant.id)
 
-    Rails.logger.info("Tenant: #{tenant.name}")
+    puts("Tenant: #{tenant.name}")
     if settings.present?
       settings.each do |setting|
-        Rails.logger.info("  id: #{setting.id}")
-        Rails.logger.info("\tparam: #{setting.param}")
-        Rails.logger.info("\tvalue: #{setting.value}")
-        Rails.logger.info("\toverride: #{setting.override}")
+        puts("  id: #{setting.id}")
+        puts("\tparam: #{setting.param}")
+        puts("\tvalue: #{setting.value}")
+        puts("\toverride: #{setting.override}")
       end
     else
       warn('  No custom settings are configured')

@@ -40,6 +40,7 @@ namespace :servers do
     unless args.load_multiplier.nil?
       tmp_load_multiplier = args.load_multiplier.to_d
       if tmp_load_multiplier.zero?
+        puts('WARNING! Load-multiplier was not readable or 0, so it is now 1')
         Rails.logger.info('WARNING! Load-multiplier was not readable or 0, so it is now 1')
         tmp_load_multiplier = 1.0
       end
@@ -51,6 +52,7 @@ namespace :servers do
 
   desc 'Update a BigBlueButton server'
   task :update, [:id, :secret, :load_multiplier, :tag] => :environment do |_t, args|
+    puts("Updating server #{args.id}...")
     Rails.logger.info("Updating server #{args.id}...")
     server = Server.find(args.id)
     server.secret = args.secret unless args.secret.nil?
@@ -58,6 +60,7 @@ namespace :servers do
     unless args.load_multiplier.nil?
       tmp_load_multiplier = args.load_multiplier.to_d
       if tmp_load_multiplier.zero?
+        puts('WARNING! Load-multiplier was not readable or 0, so it is now 1')
         Rails.logger.info('WARNING! Load-multiplier was not readable or 0, so it is now 1')
         tmp_load_multiplier = 1.0
       end
@@ -73,6 +76,7 @@ namespace :servers do
 
   desc 'Remove a BigBlueButton server'
   task :remove, [:id] => :environment do |_t, args|
+    puts("Removing server #{args.id}...")
     Rails.logger.info("Removing server #{args.id}...")
     server = Server.find(args.id)
     server.destroy!
@@ -84,6 +88,7 @@ namespace :servers do
 
   desc 'Mark a BigBlueButton server as available for scheduling new meetings'
   task :enable, [:id] => :environment do |_t, args|
+    puts("Enabling server #{args.id}...")
     Rails.logger.info("Enabling server #{args.id}...")
     server = Server.find(args.id)
     server.state = 'enabled'
@@ -97,6 +102,7 @@ namespace :servers do
   desc 'Mark a BigBlueButton server as cordoned to stop scheduling new meetings but consider for
         load calculation and joining existing meetings'
   task :cordon, [:id] => :environment do |_t, args|
+    puts("Cordoning server #{args.id}...")
     Rails.logger.info("Cordoning server #{args.id}...")
     server = Server.find(args.id)
     server.state = 'cordoned'
@@ -113,6 +119,7 @@ namespace :servers do
   desc 'Mark a BigBlueButton server as unavailable to stop scheduling new meetings'
   task :disable, [:id] => :environment do |_t, args|
     include ApiHelper
+    puts("Disabling server #{args.id}...")
     Rails.logger.info("Disabling server #{args.id}...")
     server = Server.find(args.id)
     response = true
@@ -124,6 +131,7 @@ namespace :servers do
       if response
         meetings = Meeting.all.select { |m| m.server_id == server.id }
         meetings.each do |meeting|
+          puts("Clearing Meeting id=#{meeting.id}")
           Rails.logger.info("Clearing Meeting id=#{meeting.id}")
           moderator_pw = meeting.try(:moderator_pw)
           meeting.destroy!
@@ -145,6 +153,7 @@ namespace :servers do
 
   desc 'Mark a BigBlueButton server as unavailable, and clear all meetings from it'
   task :panic, [:id, :keep_state, :skip_end_calls] => :environment do |_t, args|
+    puts("Panicking server #{args.id}...")
     Rails.logger.info("Panicking server #{args.id}...")
     args.with_defaults(keep_state: false, skip_end_calls: false)
     include ApiHelper
@@ -153,6 +162,7 @@ namespace :servers do
 
     meetings = Meeting.all.select { |m| m.server_id == server.id }
     meetings.each do |meeting|
+      puts("Clearing Meeting id=#{meeting.id}")
       Rails.logger.info("Clearing Meeting id=#{meeting.id}")
       moderator_pw = meeting.try(:moderator_pw)
       meeting.destroy!
@@ -180,6 +190,7 @@ namespace :servers do
     unless args.load_multiplier.nil?
       tmp_load_multiplier = args.load_multiplier.to_d
       if tmp_load_multiplier.zero?
+        puts('WARNING! Load-multiplier was not readable or 0, so it is now 1')
         Rails.logger.info('WARNING! Load-multiplier was not readable or 0, so it is now 1')
         tmp_load_multiplier = 1.0
       end
