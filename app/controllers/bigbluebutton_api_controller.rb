@@ -244,6 +244,9 @@ class BigBlueButtonApiController < ApplicationController
       # Read the body if preuploaded slide XML is present
       body = have_preuploaded_slide ? request.raw_post : ''
 
+      # Override body with default presentations if empty
+      body = generate_default_presentations unless body != ''
+
       # Send a GET/POST request to the server
       response = get_post_req(uri, body, **bbb_req_timeout(server))
     rescue BBBError
