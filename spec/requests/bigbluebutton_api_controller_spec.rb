@@ -2433,6 +2433,25 @@ RSpec.describe BigBlueButtonApiController, :redis do
         expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
         expect(response_xml.at_xpath('/response/updated').text).to eq('false')
       end
+
+      it 'returns false if you mix recording ids from different tenants' do
+        r = create(:recording, :published)
+        create(:metadatum, recording: r, key: "tenant-id", value: tenant.id)
+        r1 = create(:recording, :published)
+        create(:metadatum, recording: r1, key: "tenant-id", value: tenant1.id)
+
+        meta_params = { 'newparam' => 'newvalue' }
+        params = encode_bbb_params('updateRecordings', {
+          recordID: "#{r.record_id},#{r1.record_id}",
+        }.merge(meta_params.transform_keys { |k| "meta_#{k}" }).to_query)
+
+        expect { get bigbluebutton_api_update_recordings_url, params: params }.not_to change(Metadatum, :count)
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+        expect(response_xml.at_xpath('/response/updated').text).to eq('false')
+      end
     end
   end
 

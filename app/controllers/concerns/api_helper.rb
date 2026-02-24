@@ -67,6 +67,10 @@ module ApiHelper
     request.host.split(".").first
   end
 
+  def set_tenant
+    @tenant = fetch_tenant
+  end
+
   def fetch_tenant(name: nil)
     return nil unless Rails.configuration.x.multitenancy_enabled
 
