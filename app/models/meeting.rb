@@ -149,6 +149,10 @@ class Meeting < ApplicationRedisRecord
       redis.watch('meetings') do
         hash = redis.hgetall(meeting_key)
         unless hash.empty?
+          if tenant_id.present? && hash['tenant_id'].present? && hash['tenant_id'] != tenant_id
+            redis.unwatch
+            raise RecordNotFound.new("Couldn't find Meeting with id=#{id} and tenant_id=#{tenant_id}", name, id)
+          end
           hash[:id] = id
           hash[:server] = server if server.id == hash['server_id']
           redis.unwatch

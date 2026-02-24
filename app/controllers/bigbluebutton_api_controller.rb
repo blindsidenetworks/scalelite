@@ -459,7 +459,8 @@ class BigBlueButtonApiController < ApplicationController
     query_params = { record_id: record_ids }
     query_params[:metadata] = { key: 'tenant-id', value: @tenant.id } if @tenant.present? # filter based on tenant
 
-    if Recording.includes(:metadata).where(query_params).blank?
+    # Check to make sure all recordings belong to the current tenant
+    if Recording.includes(:metadata).where(query_params).count != record_ids.count
       @updated = false
       return render(:update_recordings)
     end
@@ -554,10 +555,6 @@ class BigBlueButtonApiController < ApplicationController
   def pass_through_params(excluded_params)
     params.except(*(excluded_params + [:format, :controller, :action, :checksum]))
           .to_unsafe_hash
-  end
-
-  def set_tenant
-    @tenant = fetch_tenant
   end
 
   # Success response if there are no meetings on any servers
