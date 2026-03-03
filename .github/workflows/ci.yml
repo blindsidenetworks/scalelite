@@ -56,6 +56,12 @@ jobs:
       - name: Run Rubocop
         run: bundle exec rubocop
 
+      - name: Run Rails Test
+        env:
+          DATABASE_URL: postgres://postgres:password@localhost:5432/scalelite_test
+        run: |
+          bundler exec rails test:db
+
       - name: Run RSpec
         env:
           DATABASE_URL: postgres://postgres:password@localhost:5432/scalelite_test
