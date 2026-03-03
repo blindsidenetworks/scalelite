@@ -49,7 +49,7 @@ namespace :recordings do
   task :addToTenant, [:tenant_id] => :environment do |_t, args|
     tenant_id = args[:tenant_id]
     unless tenant_id
-      Rails.logger.error('No tenant ID was provided')
+      warn('No tenant ID was provided')
       exit(1)
     end
 
@@ -58,10 +58,10 @@ namespace :recordings do
       begin
         Metadatum.create!(recording_id: rec.id, key: 'tenant-id', value: tenant_id)
       rescue ActiveRecord::RecordInvalid => e
-        Rails.logger.error("Error creating metadatum record for recording with id #{rec.id}: #{e}")
+        warn("Error creating metadatum record for recording with id #{rec.id}: #{e}")
       end
     end
 
-    Rails.logger.info("All existing recordings have been successfully linked to tenant #{tenant_id}")
+    puts("All existing recordings have been successfully linked to tenant #{tenant_id}")
   end
 end

@@ -2,6 +2,7 @@
 
 class PlaybackController < ApplicationController
   include CookieSameSiteCompat
+  include ApiHelper
 
   class RecordingNotFoundError < StandardError
   end
@@ -19,11 +20,15 @@ class PlaybackController < ApplicationController
   # in json or xml files that are protected by browser cross-site request mechanisms.)
   skip_forgery_protection only: [:resource]
 
+  before_action :set_tenant, if: -> { Rails.configuration.x.multitenancy_enabled }
+
   def play
     @playback_format = PlaybackFormat
                        .joins(:recording)
                        .find_by!(format: params[:playback_format], recordings: { record_id: params[:record_id] })
     @recording = @playback_format.recording
+
+    raise RecordingNotFoundError if @tenant.present? && @recording.metadata.find_by(key: "tenant-id", value: @tenant.id).blank?
 
     if @recording.protected
       # Consume the one-time-use token (return an error if missing/invalid)
@@ -42,6 +47,8 @@ class PlaybackController < ApplicationController
                        .joins(:recording)
                        .find_by!(format: params[:playback_format], recordings: { record_id: params[:record_id] })
     @recording = @playback_format.recording
+
+    raise RecordingNotFoundError if @tenant.present? && @recording.metadata.find_by(key: "tenant-id", value: @tenant.id).blank?
 
     verify_cookie if Rails.configuration.x.protected_recordings_enabled && @recording.protected
 
@@ -79,10 +86,12 @@ class PlaybackController < ApplicationController
       cookie,
       secret,
       true,
-      'sub' => resource_path,
-      required_claims: %w[sub exp],
-      verify_sub: true,
-      algorithm: 'HS256'
+      {
+        sub: resource_path,
+        required_claims: %w[sub exp],
+        verify_sub: true,
+        algorithm: 'HS256'
+      }
     )
   rescue JWT::DecodeError
     raise RecordingNotFoundError

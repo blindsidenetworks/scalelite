@@ -193,12 +193,14 @@ class BigBlueButtonApiController < ApplicationController
 
         logger.debug("Incrementing server #{server.id} load by 1")
         server.increment_load(1)
+
+        # Pass the generated moderatorPW only on new meeting create
+        params[:moderatorPW] = meeting.moderator_pw
       rescue ApplicationRedisRecord::RecordNotFound => e
         raise InternalError, e.message
       end
     end
 
-    params[:moderatorPW] = meeting.moderator_pw
     params[:voiceBridge] = meeting.voice_bridge
 
     if @tenant.present?
@@ -457,7 +459,8 @@ class BigBlueButtonApiController < ApplicationController
     query_params = { record_id: record_ids }
     query_params[:metadata] = { key: 'tenant-id', value: @tenant.id } if @tenant.present? # filter based on tenant
 
-    if Recording.includes(:metadata).where(query_params).blank?
+    # Check to make sure all recordings belong to the current tenant
+    if Recording.includes(:metadata).where(query_params).count != record_ids.count
       @updated = false
       return render(:update_recordings)
     end
@@ -552,10 +555,6 @@ class BigBlueButtonApiController < ApplicationController
   def pass_through_params(excluded_params)
     params.except(*(excluded_params + [:format, :controller, :action, :checksum]))
           .to_unsafe_hash
-  end
-
-  def set_tenant
-    @tenant = fetch_tenant
   end
 
   # Success response if there are no meetings on any servers

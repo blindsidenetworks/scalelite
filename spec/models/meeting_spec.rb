@@ -263,6 +263,20 @@ RSpec.describe Meeting, :redis do
           expect(meeting_hash['server_id']).to eq 'test-server-1'
         end
       end
+
+      it 'raises RecordNotFound when tenant does not match existing meeting' do
+        tenant = create(:tenant)
+        other_tenant = create(:tenant)
+
+        RedisStore.with_connection do |redis|
+          redis.hset('meeting:Demo Meeting', 'tenant_id', tenant.id)
+        end
+
+        server = Server.find('test-server-2')
+        expect {
+          described_class.find_or_create_with_server('Demo Meeting', server, 'mp', nil, other_tenant.id)
+        }.to raise_error(ApplicationRedisRecord::RecordNotFound)
+      end
     end
   end
 
