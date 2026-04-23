@@ -51,4 +51,26 @@ RSpec.describe 'servers tasks', type: :task do
       expect { task.invoke(verbose) }.to output(%r{url: https://example.com}).to_stdout
     end
   end
+
+  describe 'servers:update task' do
+    let(:task) { Rake::Task['servers:update'] }
+
+    it 'updates the tag when the fourth argument is non-empty' do
+      server = create(:server, tag: nil, load_multiplier: 1.0)
+      task.invoke(server.id, server.secret, '1.0', 'test-tag')
+      expect(Server.find(server.id).tag).to eq('test-tag')
+    end
+
+    it 'clears the tag when the fourth argument is an empty string' do
+      server = create(:server, tag: 'test-tag', load_multiplier: 1.0)
+      task.invoke(server.id, server.secret, '1.0', '')
+      expect(Server.find(server.id).tag).to be_nil
+    end
+
+    it 'keeps the existing tag when the fourth argument is omitted' do
+      server = create(:server, tag: 'test-tag', load_multiplier: 1.0)
+      task.invoke(server.id, server.secret, '1.0')
+      expect(Server.find(server.id).tag).to eq('test-tag')
+    end
+  end
 end
