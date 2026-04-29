@@ -25,11 +25,13 @@ require File.expand_path('../../lib/recordandplayback', __dir__)
 puts('Recording transferring to Scalelite starts')
 
 meeting_id = nil
+format = nil
 OptionParser.new do |opts|
   opts.on('-m', '--meeting-id MEETING_ID', 'Internal Meeting ID') do |v|
     meeting_id = v
   end
   opts.on('-f', '--format FORMAT', 'Recording Format') do |v|
+    format = v
   end
 end.parse!
 
@@ -47,6 +49,29 @@ work_dir = scalelite_props['work_dir'] || raise('Unable to determine work_dir fr
 spool_dir = scalelite_props['spool_dir'] || raise('Unable to determine spool_dir from scalelite.yml')
 extra_rsync_opts = scalelite_props['extra_rsync_opts'] || []
 delete_recording = scalelite_props['delete_recording']
+wait_for_all_formats = scalelite_props['wait_for_all_formats']
+
+if wait_for_all_formats
+  publish_scripts_dir = File.expand_path('../publish', __dir__)
+  active_formats = Dir.glob("#{publish_scripts_dir}/*.rb").map { |f| File.basename(f, '.rb') }
+
+  if active_formats.empty?
+    puts('Warning: No publish format scripts found in publish directory, proceeding with transfer')
+  else
+    puts("Active recording formats: #{active_formats.join(', ')}")
+    pending_formats = active_formats.reject do |fmt|
+      File.exist?("#{recording_dir}/status/published/#{meeting_id}-#{fmt}.done")
+    end
+
+    unless pending_formats.empty?
+      puts("Formats not yet published: #{pending_formats.join(', ')}")
+      puts("Skipping transfer - waiting for all formats to finish (triggered by format: #{format || 'unknown'})")
+      exit
+    end
+
+    puts('All recording formats are published, proceeding with transfer')
+  end
+end
 
 puts("Transferring recording for #{meeting_id} to Scalelite")
 format_dirs = []
