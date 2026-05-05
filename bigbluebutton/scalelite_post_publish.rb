@@ -40,6 +40,11 @@ unless meeting_id
   puts(msg) && raise(msg)
 end
 
+unless format
+  msg = 'Recording format was not provided'
+  puts(msg) && raise(msg)
+end
+
 props = Psych.load_file(File.join(__dir__, '../bigbluebutton.yml'))
 published_dir = props['published_dir'] || raise('Unable to determine published_dir from bigbluebutton.yml')
 recording_dir = props['recording_dir'] || raise('Unable to determine recording_dir from bigbluebutton.yml')
@@ -65,34 +70,44 @@ if wait_for_all_formats
 
     unless pending_formats.empty?
       puts("Formats not yet published: #{pending_formats.join(', ')}")
-      puts("Skipping transfer - waiting for all formats to finish (triggered by format: #{format || 'unknown'})")
+      puts("Skipping transfer - waiting for all formats to finish (triggered by format: #{format})")
       exit
     end
 
     puts('All recording formats are published, proceeding with transfer')
   end
+
+  puts("Transferring recording for #{meeting_id} to Scalelite")
+  tar_dirs = []
+  FileUtils.cd(published_dir) do
+    tar_dirs = Dir.glob("*/#{meeting_id}")
+  end
+  if tar_dirs.empty?
+    puts('No published recording formats found')
+    exit
+  end
+  tar_dirs.each do |fmt_dir|
+    puts("Found recording format: #{fmt_dir}")
+  end
+
+  archive_file = "#{work_dir}/#{meeting_id}.tar"
+else
+  puts("Transferring recording for #{meeting_id} (format: #{format}) to Scalelite")
+  format_dir = "#{format}/#{meeting_id}"
+  unless File.directory?("#{published_dir}/#{format_dir}")
+    puts("No published recording found at #{published_dir}/#{format_dir}")
+    exit
+  end
+
+  tar_dirs = [format_dir]
+  archive_file = "#{work_dir}/#{meeting_id}-#{format}.tar"
 end
 
-puts("Transferring recording for #{meeting_id} to Scalelite")
-format_dirs = []
-FileUtils.cd(published_dir) do
-  format_dirs = Dir.glob("*/#{meeting_id}")
-end
-if format_dirs.empty?
-  puts('No published recording formats found')
-  exit
-end
-
-format_dirs.each do |format_dir|
-  puts("Found recording format: #{format_dir}")
-end
-
-archive_file = "#{work_dir}/#{meeting_id}.tar"
 begin
   puts('Creating recording archive')
   FileUtils.mkdir_p(work_dir)
   FileUtils.cd(published_dir) do
-    system('tar', '--create', '--file', archive_file, *format_dirs) \
+    system('tar', '--create', '--file', archive_file, *tar_dirs) \
       || raise('Failed to create recording archive')
   end
 
