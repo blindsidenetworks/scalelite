@@ -69,9 +69,23 @@ RSpec.describe RecordingReadyNotifierService, type: :service do
       stub_request(:post, url)
         .to_return(status: 200, body: '', headers: {})
 
-      expect(JWT).to receive(:encode).with({ meeting_id: recording.meeting_id, record_id: recording.record_id }, tenant.secrets_array[0])
+      expect(JWT).to receive(:encode).with({ meeting_id: recording.meeting_id, record_id: recording.record_id }, tenant.secrets_array[0], anything)
 
       described_class.execute(recording.id)
+    end
+  end
+
+  describe '.jwt_algorithm' do
+    it 'returns HS256 with the default checksum algorithms configuration' do
+      allow(Rails.configuration.x).to receive(:loadbalancer_checksum_algorithms).and_return(%w[SHA1 SHA256 SHA512])
+
+      expect(described_class.jwt_algorithm).to eq('HS256')
+    end
+
+    it 'returns HS512 when only SHA512 is configured' do
+      allow(Rails.configuration.x).to receive(:loadbalancer_checksum_algorithms).and_return(%w[SHA512])
+
+      expect(described_class.jwt_algorithm).to eq('HS512')
     end
   end
 end
