@@ -23,7 +23,16 @@ class RecordingReadyNotifierService
 
     def encoded_payload(meeting_id, record_id, secret)
       payload = { meeting_id: meeting_id, record_id: record_id }
-      JWT.encode(payload, secret)
+      JWT.encode(payload, secret, jwt_algorithm)
+    end
+
+    def jwt_algorithm
+      algos = Rails.configuration.x.loadbalancer_checksum_algorithms
+
+      return 'HS256' if algos.include?('SHA256')
+      return 'HS512' if algos.include?('SHA512')
+
+      'HS256'
     end
 
     def notify(callback_url, meeting_id, record_id, tenant_name)
