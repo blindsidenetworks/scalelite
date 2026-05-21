@@ -59,6 +59,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `OVERRIDE_CREATE_PARAMS`: Sets a list of params on the create call that CANNOT be overridden by the client/requester. Should be in the format 'OVERRIDE_CREATE_PARAMS=param1=param1value,param2=param2value'
 * `DEFAULT_JOIN_PARAMS`: Sets a list of default params on the join call that CAN be overridden by the client/requester. Should be in the format 'DEFAULT_JOIN_PARAMS=param1=param1value,param2=param2value'
 * `OVERRIDE_JOIN_PARAMS`: Sets a list of  params on the create call that CANNOT be overridden by the client/requester. Should be in the format 'OVERRIDE_JOIN_PARAMS=param1=param1value,param2=param2value'
+* `DEFAULT_PRESENTATIONS`: Sets a list of default presentations on the create call. Will only trigger when a GET-request is used, otherwise the supplied body will be used. Should be in the format 'DEFAULT_PRESENTATIONS=http://presurl->presname.pdf,http://presurl2->presname2.pdf'
 * `GET_RECORDINGS_API_FILTERED`: Prevent get_recordings api from returning all recordings when recordID is not specified in the request, by setting value to 'true'. Defaults to false.
 * `PREPARED_STATEMENT`: Enable/Disable Active Record prepared statements feature, can be disabled by setting the value as `false`. Defaults to `true`.
 * `DB_CONNECTION_RETRY_COUNT`: The number of times db connection retries will be attempted, in case of a db connection failure. Defaults to `3`.
