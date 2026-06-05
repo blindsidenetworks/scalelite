@@ -152,7 +152,8 @@ GEM
       reline (>= 0.4.2)
     jmespath (1.6.2)
     json (2.10.2)
-    jwt (2.7.1)
+    jwt (3.2.0)
+      base64
     language_server-protocol (3.17.0.4)
     listen (3.9.0)
       rb-fsevent (~> 0.10, >= 0.10.3)
@@ -377,7 +378,7 @@ DEPENDENCIES
   factory_bot_rails
   faker
   fakeredis (~> 0.8)
-  jwt (~> 2.7.0)
+  jwt (~> 3.2.0)
   minitest
   minitest-stub_any_instance
   pg (~> 1.4.4)
