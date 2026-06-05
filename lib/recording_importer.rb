@@ -71,7 +71,15 @@ class RecordingImporter
               FileUtils.mv(directory, format_dir, force: true)
             end
           end
+        rescue ActiveRecord::StatementInvalid
+          # Let the connection-retry handler below deal with dropped DB connections
+          raise
+        rescue StandardError => e
+          # Isolate per-format failures
+          logger.warn("Skipping recording format from #{metadata_xml} due to import error: #{e.message}")
+          next
         end
+
         callback_data = CallbackData.find_by(meeting_id: recording.meeting_id)
         callback_data&.update(recording_id: recording.id)
       end
