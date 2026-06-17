@@ -2536,6 +2536,40 @@ RSpec.describe BigBlueButtonApiController, :redis do
       end
     end
 
+    context 'with S3 recording storage enabled' do
+      let(:s3_client) { Aws::S3::Client.new(stub_responses: true, region: 'us-east-1') }
+
+      before do
+        ENV['S3_RECORDING'] = 'true'
+        ENV['S3_BUCKET_NAME'] = 'test-bucket'
+        s3_client.stub_responses(:list_objects_v2, { contents: [{ key: 'published/presentation/test123/metadata.xml' }] })
+        allow(Aws::S3::Client).to receive(:new).and_return(s3_client)
+      end
+
+      after do
+        ENV.delete('S3_RECORDING')
+        ENV.delete('S3_BUCKET_NAME')
+      end
+
+      it 'deletes the recording objects from S3 and marks the recording deleted' do
+        r = create(:recording, record_id: 'test123')
+        create(:playback_format, recording: r, format: 'presentation')
+        params = encode_bbb_params('deleteRecordings', "recordID=#{r.record_id}")
+
+        expect(FileUtils).not_to receive(:rm_r)
+
+        get bigbluebutton_api_delete_recordings_url, params: params
+
+        expect(response).to be_successful
+        response_xml = Nokogiri::XML(response.body)
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('SUCCESS')
+
+        delete_requests = s3_client.api_requests.select { |req| req[:operation_name] == :delete_objects }
+        expect(delete_requests).not_to be_empty
+        expect(r.reload.state).to eq('deleted')
+      end
+    end
+
     context 'POST request' do
       it 'is not supported' do
         r = create(:recording)
