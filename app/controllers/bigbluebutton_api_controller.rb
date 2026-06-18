@@ -498,15 +498,30 @@ class BigBlueButtonApiController < ApplicationController
     query_params = { record_id: params[:recordID].split(',') }
     query_params[:metadata] = { key: 'tenant-id', value: @tenant.id } if @tenant.present? # filter based on tenant
 
-    query = Recording.includes(:metadata).where(query_params).load
+    query = Recording.includes(:metadata, :playback_formats).where(query_params).load
     raise BBBError.new('notFound', 'We could not find recordings') if query.none?
+
+    s3_client = Aws::S3::Client.new if ENV['S3_RECORDING']
 
     query.each do |rec|
       # Start transaction + lock record
       rec.with_lock do
         logger.debug("Deleting recording: #{rec.record_id}")
-        # TODO: check the unpublished dir when it is implemented
-        FileUtils.rm_r(Dir.glob(File.join(Rails.configuration.x.recording_publish_dir, '/*/', rec.record_id)))
+        if ENV['S3_RECORDING']
+          bucket = ENV.fetch('S3_BUCKET_NAME')
+          state = rec.published ? 'published' : 'unpublished'
+
+          rec.playback_formats.each do |playback_format|
+            prefix = "#{state}/#{playback_format.format}/#{rec.record_id}/"
+            objects = s3_client.list_objects_v2(bucket: bucket, prefix: prefix).contents
+            next if objects.empty?
+
+            s3_client.delete_objects(bucket: bucket, delete: { objects: objects.map { |o| { key: o.key } } })
+          end
+        else
+          # TODO: check the unpublished dir when it is implemented
+          FileUtils.rm_r(Dir.glob(File.join(Rails.configuration.x.recording_publish_dir, '/*/', rec.record_id)))
+        end
         rec.mark_delete!
       rescue StandardError => e
         logger.warn("Error #{e} deleting recording #{rec.record_id}")
