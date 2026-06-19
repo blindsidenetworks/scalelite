@@ -8,10 +8,12 @@ After=scalelite-api.service
 After=remote-fs.target
 [Service]
 EnvironmentFile=/etc/default/scalelite
+TimeoutStopSec=140
 ExecStartPre=-/usr/bin/docker kill scalelite-recording-importer
 ExecStartPre=-/usr/bin/docker rm scalelite-recording-importer
 ExecStartPre=/usr/bin/docker pull blindsidenetwks/scalelite:${SCALELITE_TAG}-recording-importer
-ExecStart=/usr/bin/docker run --log-opt max-size=10m --log-opt max-file=5 --name scalelite-recording-importer --env-file /etc/default/scalelite --network scalelite --mount type=bind,source=${SCALELITE_RECORDING_DIR},target=/var/bigbluebutton blindsidenetwks/scalelite:${SCALELITE_TAG}-recording-importer
+ExecStart=/usr/bin/docker run --log-opt max-size=10m --log-opt max-file=5 --stop-timeout=120 --name scalelite-recording-importer --env-file /etc/default/scalelite --network scalelite --mount type=bind,source=${SCALELITE_RECORDING_DIR},target=/var/bigbluebutton blindsidenetwks/scalelite:${SCALELITE_TAG}-recording-importer
+ExecStop=/usr/bin/docker stop scalelite-recording-importer
 ExecStartPost=/usr/bin/docker image prune -f
 [Install]
 WantedBy=scalelite.target
