@@ -66,7 +66,9 @@ namespace :servers do
       end
     end
     server.load_multiplier = tmp_load_multiplier
-    server.tag = args.tag.presence unless args.tag.nil?
+    # inspect the raw positional arguments to distinguish an omitted tag from an explicit untag
+    tag_arg = args.to_a[3]
+    server.tag = tag_arg.presence unless tag_arg.nil?
     server.save!
     puts('OK')
   rescue ApplicationRedisRecord::RecordNotFound

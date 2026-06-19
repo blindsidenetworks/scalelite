@@ -8,7 +8,7 @@ ruby '>= 3.3'
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 7.2'
 # Use Puma as the app server
-gem 'puma', '~> 6.4'
+gem 'puma', '~> 7.2'
 
 # Build JSON APIs with ease. Read more: https://github.com/rails/jbuilder
 # gem 'jbuilder', '~> 2.7'
@@ -32,7 +32,7 @@ gem 'bootsnap', '>= 1.16.0', require: false
 # Generates a terminal table
 gem 'tabulo', '~> 2.8.1'
 
-gem 'jwt', '~> 2.7.0'
+gem 'jwt', '~> 3.2.0'
 
 gem 'aws-sdk-cloudfront', '~> 1'
 gem 'aws-sdk-s3', '~> 1'

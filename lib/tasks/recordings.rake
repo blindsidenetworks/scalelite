@@ -10,18 +10,26 @@ namespace :recordings do
     # Setup AWS S3 Client if enabled (auto looks up the env variables it needs)
     client = Aws::S3::Client.new if ENV['S3_RECORDING']
 
+    # On SIGTERM/SIGINT only set a flag; the in-progress import is allowed to
+    # finish before the loop exits, so a running extraction is never interrupted.
+    shutdown = false
+    %w[TERM INT].each do |sig|
+      Signal.trap(sig) { shutdown = true }
+    end
+
     loop do
       Dir.glob("#{dir}/*.tar").each do |file|
+        break if shutdown
         Rails.logger.debug { "Found #{file}" }
         RecordingImporter.import(file, client)
       rescue StandardError => e
         Rails.logger.error("Failed to import recording: #{e}")
         sleep(args.latency.to_f)
       end
+      break if shutdown
       sleep(args.latency.to_f)
     end
-  rescue SignalException => e
-    Rails.logger.info("Exiting recording importer on signal: #{e}")
+    Rails.logger.info('Exiting recording importer gracefully')
   end
 
   desc 'Search through the recordings and move unpublished recordings to the correct folder'
