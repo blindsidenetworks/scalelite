@@ -171,6 +171,14 @@ class BigBlueButtonApiController < ApplicationController
       # Check if meeting is already running
       meeting = Meeting.find(params[:meetingID], @tenant&.id)
       server = meeting.server
+
+      # Handle edge case where stale meeting persists on cordoned server
+      if server.cordoned? && !meeting_running_on_server?(meeting)
+        logger.info("Meeting #{params[:meetingID]} no longer running on cordoned server #{server.id}; re-allocating.")
+        meeting.destroy!
+        raise ApplicationRedisRecord::RecordNotFound.new('stale meeting on cordoned server', 'Meeting', params[:meetingID])
+      end
+
       logger.debug("Found existing meeting #{params[:meetingID]} on BigBlueButton server #{server.id}.")
     rescue ApplicationRedisRecord::RecordNotFound
       begin
@@ -570,6 +578,16 @@ class BigBlueButtonApiController < ApplicationController
   def pass_through_params(excluded_params)
     params.except(*(excluded_params + [:format, :controller, :action, :checksum]))
           .to_unsafe_hash
+  end
+
+  def meeting_running_on_server?(meeting)
+    server = meeting.server
+    uri = encode_bbb_uri('isMeetingRunning', server.url, server.secret, 'meetingID' => meeting.id)
+    response = get_post_req(uri, **bbb_req_timeout(server))
+    response.at_xpath('/response/running')&.text == 'true'
+  rescue StandardError => e
+    logger.warn("Could not verify meeting #{meeting.id} on cordoned server #{server.id}: #{e}")
+    false
   end
 
   # Success response if there are no meetings on any servers
