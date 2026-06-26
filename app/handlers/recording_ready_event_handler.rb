@@ -22,6 +22,6 @@ class RecordingReadyEventHandler < EventHandler
     # meta_canvas-recording-ready, when meta_bn-recording-ready-url is not included.
     @callback_url = params['meta_bn-recording-ready-url']
     @callback_url ||= params['meta_bbb-recording-ready-url']
-    @callback_url || params['meta_canvas-recording-ready-url']
+    @callback_url ||= params['meta_canvas-recording-ready-url']
   end
 end
