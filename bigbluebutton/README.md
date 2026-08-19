@@ -58,6 +58,14 @@ You should do this at least once to make sure to accept the remote server's publ
 
 Finally (after switching back to root), set the `spool_dir` setting in `scalelite.yml` to the rsync destination, which will be formatted like `scalelite-recording.example.com:/path/to/spool`. It will automatically use the username and private key configured in the `~/.ssh/config` file.
 
+### Waiting for all recording formats
+
+By default, the transfer script runs after each recording format is published and immediately transfers the available formats to Scalelite. If you have multiple formats enabled (e.g. `presentation` and `video`), this means Scalelite may receive multiple separate archives for the same meeting.
+
+To instead wait until all active formats are published before transferring, set `wait_for_all_formats: true` in `scalelite.yml`. The script will then skip the transfer on intermediate format completions and only transfer once all formats are done.
+
+Active formats are detected automatically from the publish scripts in `/usr/local/bigbluebutton/core/scripts/publish/`.
+
 ### Other configurations
 
 If you need to customize the rsync command (for example, to pass the `--rsh` option to set up a tunnel), you can add extra rsync command line arguments via the `extra_rsync_opts` array in `scalelite.yml`.
