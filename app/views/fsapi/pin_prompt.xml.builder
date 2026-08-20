@@ -4,7 +4,7 @@ xml.document(type: 'freeswitch/xml') do
   xml.section(name: 'dialplan', description: 'Match DID and Pin for Conference') do
     xml.context(name: 'public') do
       xml.extension(name: 'match_did_and_prompt_for_pin') do
-        xml.condition(field: 'destination_number', expression: "^#{@caller_dest_num}$") do
+        xml.condition(field: 'destination_number', expression: "^#{fs_escape(Regexp.escape(@caller_dest_num))}$") do
           xml.action(application: 'answer')
           xml.action(application: 'sched_hangup', data: "+#{@allotted_timeout} normal_clearing") if @allotted_timeout.positive?
           xml.action(application: 'sleep', data: '500')
