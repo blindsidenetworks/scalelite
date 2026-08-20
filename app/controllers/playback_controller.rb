@@ -28,6 +28,7 @@ class PlaybackController < ApplicationController
                        .find_by!(format: params[:playback_format], recordings: { record_id: params[:record_id] })
     @recording = @playback_format.recording
 
+    raise RecordingNotFoundError unless @recording.published?
     raise RecordingNotFoundError if @tenant.present? && @recording.metadata.find_by(key: "tenant-id", value: @tenant.id).blank?
 
     if @recording.protected
@@ -48,6 +49,7 @@ class PlaybackController < ApplicationController
                        .find_by!(format: params[:playback_format], recordings: { record_id: params[:record_id] })
     @recording = @playback_format.recording
 
+    raise RecordingNotFoundError unless @recording.published?
     raise RecordingNotFoundError if @tenant.present? && @recording.metadata.find_by(key: "tenant-id", value: @tenant.id).blank?
 
     verify_cookie if Rails.configuration.x.protected_recordings_enabled && @recording.protected

@@ -91,6 +91,27 @@ RSpec.describe PlaybackController do
       end
     end
 
+    context 'with unpublished recording' do
+      let!(:recording) { create(:recording, :unpublished, published: false) }
+      let!(:playback_format) {
+        create(
+          :playback_format,
+          recording: recording,
+          format: 'presentation',
+          url: "/presentation/#{recording.record_id}/index.html"
+        )
+      }
+
+      it 'returns 404 and does not deliver or sign the resource' do
+        get "/presentation/#{recording.record_id}/index.html"
+
+        expect(response).to have_http_status :not_found
+        expect(response).to render_template 'errors/recording_not_found'
+        expect(response.has_header?('X-Accel-Redirect')).to be false
+        expect(response.cookies.keys).not_to include('CloudFront-Policy')
+      end
+    end
+
     context 'multitenancy' do
       let(:host_name) { 'api.rna1.blindside-dev.com' }
       let(:host) { "bn.#{host_name}" }
