@@ -10,6 +10,6 @@ module FsapiHelper
   # Reference the switch_string_var_check_const and switch_string_has_escaped_data functions in
   # freeswitch/src/include/switch_utils.h (the string unescaping will not run unless one of those functions returns TRUE).
   def fs_escape(val)
-    val.gsub(/(\\|\$\{)/, '\\\\\\1')
+    val.to_s.gsub(/(\\|\$\{)/, '\\\\\\1')
   end
 end
