@@ -115,6 +115,10 @@ module Scalelite
     # Scalelite Host name
     config.x.url_host = ENV.fetch('URL_HOST', nil)
 
+    # Analytics callback URL host (for HA deployments behind proxy)
+    # Falls back to URL_HOST if not set. Use for deployments where URL_HOST is internal.
+    config.x.analytics_callback_url_host = ENV.fetch('ANALYTICS_CALLBACK_URL_HOST', nil)
+
     # DB connection retry attempt counts
     config.x.db_connection_retry_count = ENV.fetch('DB_CONNECTION_RETRY_COUNT', '3').to_i
 
