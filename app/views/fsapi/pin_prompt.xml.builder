@@ -6,7 +6,7 @@ xml.document(type: 'freeswitch/xml') do
       xml.extension(name: 'match_did_and_prompt_for_pin') do
         xml.condition(field: 'destination_number', expression: "^#{fs_escape(Regexp.escape(@caller_dest_num))}$") do
           xml.action(application: 'answer')
-          xml.action(application: 'sched_hangup', data: "+#{@allotted_timeout} normal_clearing") if @allotted_timeout.positive?
+          xml.action(application: 'sched_hangup', data: fs_escape("+#{@allotted_timeout} normal_clearing")) if @allotted_timeout.positive?
           xml.action(application: 'sleep', data: '500')
           xml.action(application: 'playback', data: 'ivr/ivr-welcome.wav')
           xml.action(application: 'sleep', data: '200')
