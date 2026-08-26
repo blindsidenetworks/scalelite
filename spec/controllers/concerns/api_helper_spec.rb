@@ -112,6 +112,17 @@ RSpec.describe ApiHelper, type: :helper do
           }.to raise_error(BBBErrors::ChecksumError)
         end
       end
+
+      context 'with an overridden request method' do
+        let(:checksum_algo) { 'SHA256' }
+
+        it 'throws an error even when the checksum is valid' do
+          allow(request).to receive_messages(method: 'POST', request_method: 'GET')
+          expect {
+            verify_checksum
+          }.to raise_error(BBBErrors::ChecksumError)
+        end
+      end
     end
   end
 

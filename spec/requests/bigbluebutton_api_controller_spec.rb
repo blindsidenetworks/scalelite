@@ -1484,6 +1484,17 @@ RSpec.describe BigBlueButtonApiController, :redis do
       end
     end
 
+    context 'HTTP method override' do
+      it 'does not treat a POST with _method=GET as a join' do
+        meeting = create(:meeting, server: server)
+
+        post bigbluebutton_api_join_url(meetingID: meeting.id, fullName: 'Test'),
+             params: { _method: 'GET', role: 'MODERATOR' }
+
+        expect(response).not_to have_http_status(:redirect)
+      end
+    end
+
     context 'multitenancy' do
       let(:host_name) { 'api.rna1.blindside-dev.com' }
       let(:host) { "bn.#{host_name}" }
