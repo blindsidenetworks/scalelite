@@ -11,7 +11,9 @@ class AnalyticsCallbackEventHandler < EventHandler
   def handle
     return if analytics_callback_url.nil?
 
-    host_name = Rails.configuration.x.url_host
+    # Use ANALYTICS_CALLBACK_URL_HOST if set (for HA/proxy deployments)
+    # Otherwise fall back to URL_HOST (for direct deployments)
+    host_name = Rails.configuration.x.analytics_callback_url_host || Rails.configuration.x.url_host
 
     params['meta_analytics-callback-url'] = if tenant.present?
       "https://#{tenant.name}.#{host_name}/bigbluebutton/api/analytics_callback"
