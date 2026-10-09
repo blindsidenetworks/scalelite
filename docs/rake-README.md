@@ -99,11 +99,23 @@ Note that the server won't be used for new meetings until after the next time th
 
 ```sh
 ./bin/rake servers:panic[id]
+./bin/rake servers:panic[id,keep_state,skip_end_calls]
 ```
 
 Disable a server and clear all meeting state.
 This method is used to recover from a crashed BigBlueButton server.
 After the meeting state is cleared, anyone who tries to join a meeting that was previously on this server will instead be directed to a new meeting on a different server.
+
+The task accepts two optional parameters:
+
+- `keep_state` (default `false`): By default the server is marked as `disabled` after it is panicked. Set to `true` to leave the server's state unchanged (for example, to keep it `cordoned` or `enabled`) while still clearing its meetings.
+- `skip_end_calls` (default `false`): By default an `end` API call is sent to the BigBlueButton server for each cleared meeting. Set to `true` to skip these calls and only clear the meeting state in Scalelite. This is useful when the server is unreachable (e.g. crashed), so the task does not wait on `end` calls that would fail.
+
+For example, to clear the meetings from a server without changing its state and without attempting to contact the (unreachable) server:
+
+```sh
+./bin/rake servers:panic[id,true,true]
+```
 
 ### Cordon a server
 

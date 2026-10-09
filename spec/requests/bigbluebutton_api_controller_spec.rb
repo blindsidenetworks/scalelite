@@ -538,6 +538,43 @@ RSpec.describe BigBlueButtonApiController, :redis do
         expect(new_server.load).to eq(1)
       end
 
+      context 'when the meeting is pinned to a cordoned server' do
+        let!(:cordoned_server) do
+          s = create(:server)
+          s.state = 'cordoned'
+          s.save!
+          s
+        end
+
+        it 're-allocates to an available server when the meeting is no longer running there' do
+          Meeting.find_or_create_with_server!('test-meeting-1', cordoned_server, 'mp')
+
+          stub_request(:get, /#{Regexp.escape(cordoned_server.url)}isMeetingRunning/)
+            .to_return(body: '<response><returncode>SUCCESS</returncode><running>false</running></response>')
+          stub_create = stub_request(:get, /#{Regexp.escape(server.url)}create/)
+                        .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID></response>')
+
+          get bigbluebutton_api_create_url, params: { meetingID: 'test-meeting-1', moderatorPW: 'mp', voiceBridge: '1234567' }
+
+          expect(stub_create).to have_been_requested
+          expect(Meeting.find('test-meeting-1').server.id).to eq(server.id)
+        end
+
+        it 'keeps the meeting on the cordoned server when it is still running there' do
+          Meeting.find_or_create_with_server!('test-meeting-1', cordoned_server, 'mp')
+
+          stub_request(:get, /#{Regexp.escape(cordoned_server.url)}isMeetingRunning/)
+            .to_return(body: '<response><returncode>SUCCESS</returncode><running>true</running></response>')
+          stub_create = stub_request(:get, /#{Regexp.escape(cordoned_server.url)}create/)
+                        .to_return(body: '<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID></response>')
+
+          get bigbluebutton_api_create_url, params: { meetingID: 'test-meeting-1', moderatorPW: 'mp', voiceBridge: '1234567' }
+
+          expect(stub_create).to have_been_requested
+          expect(Meeting.find('test-meeting-1').server.id).to eq(cordoned_server.id)
+        end
+      end
+
       it "returns an appropriate error on timeout" do
         params = { meetingID: "test-meeting-1", moderatorPW: "mp", voiceBridge: "1234567" }
 
@@ -1444,6 +1481,17 @@ RSpec.describe BigBlueButtonApiController, :redis do
         expect(response_xml.at_xpath("/response/returncode").text).to(eq("FAILED"))
         expect(response_xml.at_xpath("/response/messageKey").text).to(eq(expected_error.message_key))
         expect(response_xml.at_xpath("/response/message").text).to(eq(expected_error.message))
+      end
+    end
+
+    context 'HTTP method override' do
+      it 'does not treat a POST with _method=GET as a join' do
+        meeting = create(:meeting, server: server)
+
+        post bigbluebutton_api_join_url(meetingID: meeting.id, fullName: 'Test'),
+             params: { _method: 'GET', role: 'MODERATOR' }
+
+        expect(response).not_to have_http_status(:redirect)
       end
     end
 

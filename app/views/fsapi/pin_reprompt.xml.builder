@@ -4,7 +4,7 @@ xml.document(type: 'freeswitch/xml') do
   xml.section(name: 'dialplan', description: 'Reprompt Pin for Conference') do
     xml.context(name: 'public') do
       xml.extension(name: 'reprompt_for_pin') do
-        xml.condition(field: 'destination_number', expression: "^#{@caller_dest_num}$") do
+        xml.condition(field: 'destination_number', expression: "^#{fs_escape(Regexp.escape(@caller_dest_num))}$") do
           xml.action(application: 'playback', data: 'conference/conf-bad-pin.wav')
           xml.action(application: 'sleep', data: '500')
           xml.action(

@@ -311,4 +311,25 @@ RSpec.describe FsapiController do
       expect(action_element).to be_empty
     end
   end
+
+  context 'malicious caller-id name' do
+    it 'escapes the ${...} substitution in the generated bridge dialplan' do
+      allow_any_instance_of(described_class).to receive(:authenticate).and_return(true)
+      server = Server.create(url: 'https://test-1.example.com/bigbluebutton/api/', secret: 'secret', enabled: true, load: 0)
+      meeting = Meeting.find_or_create_with_server('Demo Meeting', server, 'mp')
+
+      post fsapi_url, params: {
+        section: 'dialplan',
+        variable_pin: meeting.voice_bridge,
+        'Caller-Destination-Number': '5551234',
+        'Caller-Caller-ID-Name': '${system(id>/tmp/RCE)}',
+      }
+
+      expect(response).to have_http_status(:success)
+      data = Nokogiri::XML(response.body)
+                     .at('action[application="set"][data^="effective_caller_id_name="]')['data']
+      expect(data).to include('effective_caller_id_name=')
+      expect(data).not_to match(/(?<!\\)\$\{/)
+    end
+  end
 end

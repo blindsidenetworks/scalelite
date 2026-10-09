@@ -18,6 +18,9 @@ module ApiHelper
   # @param [boolean] force_loadbalancer_secret. Set true for API endpoints (such as the tenants API)
   #     which should be accessed only by superadmins.
   def verify_checksum(force_loadbalancer_secret = false)
+    # Reject if request method was overwritten
+    raise ChecksumError if request.method != request.request_method
+
     secrets = fetch_secrets(force_loadbalancer_secret: force_loadbalancer_secret)
     raise ChecksumError if secrets.empty?
 

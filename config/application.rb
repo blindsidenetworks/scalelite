@@ -31,6 +31,9 @@ module Scalelite
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[tasks])
 
+    # Remove HTTP method override to prevent request method from being overridden
+    config.middleware.delete Rack::MethodOverride
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files
