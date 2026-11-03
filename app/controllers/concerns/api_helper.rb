@@ -31,7 +31,7 @@ module ApiHelper
     allowed_checksum_algorithms = Rails.configuration.x.loadbalancer_checksum_algorithms
     raise ChecksumError unless allowed_checksum_algorithms.include?(algorithm)
 
-    check_string = action_name.camelcase(:lower) + query_string_remove_checksum(checksum)
+    check_string = action_name.camelcase(:lower) + query_string_remove_checksum
     return true if secrets.any? do |secret|
       ActiveSupport::SecurityUtils.secure_compare(get_checksum(check_string + secret, algorithm), checksum)
     end
@@ -48,9 +48,13 @@ module ApiHelper
 
   # Remove the checksum from the request query string. This is done as string manipulation, rather than decoding then re-encoding the parameters,
   # since there's multiple possible valid encodings for query parameters, and the one used by Ruby might not match.
-  def query_string_remove_checksum(checksum)
-    checksum = Regexp.escape(checksum)
-    request.query_string.gsub(/&checksum=#{checksum}|checksum=#{checksum}&|checksum=#{checksum}/, '')
+  # Only a whole checksum parameter is removed, and more than one is rejected (POST requests may send it in the body instead).
+  def query_string_remove_checksum
+    segments = request.query_string.split('&', -1)
+    checksum_segments = segments.select { |segment| segment.start_with?('checksum=') }
+    raise ChecksumError if checksum_segments.length > 1
+
+    (segments - checksum_segments).join('&')
   end
 
   def guess_checksum_digest_algorithm(checksum)
