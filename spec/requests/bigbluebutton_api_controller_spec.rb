@@ -236,6 +236,19 @@ RSpec.describe BigBlueButtonApiController, :redis do
 
   describe '#get_meeting_info' do
     context 'GET request' do
+      # An array meetingID must not match a meeting stored under its string form
+      it 'responds with MissingMeetingIDError for an array shaped meetingID' do
+        create(:meeting, id: '["victim-room"]', server: server)
+
+        get bigbluebutton_api_get_meeting_info_url, params: { meetingID: ['victim-room'] }
+
+        response_xml = Nokogiri::XML(response.body)
+        expected_error = BBBErrors::MissingMeetingIDError.new
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq(expected_error.message_key)
+        expect(a_request(:get, /getMeetingInfo/)).not_to have_been_made
+      end
+
       it 'responds with the correct meeting info for a get request' do
         meeting = create(:meeting, server: server)
 
@@ -837,6 +850,18 @@ RSpec.describe BigBlueButtonApiController, :redis do
         expected_error = BBBErrors::ChecksumError.new
         expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
         expect(response_xml.at_xpath('/response/messageKey').text).to eq(expected_error.message_key)
+      end
+
+      it 'does not forward array shaped params to the backend' do
+        params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "123" }
+
+        stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, params))
+                      .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                                        <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+        get bigbluebutton_api_create_url, params: params.merge(role: ['MODERATOR'])
+
+        expect(stub_create).to have_been_requested
       end
 
       it 'creates a record in callback_data if params["meta_analytics-callback-url"] is present in request' do

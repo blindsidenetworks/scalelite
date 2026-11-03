@@ -39,6 +39,11 @@ module ApiHelper
     raise ChecksumError
   end
 
+  # BigBlueButton API parameters are plain strings; drop array or hash shaped ones
+  def remove_non_scalar_params
+    params.delete_if { |_key, value| value.is_a?(Array) || value.is_a?(ActionController::Parameters) }
+  end
+
   # Lowercase meta_ params like BigBlueButton does, and reject duplicates
   def normalize_meta_params
     meta_keys = params.keys.grep(/\Ameta_/i)
