@@ -39,6 +39,13 @@ module ApiHelper
     raise ChecksumError
   end
 
+  # Lowercase meta_ params like BigBlueButton does, and reject duplicates
+  def normalize_meta_params
+    meta_keys = params.keys.grep(/\Ameta_/i)
+    meta_keys.each { |key| params[key.downcase] = params.delete(key) unless key == key.downcase }
+    raise ChecksumError if params.keys.grep(/\Ameta_/i).size < meta_keys.size
+  end
+
   # Remove the checksum from the request query string. This is done as string manipulation, rather than decoding then re-encoding the parameters,
   # since there's multiple possible valid encodings for query parameters, and the one used by Ruby might not match.
   def query_string_remove_checksum(checksum)

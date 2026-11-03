@@ -807,6 +807,38 @@ RSpec.describe BigBlueButtonApiController, :redis do
         expect(callback_data.callback_attributes).to eq({ recording_ready_url: params['meta_bn-recording-ready-url'] })
       end
 
+      # Mixed-case meta_ params must not bypass Scalelite's checks
+      it 'intercepts a mixed-case meta_ recording-ready url instead of forwarding it' do
+        params = {
+          meetingID: "test-meeting-1",
+          moderatorPW: "test-password",
+          voiceBridge: "123",
+          "meta_BN-Recording-Ready-Url" => "https://test-1.example.com/bigbluebutton/api/"
+        }
+        stub_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "123" }
+
+        stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, stub_params))
+                      .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                                        <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+        get bigbluebutton_api_create_url, params: params
+
+        expect(stub_create).to have_been_requested
+        callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
+        expect(callback_data.callback_attributes).to eq({ recording_ready_url: params['meta_BN-Recording-Ready-Url'] })
+      end
+
+      it 'rejects a request with meta_ names that differ only by case' do
+        params = { meetingID: "test-meeting-1", "meta_tenant-id" => "a", "meta_Tenant-Id" => "b" }
+
+        get bigbluebutton_api_create_url, params: params
+
+        response_xml = Nokogiri::XML(response.body)
+        expected_error = BBBErrors::ChecksumError.new
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq(expected_error.message_key)
+      end
+
       it 'creates a record in callback_data if params["meta_analytics-callback-url"] is present in request' do
         params = {
           meetingID: "test-meeting-66",

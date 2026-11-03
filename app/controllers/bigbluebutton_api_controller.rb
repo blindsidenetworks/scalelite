@@ -18,6 +18,8 @@ class BigBlueButtonApiController < ApplicationController
   before_action :set_tenant, except: [:index, :get_recordings_disabled, :recordings_disabled, :get_meetings_disabled],
                 if: -> { Rails.configuration.x.multitenancy_enabled }
 
+  before_action :normalize_meta_params
+
   def index
     # Return the scalelite build number if passed as an env variable
     build_number = Rails.configuration.x.build_number
