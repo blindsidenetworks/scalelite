@@ -20,6 +20,8 @@ module ApiHelper
   def verify_checksum(force_loadbalancer_secret = false)
     # Reject if request method was overwritten
     raise ChecksumError if request.method != request.request_method
+    # Reject body parameters on non-POST requests, since the checksum does not cover them
+    raise ChecksumError if !request.post? && request.request_parameters.present?
 
     secrets = fetch_secrets(force_loadbalancer_secret: force_loadbalancer_secret)
     raise ChecksumError if secrets.empty?

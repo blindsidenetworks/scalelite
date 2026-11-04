@@ -1390,6 +1390,26 @@ RSpec.describe BigBlueButtonApiController, :redis do
         expect(response).to redirect_to(encode_bbb_uri("join", server.url, server.secret, params).to_s)
       end
 
+      # Parameters in a GET body are not covered by the checksum and must not be forwarded
+      it "responds with ChecksumError if a get request has parameters in its body" do
+        allow_any_instance_of(described_class).to receive(:verify_checksum).and_call_original
+        allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['test-1'])
+        meeting = create(:meeting, server: server)
+        signed = URI.encode_www_form(meetingID: meeting.id, fullName: "test-name", role: "VIEWER")
+        query = "#{signed}&checksum=#{Digest::SHA256.hexdigest("join#{signed}test-1")}"
+        body = "existingUserID=w_moderator"
+
+        get "#{bigbluebutton_api_join_url}?#{query}", env: {
+          'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+          'CONTENT_LENGTH' => body.bytesize.to_s,
+          'rack.input' => StringIO.new(body),
+        }
+
+        response_xml = Nokogiri::XML(response.body)
+        expect(response).not_to have_http_status(:redirect)
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq(BBBErrors::ChecksumError.new.message_key)
+      end
+
       it "increments the server load by the value of load_multiplier" do
         server.load_multiplier = 7.0
         server.save!
