@@ -16,3 +16,10 @@ extra_rsync_opts: []
 # If recordings should be deleted locally immediately after they are
 # transferred to the spool directory. Defaults to false.
 delete_recording: false
+
+# If true, the transfer to Scalelite will only start once all active recording
+# formats for a meeting have been published. Active formats are determined by
+# the publish scripts in /usr/local/bigbluebutton/core/scripts/publish/.
+# Useful when multiple formats (e.g. presentation, video) are enabled and you
+# want a single archive containing all formats. Defaults to false.
+wait_for_all_formats: false
