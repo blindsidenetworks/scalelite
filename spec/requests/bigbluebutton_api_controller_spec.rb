@@ -236,6 +236,19 @@ RSpec.describe BigBlueButtonApiController, :redis do
 
   describe '#get_meeting_info' do
     context 'GET request' do
+      # An array meetingID must not match a meeting stored under its string form
+      it 'responds with MissingMeetingIDError for an array shaped meetingID' do
+        create(:meeting, id: '["victim-room"]', server: server)
+
+        get bigbluebutton_api_get_meeting_info_url, params: { meetingID: ['victim-room'] }
+
+        response_xml = Nokogiri::XML(response.body)
+        expected_error = BBBErrors::MissingMeetingIDError.new
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq(expected_error.message_key)
+        expect(a_request(:get, /getMeetingInfo/)).not_to have_been_made
+      end
+
       it 'responds with the correct meeting info for a get request' do
         meeting = create(:meeting, server: server)
 
@@ -807,6 +820,50 @@ RSpec.describe BigBlueButtonApiController, :redis do
         expect(callback_data.callback_attributes).to eq({ recording_ready_url: params['meta_bn-recording-ready-url'] })
       end
 
+      # Mixed-case meta_ params must not bypass Scalelite's checks
+      it 'intercepts a mixed-case meta_ recording-ready url instead of forwarding it' do
+        params = {
+          meetingID: "test-meeting-1",
+          moderatorPW: "test-password",
+          voiceBridge: "123",
+          "meta_BN-Recording-Ready-Url" => "https://test-1.example.com/bigbluebutton/api/"
+        }
+        stub_params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "123" }
+
+        stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, stub_params))
+                      .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                                        <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+        get bigbluebutton_api_create_url, params: params
+
+        expect(stub_create).to have_been_requested
+        callback_data = CallbackData.find_by(meeting_id: params[:meetingID])
+        expect(callback_data.callback_attributes).to eq({ recording_ready_url: params['meta_BN-Recording-Ready-Url'] })
+      end
+
+      it 'rejects a request with meta_ names that differ only by case' do
+        params = { meetingID: "test-meeting-1", "meta_tenant-id" => "a", "meta_Tenant-Id" => "b" }
+
+        get bigbluebutton_api_create_url, params: params
+
+        response_xml = Nokogiri::XML(response.body)
+        expected_error = BBBErrors::ChecksumError.new
+        expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq(expected_error.message_key)
+      end
+
+      it 'does not forward array shaped params to the backend' do
+        params = { meetingID: "test-meeting-1", moderatorPW: "test-password", voiceBridge: "123" }
+
+        stub_create = stub_request(:get, encode_bbb_uri("create", server.url, server.secret, params))
+                      .to_return(body: "<response><returncode>SUCCESS</returncode><meetingID>test-meeting-1</meetingID>
+                                        <attendeePW>ap</attendeePW><moderatorPW>mp</moderatorPW><messageKey/><message/></response>")
+
+        get bigbluebutton_api_create_url, params: params.merge(role: ['MODERATOR'])
+
+        expect(stub_create).to have_been_requested
+      end
+
       it 'creates a record in callback_data if params["meta_analytics-callback-url"] is present in request' do
         params = {
           meetingID: "test-meeting-66",
@@ -1331,6 +1388,26 @@ RSpec.describe BigBlueButtonApiController, :redis do
 
         get bigbluebutton_api_join_url, params: params
         expect(response).to redirect_to(encode_bbb_uri("join", server.url, server.secret, params).to_s)
+      end
+
+      # Parameters in a GET body are not covered by the checksum and must not be forwarded
+      it "responds with ChecksumError if a get request has parameters in its body" do
+        allow_any_instance_of(described_class).to receive(:verify_checksum).and_call_original
+        allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['test-1'])
+        meeting = create(:meeting, server: server)
+        signed = URI.encode_www_form(meetingID: meeting.id, fullName: "test-name", role: "VIEWER")
+        query = "#{signed}&checksum=#{Digest::SHA256.hexdigest("join#{signed}test-1")}"
+        body = "existingUserID=w_moderator"
+
+        get "#{bigbluebutton_api_join_url}?#{query}", env: {
+          'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
+          'CONTENT_LENGTH' => body.bytesize.to_s,
+          'rack.input' => StringIO.new(body),
+        }
+
+        response_xml = Nokogiri::XML(response.body)
+        expect(response).not_to have_http_status(:redirect)
+        expect(response_xml.at_xpath('/response/messageKey').text).to eq(BBBErrors::ChecksumError.new.message_key)
       end
 
       it "increments the server load by the value of load_multiplier" do

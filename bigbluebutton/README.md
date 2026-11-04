@@ -9,6 +9,22 @@ On each BigBlueButton server, install the following files to the listed paths:
 * `scalelite_post_publish.rb`: install to the directory `/usr/local/bigbluebutton/core/scripts/post_publish`
 * `scalelite.yml`: install to the directory `/usr/local/bigbluebutton/core/scripts`
 
+### Disable recording playback on BigBlueButton
+
+Recordings are served by Scalelite, so the BigBlueButton server should not serve its own copies of them.
+If it does, recordings that are protected, unpublished, or deleted in Scalelite remain publicly readable from the BigBlueButton server.
+
+Disable the BigBlueButton recording playback configuration with `dpkg-divert`, so that package upgrades do not re-enable it:
+
+```sh
+for f in notes-playback podcast presentation presentation-legacy recording-screenshare slides playback-video playback; do
+  dpkg-divert --add --rename /usr/share/bigbluebutton/nginx/$f.nginx
+done
+nginx -t && systemctl reload nginx
+```
+
+It is safe to run this even if some of these playback formats are not installed.
+
 ## Configuration
 
 The file `scalelite.yml` contains configuration for the transfer script.

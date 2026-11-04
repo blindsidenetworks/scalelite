@@ -20,6 +20,8 @@ module ApiHelper
   def verify_checksum(force_loadbalancer_secret = false)
     # Reject if request method was overwritten
     raise ChecksumError if request.method != request.request_method
+    # Reject body parameters on non-POST requests, since the checksum does not cover them
+    raise ChecksumError if !request.post? && request.request_parameters.present?
 
     secrets = fetch_secrets(force_loadbalancer_secret: force_loadbalancer_secret)
     raise ChecksumError if secrets.empty?
@@ -31,7 +33,7 @@ module ApiHelper
     allowed_checksum_algorithms = Rails.configuration.x.loadbalancer_checksum_algorithms
     raise ChecksumError unless allowed_checksum_algorithms.include?(algorithm)
 
-    check_string = action_name.camelcase(:lower) + query_string_remove_checksum(checksum)
+    check_string = action_name.camelcase(:lower) + query_string_remove_checksum
     return true if secrets.any? do |secret|
       ActiveSupport::SecurityUtils.secure_compare(get_checksum(check_string + secret, algorithm), checksum)
     end
@@ -39,11 +41,27 @@ module ApiHelper
     raise ChecksumError
   end
 
+  # BigBlueButton API parameters are plain strings; drop array or hash shaped ones
+  def remove_non_scalar_params
+    params.delete_if { |_key, value| value.is_a?(Array) || value.is_a?(ActionController::Parameters) }
+  end
+
+  # Lowercase meta_ params like BigBlueButton does, and reject duplicates
+  def normalize_meta_params
+    meta_keys = params.keys.grep(/\Ameta_/i)
+    meta_keys.each { |key| params[key.downcase] = params.delete(key) unless key == key.downcase }
+    raise ChecksumError if params.keys.grep(/\Ameta_/i).size < meta_keys.size
+  end
+
   # Remove the checksum from the request query string. This is done as string manipulation, rather than decoding then re-encoding the parameters,
   # since there's multiple possible valid encodings for query parameters, and the one used by Ruby might not match.
-  def query_string_remove_checksum(checksum)
-    checksum = Regexp.escape(checksum)
-    request.query_string.gsub(/&checksum=#{checksum}|checksum=#{checksum}&|checksum=#{checksum}/, '')
+  # Only a whole checksum parameter is removed, and more than one is rejected (POST requests may send it in the body instead).
+  def query_string_remove_checksum
+    segments = request.query_string.split('&', -1)
+    checksum_segments = segments.select { |segment| segment.start_with?('checksum=') }
+    raise ChecksumError if checksum_segments.length > 1
+
+    (segments - checksum_segments).join('&')
   end
 
   def guess_checksum_digest_algorithm(checksum)

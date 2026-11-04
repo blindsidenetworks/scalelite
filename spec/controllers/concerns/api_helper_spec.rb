@@ -63,7 +63,8 @@ RSpec.describe ApiHelper, type: :helper do
 
     before do
       controller.action_name = action_name
-      allow(request).to receive_messages(query_string: query_string, request_method_symbol: method)
+      raw_query_string = hash.present? ? "#{query_string}&checksum=#{hash}" : query_string
+      allow(request).to receive_messages(query_string: raw_query_string, request_method_symbol: method)
       Rails.configuration.x.loadbalancer_secrets = [secret]
       if hash.present?
         case method
@@ -118,6 +119,37 @@ RSpec.describe ApiHelper, type: :helper do
 
         it 'throws an error even when the checksum is valid' do
           allow(request).to receive_messages(method: 'POST', request_method: 'GET')
+          expect {
+            verify_checksum
+          }.to raise_error(BBBErrors::ChecksumError)
+        end
+      end
+
+      context 'with the checksum parameter first' do
+        let(:checksum_algo) { 'SHA256' }
+
+        it 'verifies checksum' do
+          allow(request).to receive(:query_string).and_return("checksum=#{hash}&#{query_string}")
+          expect(verify_checksum).to be true
+        end
+      end
+
+      context 'with more than one checksum parameter' do
+        let(:checksum_algo) { 'SHA256' }
+
+        it 'throws an error' do
+          allow(request).to receive(:query_string).and_return("#{query_string}&checksum=#{hash}&checksum=#{hash}")
+          expect {
+            verify_checksum
+          }.to raise_error(BBBErrors::ChecksumError)
+        end
+      end
+
+      context 'with checksum text inside another parameter' do
+        let(:checksum_algo) { 'SHA256' }
+
+        it 'throws an error even when the checksum is valid' do
+          allow(request).to receive(:query_string).and_return("query&checksum=#{hash}string&checksum=#{hash}")
           expect {
             verify_checksum
           }.to raise_error(BBBErrors::ChecksumError)
