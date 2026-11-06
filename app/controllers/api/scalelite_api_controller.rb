@@ -7,7 +7,11 @@ module Api
     skip_before_action :verify_authenticity_token
 
     before_action :verify_content_type
-    before_action -> { verify_checksum(true) }
+    before_action :verify_loadbalancer_checksum
+
+    def verify_loadbalancer_checksum
+      verify_checksum(true)
+    end
 
     def verify_content_type
       return unless request.post? && request.content_length.positive?

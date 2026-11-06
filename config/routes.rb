@@ -46,6 +46,8 @@ Rails.application.routes.draw do
     post '/updateServer', to: 'servers#update_server', as: :update_server
     post '/deleteServer', to: 'servers#delete_server', as: :delete_server
     post '/panicServer', to: 'servers#panic_server', as: :panic_server
+
+    post '/expiredRecording', to: 'recordings#expired_recording', as: :expired_recording
   end
 
   get('health_check', to: 'health_check#index')
