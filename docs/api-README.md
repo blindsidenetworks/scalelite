@@ -1,6 +1,6 @@
 # Scalelite Management Using APIs
 
-Scalelite comes with an API that allows for the management of tenants and servers.
+Scalelite comes with an API that allows for the management of tenants and servers, and for marking recordings whose storage has expired.
 
 ## Servers API
 
@@ -367,3 +367,48 @@ curl --header "Content-Type: application/json" --request POST  --data '{"id":"<t
 ```
 
 Warning: Removing a tenant with data still in the database may cause some inconsistencies.
+
+## Recordings API
+
+### Expired Recording
+```sh
+POST /scalelite/api/expiredRecording
+```
+
+Marks a recording as deleted after its files have been removed from storage, for example by a storage
+lifecycle (retention) rule. Its metadata and playback formats are removed, so it is no longer returned by
+`getRecordings`. The recording files themselves are not touched.
+
+This endpoint does not use the `checksum` parameter. It is authenticated with the shared secret set in
+`RECORDING_EXPIRED_SECRET` (see `docs/configuration-README.md`), sent as a bearer token. If
+`RECORDING_EXPIRED_SECRET` is not set, every request is refused.
+
+#### Required Headers
+```
+Authorization: Bearer <RECORDING_EXPIRED_SECRET>
+Content-Type: application/json
+```
+
+#### Expected Parameters
+```
+{
+  "id": String                     # Required: record ID of the recording
+}
+```
+
+#### Responses
+
+| Status                    | Body                   | Meaning                                                   |
+| ------------------------- | ---------------------- | --------------------------------------------------------- |
+| 200 OK                    | `{ "success": String }` | Recording marked as deleted, or it was already deleted    |
+| 400 Bad Request           | `{ "error": String }`   | `id` missing, empty, or not a string                      |
+| 401 Unauthorized          | `{ "error": String }`   | Secret missing or wrong, or `RECORDING_EXPIRED_SECRET` unset |
+| 404 Not Found             | `{ "error": String }`   | No recording with that `id`                               |
+| 415 Unsupported Media Type | `{ "error": String }`  | Request body is not JSON                                  |
+| 500 Internal Server Error | `{ "error": String }`   | Unexpected error; safe to retry                           |
+
+#### Example cURL
+
+```bash
+curl --header "Content-Type: application/json" --header "Authorization: Bearer <recording-expired-secret>" --request POST --data '{"id":"<record-id>"}' 'https://scalelite-hostname.com/scalelite/api/expiredRecording'
+```

@@ -75,6 +75,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `USE_EXTERNAL_VOICE_BRIDGE`: Whether or not to try to use the `voiceBridge` number passed by the BigBlueButton API client. Defaults to `false`. If your API client generates numbers compatible with your BigBlueButton configuration, you can change this to `true` to use them. Note that Scalelite will ignore the voice bridge number provided, and generate a new one, if the number is already in use by a different meeting.
 * `FSAPI_PASSWORD`: Password (for "Basic" authentication) to access the freeswitch dialplan API. Default is to use the first `LOADBALANCER_SECRET` as the password. You can set this to the empty string to disable authentication.
 * `FSAPI_MAX_DURATION`: Maximum duration for voice calls handled by the freeswitch dialplan integration in minutes. Defaults to `MAX_MEETING_DURATION` if that is set, otherwise no limit. You probably want to set a limit here to ensure you do not have excess expenses due to people not hanging up calls.
+* `RECORDING_EXPIRED_SECRET`: Shared secret that authenticates `POST /scalelite/api/expiredRecording` (see `docs/api-README.md`), sent as `Authorization: Bearer <secret>`. That endpoint does not use the `LOADBALANCER_SECRET` checksum; this secret grants access to it only. If unset or empty, the endpoint refuses every request. Use a long random value that is different from `LOADBALANCER_SECRET`, and keep it in your secrets store rather than in plain configuration files.
 
 ### Configure your Front-End to use Scalelite
 
