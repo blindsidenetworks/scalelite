@@ -51,6 +51,11 @@ module Scalelite
     config.x.loadbalancer_secrets.push(ENV['LOADBALANCER_SECRET']) if ENV['LOADBALANCER_SECRET']
     config.x.loadbalancer_secrets.concat(ENV['LOADBALANCER_SECRETS'].split(':')) if ENV['LOADBALANCER_SECRETS']
 
+    # Shared secret for POST /scalelite/api/expiredRecording, sent as "Authorization: Bearer <secret>".
+    # [REVIEW REQUIRED] Authentication: this secret replaces the loadbalancer checksum for that one
+    # endpoint only. When unset or blank, the endpoint refuses every request.
+    config.x.recording_expired_secret = ENV.fetch('RECORDING_EXPIRED_SECRET', nil)
+
     # Algorithms used for calculating checksum [SHA1|SHA256|...]
     config.x.loadbalancer_checksum_algorithm = ENV.fetch('LOADBALANCER_CHECKSUM_ALGORITHM', 'SHA1:SHA256:SHA512')
     config.x.loadbalancer_checksum_algorithms = config.x.loadbalancer_checksum_algorithm.split(':')
