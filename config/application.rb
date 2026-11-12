@@ -118,6 +118,9 @@ module Scalelite
     # Scalelite Host name
     config.x.url_host = ENV.fetch('URL_HOST', nil)
 
+    # API Mate URL used to build per-tenant links in the tenants rake task, e.g. https://bigbluebutton.org/api-mate/
+    config.x.api_mate_url = ENV.fetch('API_MATE_URL', nil)
+
     # DB connection retry attempt counts
     config.x.db_connection_retry_count = ENV.fetch('DB_CONNECTION_RETRY_COUNT', '3').to_i
 
