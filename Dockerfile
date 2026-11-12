@@ -44,8 +44,8 @@ RUN apk add --no-cache \
     shared-mime-info
 # ruby-start.
 # Install Ruby from sources since Scalelite does not necessarily use the version shipped with Apline.
-ARG RUBY_RELEASE="https://cache.ruby-lang.org/pub/ruby/3.3/ruby-3.3.6.tar.gz"
-ARG RUBY="ruby-3.3.6"
+ARG RUBY_RELEASE="https://cache.ruby-lang.org/pub/ruby/3.3/ruby-3.3.13.tar.gz"
+ARG RUBY="ruby-3.3.13"
 RUN apk add --no-cache git make gcc g++ libc-dev pkgconfig \
     libxml2-dev libxslt-dev postgresql-dev coreutils curl wget bash \
     gnupg tar linux-headers bison readline-dev readline zlib-dev \

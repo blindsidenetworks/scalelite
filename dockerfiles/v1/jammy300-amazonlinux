@@ -65,8 +65,8 @@ USER scalelite:scalelite
 # Install Ruby
 RUN git clone https://github.com/rbenv/rbenv.git ~/.rbenv && \
     git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build && \
-    ~/.rbenv/bin/rbenv install 3.3.6 && \
-    ~/.rbenv/bin/rbenv global 3.3.6 && \
+    ~/.rbenv/bin/rbenv install 3.3.13 && \
+    ~/.rbenv/bin/rbenv global 3.3.13 && \
     ~/.rbenv/bin/rbenv rehash
 ENV PATH="~/.rbenv/shims:~/.rbenv/bin:$PATH"
 RUN echo 'export PATH="~/.rbenv/bin:$PATH"' >> ~/.bashrc && \
