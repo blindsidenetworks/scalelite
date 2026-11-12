@@ -14,6 +14,25 @@ RSpec.describe 'servers tasks', type: :task do
     Rake::Task.clear
   end
 
+  describe 'servers task' do
+    let(:task) { Rake::Task['servers'] }
+    let!(:server) { create(:server) }
+
+    it 'prints an API Mate link for each server when API_MATE_URL is set' do
+      allow(Rails.configuration.x).to receive(:api_mate_url).and_return('https://api-mate.example.com/')
+
+      expect { task.invoke }.to output(
+        /\tapi_mate: #{Regexp.escape("https://api-mate.example.com/?server=#{server.url}&secret=#{server.secret}")}\n/
+      ).to_stdout
+    end
+
+    it 'does not print an API Mate link when API_MATE_URL is not set' do
+      allow(Rails.configuration.x).to receive(:api_mate_url).and_return(nil)
+
+      expect { task.invoke }.not_to output(/api_mate/).to_stdout
+    end
+  end
+
   describe 'servers:addAll task' do
     let(:task) { Rake::Task['servers:addAll'] }
     let(:servers_yml_path) { './spec/fixtures/files/servers.yml' }
