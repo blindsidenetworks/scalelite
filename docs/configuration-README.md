@@ -75,6 +75,7 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `USE_EXTERNAL_VOICE_BRIDGE`: Whether or not to try to use the `voiceBridge` number passed by the BigBlueButton API client. Defaults to `false`. If your API client generates numbers compatible with your BigBlueButton configuration, you can change this to `true` to use them. Note that Scalelite will ignore the voice bridge number provided, and generate a new one, if the number is already in use by a different meeting.
 * `FSAPI_PASSWORD`: Password (for "Basic" authentication) to access the freeswitch dialplan API. Default is to use the first `LOADBALANCER_SECRET` as the password. You can set this to the empty string to disable authentication.
 * `FSAPI_MAX_DURATION`: Maximum duration for voice calls handled by the freeswitch dialplan integration in minutes. Defaults to `MAX_MEETING_DURATION` if that is set, otherwise no limit. You probably want to set a limit here to ensure you do not have excess expenses due to people not hanging up calls.
+* `API_MATE_URL`: Base URL of an API Mate instance, for example `https://bigbluebutton.org/api-mate/`. When set, `rake tenants` prints an API Mate link for each tenant, built from the tenant name, `URL_HOST` and the tenant's first secret. Not set by default, in which case no link is printed.
 
 ### Configure your Front-End to use Scalelite
 

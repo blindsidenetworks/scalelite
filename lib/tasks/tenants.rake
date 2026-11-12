@@ -8,12 +8,17 @@ desc 'List all the Tenants'
 task tenants: :environment do |_t, _args|
   check_multitenancy
   tenants = Tenant.all
+  host_name = Rails.configuration.x.url_host
+  api_mate_url = Rails.configuration.x.api_mate_url
 
   if tenants.present?
     tenants.each do |tenant|
       puts("id: #{tenant.id}")
       puts("\tname: #{tenant.name}")
       puts("\tsecrets: #{tenant.secrets}")
+      if api_mate_url.present?
+        puts("\tapi_mate: #{api_mate_url}?server=https://#{tenant.name}.#{host_name}/bigbluebutton/api/&secret=#{tenant.secrets_array[0]}")
+      end
       puts("\tlrs_endpoint: #{tenant.lrs_endpoint}") if tenant.lrs_endpoint.present?
       puts("\tlrs_username: #{tenant.lrs_username}") if tenant.lrs_username.present?
       puts("\tlrs_password: #{tenant.lrs_password}") if tenant.lrs_password.present?
