@@ -6,7 +6,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 ruby '>= 3.3'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
-gem 'rails', '~> 7.2'
+gem 'rails', '~> 8.1.4'
 # Use Puma as the app server
 gem 'puma', '~> 7.2'
 
@@ -64,6 +64,7 @@ group :test do
   gem 'faker'
   gem 'fakeredis', '~> 0.8'
   gem 'minitest'
+  gem 'minitest-mock'
   gem 'minitest-stub_any_instance'
   gem 'rails-controller-testing'
   gem 'webmock'
