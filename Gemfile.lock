@@ -174,7 +174,7 @@ GEM
       prism (>= 1.5, < 3)
     minitest-mock (5.27.0)
     minitest-stub_any_instance (1.0.3)
-    msgpack (1.8.2)
+    msgpack (1.8.7)
     net-imap (0.6.8)
       date
       net-protocol
