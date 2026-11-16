@@ -2,7 +2,8 @@
 
 class Server < ApplicationRedisRecord
   define_attribute_methods :id, :url, :secret, :tag, :enabled, :load, :online, :load_multiplier, :healthy_counter,
-                           :unhealthy_counter, :state, :meetings, :users, :largest_meeting, :videos, :bbb_version
+                           :unhealthy_counter, :state, :meetings, :users, :largest_meeting, :videos, :bbb_version,
+                           :state_changed_at
 
   # Unique ID for this server
   application_redis_attr :id
@@ -52,6 +53,9 @@ class Server < ApplicationRedisRecord
   # Indicator of the BBB version of this server
   application_redis_attr :bbb_version
 
+  # When the server was added or last changed between enabled, cordoned and disabled (ISO 8601, UTC)
+  application_redis_attr :state_changed_at
+
   def online=(value)
     value = !!value
     online_will_change! unless @online == value
@@ -81,6 +85,8 @@ class Server < ApplicationRedisRecord
         clear_attribute_changes([:load])
       end
 
+      self.state_changed_at = Time.now.utc.iso8601 if @new_record || effective_state_changed?
+
       if state_changed?
         self.load ||= if cordoned?
                         redis.zscore('server_load', id)
@@ -108,6 +114,7 @@ class Server < ApplicationRedisRecord
           pipeline.hset(server_key, 'largest_meeting', largest_meeting) if largest_meeting_changed?
           pipeline.hset(server_key, 'videos', videos) if videos_changed?
           pipeline.hset(server_key, 'bbb_version', bbb_version) if bbb_version_changed?
+          pipeline.hset(server_key, 'state_changed_at', state_changed_at) if state_changed_at_changed?
           pipeline.sadd?('servers', id) if id_changed?
           state.present? ? save_with_state(pipeline) : save_without_state(pipeline)
         end
@@ -260,6 +267,18 @@ class Server < ApplicationRedisRecord
 
   def enabled?
     state.eql?('enabled') || (state.nil? && enabled)
+  end
+
+  # Whether the server moved between enabled, cordoned and disabled, including servers that still use the
+  # legacy enabled flag instead of state
+  def effective_state_changed?
+    return false unless state_changed? || enabled_changed?
+
+    effective_state(state_was, enabled_was) != effective_state(state, enabled)
+  end
+
+  def effective_state(state, enabled)
+    state.presence || (enabled ? 'enabled' : 'disabled')
   end
 
   # Find a server by ID
