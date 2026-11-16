@@ -16,6 +16,7 @@ task servers: :environment do
     else
       puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
     end
+    puts("\tstate changed at: #{server.state_changed_at.nil? ? '' : server.state_changed_at}")
     puts("\tload: #{server.load.presence || 'unavailable'}")
     puts("\tload multiplier: #{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
     puts("\tbbb version: #{server.bbb_version.nil? ? '' : server.bbb_version}")

@@ -18,7 +18,8 @@ module Api
     #     "state": String,
     #     "load": String,
     #     "load_multiplier": String,
-    #     "online": String
+    #     "online": String,
+    #     "state_changed_at": String
     #   },
     #   ...
     # ]
@@ -51,7 +52,8 @@ module Api
     #     "state": String,
     #     "load": String,
     #     "load_multiplier": String,
-    #     "online": String
+    #     "online": String,
+    #     "state_changed_at": String
     #   }
     def get_server_info
       begin
@@ -173,7 +175,8 @@ module Api
         state: server.state.presence || (server.enabled ? 'enabled' : 'disabled'),
         load: server.load.presence || 'unavailable',
         load_multiplier: server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d,
-        online: server.online ? 'online' : 'offline'
+        online: server.online ? 'online' : 'offline',
+        state_changed_at: server.state_changed_at.presence || ''
       }
     end
 
