@@ -524,7 +524,7 @@ class BigBlueButtonApiController < ApplicationController
           state = rec.published ? 'published' : 'unpublished'
 
           rec.playback_formats.each do |playback_format|
-            prefix = "#{state}/#{playback_format.format}/#{rec.record_id}/"
+            prefix = "#{rec.key_prefix}#{state}/#{playback_format.format}/#{rec.record_id}/"
             objects = s3_client.list_objects_v2(bucket: bucket, prefix: prefix).contents
             next if objects.empty?
 

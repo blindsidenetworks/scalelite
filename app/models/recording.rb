@@ -128,4 +128,22 @@ class Recording < ApplicationRecord
       update!(state: 'deleted')
     end
   end
+
+  # Lookup tenant object from Redis using tenant-id metatdata
+  def tenant
+    tenant_id = metadata.find_by(key: 'tenant-id')&.value
+    return if tenant_id.blank?
+
+    Tenant.find(tenant_id)
+  rescue ApplicationRedisRecord::RecordNotFound
+    nil
+  end
+
+  # Returns the tenant name as a prefix if env var is set
+  def key_prefix
+    return '' if ENV['S3_RECORDING_TENANT_PREFIX'].blank?
+
+    tenant_name = tenant&.name
+    tenant_name.present? ? "#{tenant_name}/" : ''
+  end
 end

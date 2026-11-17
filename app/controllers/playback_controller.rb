@@ -105,11 +105,16 @@ class PlaybackController < ApplicationController
 
   def deliver_resource
     if ENV["CLOUDFRONT_URL"].present? && request.format.html?
-      set_cf_signed_cookies!(format: @playback_format.format, record_id: @recording.record_id, published: @recording.published?)
+      set_cf_signed_cookies!(
+        key_prefix: @recording.key_prefix,
+        format: @playback_format.format,
+        record_id: @recording.record_id,
+        published: @recording.published?
+      )
 
       prefix = @recording.published? ? "published" : "unpublished"
       page   = "index.html"
-      cf_url = "#{ENV.fetch('CLOUDFRONT_URL')}/#{prefix}/#{@playback_format.format}/#{@recording.record_id}/#{page}"
+      cf_url = "#{ENV.fetch('CLOUDFRONT_URL')}/#{@recording.key_prefix}#{prefix}/#{@playback_format.format}/#{@recording.record_id}/#{page}"
 
       redirect_to cf_url, allow_other_host: true, status: :temporary_redirect
     else
@@ -125,9 +130,9 @@ class PlaybackController < ApplicationController
     render "errors/recording_not_found", status: :not_found, formats: [:html]
   end
 
-  def set_cf_signed_cookies!(format:, record_id:, published:, ttl: 5.minutes)
+  def set_cf_signed_cookies!(format:, record_id:, published:, key_prefix: '', ttl: 5.minutes)
     base_prefix = published ? "published" : "unpublished"
-    path_scope  = "/#{base_prefix}/#{format}/#{record_id}/*"
+    path_scope  = "/#{key_prefix}#{base_prefix}/#{format}/#{record_id}/*"
 
     cf_origin   = ENV.fetch("CLOUDFRONT_URL")
 

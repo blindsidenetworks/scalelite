@@ -51,6 +51,10 @@ module Scalelite
     config.x.loadbalancer_secrets.push(ENV['LOADBALANCER_SECRET']) if ENV['LOADBALANCER_SECRET']
     config.x.loadbalancer_secrets.concat(ENV['LOADBALANCER_SECRETS'].split(':')) if ENV['LOADBALANCER_SECRETS']
 
+    # Shared secret that signs the short-lived JWT (HS512) authenticating POST /scalelite/api/expiredRecording.
+    # The secret itself is never sent.
+    config.x.recording_expired_secret = ENV.fetch('RECORDING_EXPIRED_SECRET', nil)
+
     # Algorithms used for calculating checksum [SHA1|SHA256|...]
     config.x.loadbalancer_checksum_algorithm = ENV.fetch('LOADBALANCER_CHECKSUM_ALGORITHM', 'SHA1:SHA256:SHA512')
     config.x.loadbalancer_checksum_algorithms = config.x.loadbalancer_checksum_algorithm.split(':')

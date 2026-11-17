@@ -72,4 +72,62 @@ namespace :recordings do
 
     puts("All existing recordings have been successfully linked to tenant #{tenant_id}")
   end
+
+  desc 'Migrate existing S3 recording objects into per-tenant key prefixes'
+  #   dry_run:       when 'true', preview without copying/deleting (default: false)
+  #   delete_source: when 'true', also delete the source objects after copying (default: false)
+  task :migrate_to_tenant_prefix, [:dry_run, :delete_source] => :environment do |_t, args|
+    args.with_defaults(dry_run: 'false', delete_source: 'false')
+
+    unless ENV['S3_RECORDING']
+      warn('S3_RECORDING is not enabled; there is nothing to migrate')
+      exit(1)
+    end
+
+    dry_run = args[:dry_run] == 'true'
+    delete_source = args[:delete_source] == 'true'
+    bucket = ENV.fetch('S3_BUCKET_NAME')
+    s3 = Aws::S3::Client.new
+    # A recording toggled published/unpublished may have left objects under either prefix.
+    states = %w[published unpublished].freeze
+    # copy_source must be URL-encoded per path segment (slashes preserved).
+    encode_source = ->(key) { key.split('/').map { |seg| ERB::Util.url_encode(seg) }.join('/') }
+
+    copied = 0
+    skipped = 0
+
+    Recording.where.not(state: 'deleted').find_each do |rec|
+      tenant_name = rec.tenant&.name
+      if tenant_name.blank?
+        skipped += 1
+        next
+      end
+
+      rec.playback_formats.each do |playback_format|
+        states.each do |state|
+          source_prefix = "#{state}/#{playback_format.format}/#{rec.record_id}/"
+          continuation = nil
+
+          loop do
+            resp = s3.list_objects_v2(bucket: bucket, prefix: source_prefix, continuation_token: continuation)
+            resp.contents.each do |object|
+              dest_key = "#{tenant_name}/#{object.key}"
+              if dry_run
+                puts("[dry-run] #{object.key} -> #{dest_key}")
+              else
+                s3.copy_object(bucket: bucket, copy_source: "#{bucket}/#{encode_source.call(object.key)}", key: dest_key)
+                s3.delete_object(bucket: bucket, key: object.key) if delete_source
+              end
+              copied += 1
+            end
+
+            break unless resp.is_truncated
+            continuation = resp.next_continuation_token
+          end
+        end
+      end
+    end
+
+    puts("#{copied} object(s); skipped #{skipped} recording(s) without a tenant.")
+  end
 end

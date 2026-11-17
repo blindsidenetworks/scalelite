@@ -1,6 +1,6 @@
 # Scalelite Management Using APIs
 
-Scalelite comes with an API that allows for the management of tenants and servers.
+Scalelite comes with an API that allows for the management of tenants and servers, and for marking recordings whose storage has expired.
 
 ## Servers API
 
@@ -371,3 +371,55 @@ curl --header "Content-Type: application/json" --request POST  --data '{"id":"<t
 ```
 
 Warning: Removing a tenant with data still in the database may cause some inconsistencies.
+
+## Recordings API
+
+### Expired Recording
+```sh
+POST /scalelite/api/expiredRecording
+```
+
+Marks a recording as deleted after its files have been removed from storage, for example by a storage
+lifecycle (retention) rule. Its metadata and playback formats are removed, so it is no longer returned by
+`getRecordings`. The recording files themselves are not touched.
+
+This endpoint does not use the `checksum` parameter. The caller sends a short-lived JWT, signed with the
+shared secret set in `RECORDING_EXPIRED_SECRET` (see `docs/configuration-README.md`), as a bearer token.
+The secret itself is never sent. The token names the recording, so it can only be used for that one
+recording, and only until it expires. If `RECORDING_EXPIRED_SECRET` is not set, every request is refused.
+
+#### Required Headers
+```
+Authorization: Bearer <token>
+```
+
+#### Token
+
+Signed with HS512 using `RECORDING_EXPIRED_SECRET`. Required claims:
+```
+{
+  "record_id": String,             # Record ID of the recording
+  "exp": Integer                   # Expiry, in seconds since the epoch; keep it short (e.g. 5 minutes)
+}
+```
+Send no request body. If one is sent it must be JSON (like the other `scalelite/api` endpoints), and any `id` in it is ignored.
+
+#### Responses
+
+| Status                    | Body                    | Meaning                                                   |
+| ------------------------- | ----------------------- | --------------------------------------------------------- |
+| 200 OK                    | `{ "success": String }` | Recording marked as deleted, or it was already deleted    |
+| 401 Unauthorized          | `{ "error": String }`   | Token missing, invalid or expired, or `RECORDING_EXPIRED_SECRET` unset |
+| 404 Not Found             | `{ "error": String }`   | No recording with that `record_id`                        |
+| 500 Internal Server Error | `{ "error": String }`   | Unexpected error; safe to retry with a fresh token        |
+
+#### Example cURL
+
+```bash
+curl --header "Authorization: Bearer <token>" --request POST 'https://scalelite-hostname.com/scalelite/api/expiredRecording'
+```
+
+For example, generating the token in Ruby with the `jwt` gem:
+```ruby
+JWT.encode({ record_id: '<record-id>', exp: Time.now.to_i + 300 }, ENV.fetch('RECORDING_EXPIRED_SECRET'), 'HS512')
+```

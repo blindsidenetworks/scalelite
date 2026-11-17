@@ -3,6 +3,8 @@
 require 'rails_helper'
 
 RSpec.describe Recording do
+  include TestHelper
+
   describe 'recording id prefixes' do
     context 'empty list' do
       let!(:recording) { create(:recording) }
@@ -58,6 +60,27 @@ RSpec.describe Recording do
         rs_meeting_b = rs.select { |r| r.meeting_id == meeting_id_b }
 
         expect(rs_meeting_b.size).to eq recordings_b.size
+      end
+    end
+  end
+
+  describe '#key_prefix' do
+    let(:recording) { create(:recording) }
+
+    context 'when S3_RECORDING_TENANT_PREFIX is not set' do
+      it 'returns an empty prefix' do
+        expect(recording.key_prefix).to eq('')
+      end
+    end
+
+    context 'when S3_RECORDING_TENANT_PREFIX is set' do
+      it 'returns the tenant name as a prefix when the recording has a tenant' do
+        mock_env("S3_RECORDING_TENANT_PREFIX" => "true") do
+          tenant = create(:tenant)
+          create(:metadatum, recording: recording, key: 'tenant-id', value: tenant.id)
+
+          expect(recording.key_prefix).to eq("#{tenant.name}/")
+        end
       end
     end
   end
