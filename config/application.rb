@@ -53,8 +53,6 @@ module Scalelite
 
     # Shared secret that signs the short-lived JWT (HS512) authenticating POST /scalelite/api/expiredRecording.
     # The secret itself is never sent.
-    # [REVIEW REQUIRED] Authentication: this secret replaces the loadbalancer checksum for that one
-    # endpoint only. When unset or blank, the endpoint refuses every request.
     config.x.recording_expired_secret = ENV.fetch('RECORDING_EXPIRED_SECRET', nil)
 
     # Algorithms used for calculating checksum [SHA1|SHA256|...]

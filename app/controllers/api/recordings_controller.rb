@@ -6,9 +6,6 @@ module Api
     # contain whitespace, commas or semicolons, and nothing may follow it.
     BEARER_TOKEN_PATTERN = /\ABearer ([^\s,;]+)\z/i
 
-    # [REVIEW REQUIRED] Authentication: this controller does not use the loadbalancer checksum. Its
-    # caller (a storage-expiry forwarder) holds only RECORDING_EXPIRED_SECRET, so the checksum is
-    # replaced here, and only here, by verify_recording_expired_token, which fails closed.
     skip_before_action :verify_loadbalancer_checksum
     before_action :verify_recording_expired_token
 
@@ -39,10 +36,6 @@ module Api
 
     private
 
-    # [REVIEW REQUIRED] Authentication for expiredRecording. The caller signs a short-lived JWT naming
-    # the recording, so the secret itself is never sent. Fails closed: a blank or unset
-    # RECORDING_EXPIRED_SECRET, or any token that is missing, unsigned, signed with another key or
-    # algorithm, expired, or lacks a string record_id, is rejected. The token is never logged.
     def verify_recording_expired_token
       secret = Rails.configuration.x.recording_expired_secret
       token = request.authorization.to_s[BEARER_TOKEN_PATTERN, 1]
