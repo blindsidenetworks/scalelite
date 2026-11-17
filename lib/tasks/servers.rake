@@ -3,16 +3,20 @@
 desc('List configured BigBlueButton servers')
 task servers: :environment do
   servers = Server.all
+  api_mate_url = Rails.configuration.x.api_mate_url
+
   warn('No servers are configured') if servers.empty?
   servers.each do |server|
     puts("id: #{server.id}")
     puts("\turl: #{server.url}")
     puts("\tsecret: #{server.secret}")
+    puts("\tapi_mate: #{api_mate_url}?server=#{server.url}&secret=#{server.secret}") if api_mate_url.present?
     if server.state.present?
       puts("\t#{server.state}")
     else
       puts("\t#{server.enabled ? 'enabled' : 'disabled'}")
     end
+    puts("\tstate changed at: #{server.state_changed_at.nil? ? '' : server.state_changed_at}")
     puts("\tload: #{server.load.presence || 'unavailable'}")
     puts("\tload multiplier: #{server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d}")
     puts("\tbbb version: #{server.bbb_version.nil? ? '' : server.bbb_version}")

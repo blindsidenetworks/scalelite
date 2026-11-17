@@ -34,6 +34,7 @@ RSpec.describe Api::ServersController do
         expect(server_data['load']).to eq(server.load.presence || 'unavailable')
         expect(server_data['load_multiplier']).to eq(server.load_multiplier.nil? ? 1.0 : server.load_multiplier.to_d)
         expect(server_data['online']).to eq(server.online ? 'online' : 'offline')
+        expect(server_data['state_changed_at']).to eq(server.state_changed_at)
       end
     end
 

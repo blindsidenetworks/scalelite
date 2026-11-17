@@ -24,7 +24,7 @@ Bundler.require(*Rails.groups)
 module Scalelite
   class Application < Rails::Application
     # Initialize configuration defaults
-    config.load_defaults 7.2
+    config.load_defaults 8.1
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
@@ -121,6 +121,9 @@ module Scalelite
 
     # Scalelite Host name
     config.x.url_host = ENV.fetch('URL_HOST', nil)
+
+    # API Mate URL used to build per-tenant links in the tenants rake task, e.g. https://bigbluebutton.org/api-mate/
+    config.x.api_mate_url = ENV.fetch('API_MATE_URL', nil)
 
     # DB connection retry attempt counts
     config.x.db_connection_retry_count = ENV.fetch('DB_CONNECTION_RETRY_COUNT', '3').to_i

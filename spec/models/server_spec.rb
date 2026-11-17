@@ -1185,4 +1185,69 @@ RSpec.describe Server, :redis do
       end
     end
   end
+
+  describe '#state_changed_at' do
+    include ActiveSupport::Testing::TimeHelpers
+
+    let(:created_at) { Time.utc(2026, 1, 1, 9) }
+    let(:changed_at) { Time.utc(2026, 1, 2, 9) }
+
+    let!(:server) do
+      travel_to(created_at) { create(:server, state: 'enabled') }
+    end
+
+    it 'is set when the server is created' do
+      expect(described_class.find(server.id).state_changed_at).to eq(created_at.iso8601)
+    end
+
+    it 'is updated when the state changes' do
+      travel_to(changed_at) do
+        server.state = 'cordoned'
+        server.save!
+      end
+
+      expect(described_class.find(server.id).state_changed_at).to eq(changed_at.iso8601)
+    end
+
+    it 'is not updated by changes other than state' do
+      travel_to(changed_at) do
+        server.load = 5
+        server.tag = 'new-tag'
+        server.save!
+      end
+
+      expect(described_class.find(server.id).state_changed_at).to eq(created_at.iso8601)
+    end
+
+    it 'is not updated when the state is set to the same value' do
+      travel_to(changed_at) do
+        server.state = 'enabled'
+        server.save!
+      end
+
+      expect(described_class.find(server.id).state_changed_at).to eq(created_at.iso8601)
+    end
+
+    it 'is updated when a legacy server without state is disabled' do
+      legacy = travel_to(created_at) { create(:server, enabled: true) }
+
+      travel_to(changed_at) do
+        legacy.enabled = false
+        legacy.save!
+      end
+
+      expect(described_class.find(legacy.id).state_changed_at).to eq(changed_at.iso8601)
+    end
+
+    it 'is not updated when a legacy server moves to the same state' do
+      legacy = travel_to(created_at) { create(:server, enabled: true) }
+
+      travel_to(changed_at) do
+        legacy.state = 'enabled'
+        legacy.save!
+      end
+
+      expect(described_class.find(legacy.id).state_changed_at).to eq(created_at.iso8601)
+    end
+  end
 end

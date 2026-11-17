@@ -27,6 +27,15 @@ RSpec.describe 'tenants tasks', type: :task do
       # rubocop:enable Layout/LineLength
     end
 
+    it 'prints an API Mate link for each tenant when API_MATE_URL is set' do
+      allow(Rails.configuration.x).to receive_messages(api_mate_url: 'https://api-mate.example.com/', url_host: 'scalelite.example.com')
+      tenant = create(:tenant)
+
+      expect { task.invoke }.to output(
+        %r{\tapi_mate: https://api-mate\.example\.com/\?server=https://#{tenant.name}\.scalelite\.example\.com/bigbluebutton/api/&secret=#{tenant.secrets_array[0]}\n}
+      ).to_stdout
+    end
+
     it 'displays a message if there are no tenants' do
       expect { task.invoke }.to output(/Total number of tenants: 0\n/).to_stdout
     end

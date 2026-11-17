@@ -1,5 +1,5 @@
 env:
-  RUBY_VERSION: 3.3.6
+  RUBY_VERSION: 3.3.13
   DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
 
 name: CI

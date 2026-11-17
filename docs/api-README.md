@@ -26,7 +26,8 @@ n/a
    "state": String,
    "load": String,
    "load_multiplier": String,
-   "online": String
+   "online": String,
+   "state_changed_at": String
   },
   ...
 ],
@@ -61,7 +62,8 @@ Returns the data associated with a single server
   "state": String,
   "load": String,
   "load_multiplier": String,
-  "online": String
+  "online": String,
+  "state_changed_at": String
 },
 status: ok
 ```
@@ -101,7 +103,8 @@ Adds a new server
   "state": String,
   "load": String,
   "load_multiplier": String,
-  "online": String
+  "online": String,
+  "state_changed_at": String
 },
 status: ok
 ```
@@ -142,7 +145,8 @@ Updates a server
   "state": String,
   "load": String,
   "load_multiplier": String,
-  "online": String
+  "online": String,
+  "state_changed_at": String
 },
 status: ok
 ```
