@@ -51,7 +51,8 @@ module Scalelite
     config.x.loadbalancer_secrets.push(ENV['LOADBALANCER_SECRET']) if ENV['LOADBALANCER_SECRET']
     config.x.loadbalancer_secrets.concat(ENV['LOADBALANCER_SECRETS'].split(':')) if ENV['LOADBALANCER_SECRETS']
 
-    # Shared secret for POST /scalelite/api/expiredRecording, sent as "Authorization: Bearer <secret>".
+    # Shared secret that signs the short-lived JWT (HS512) authenticating POST /scalelite/api/expiredRecording.
+    # The secret itself is never sent.
     # [REVIEW REQUIRED] Authentication: this secret replaces the loadbalancer checksum for that one
     # endpoint only. When unset or blank, the endpoint refuses every request.
     config.x.recording_expired_secret = ENV.fetch('RECORDING_EXPIRED_SECRET', nil)

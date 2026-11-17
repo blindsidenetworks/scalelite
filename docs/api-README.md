@@ -379,36 +379,43 @@ Marks a recording as deleted after its files have been removed from storage, for
 lifecycle (retention) rule. Its metadata and playback formats are removed, so it is no longer returned by
 `getRecordings`. The recording files themselves are not touched.
 
-This endpoint does not use the `checksum` parameter. It is authenticated with the shared secret set in
-`RECORDING_EXPIRED_SECRET` (see `docs/configuration-README.md`), sent as a bearer token. If
-`RECORDING_EXPIRED_SECRET` is not set, every request is refused.
+This endpoint does not use the `checksum` parameter. The caller sends a short-lived JWT, signed with the
+shared secret set in `RECORDING_EXPIRED_SECRET` (see `docs/configuration-README.md`), as a bearer token.
+The secret itself is never sent. The token names the recording, so it can only be used for that one
+recording, and only until it expires. If `RECORDING_EXPIRED_SECRET` is not set, every request is refused.
 
 #### Required Headers
 ```
-Authorization: Bearer <RECORDING_EXPIRED_SECRET>
-Content-Type: application/json
+Authorization: Bearer <token>
 ```
 
-#### Expected Parameters
+#### Token
+
+Signed with HS512 using `RECORDING_EXPIRED_SECRET`. Required claims:
 ```
 {
-  "id": String                     # Required: record ID of the recording
+  "record_id": String,             # Record ID of the recording
+  "exp": Integer                   # Expiry, in seconds since the epoch; keep it short (e.g. 5 minutes)
 }
 ```
+Send no request body. If one is sent it must be JSON (like the other `scalelite/api` endpoints), and any `id` in it is ignored.
 
 #### Responses
 
-| Status                    | Body                   | Meaning                                                   |
-| ------------------------- | ---------------------- | --------------------------------------------------------- |
+| Status                    | Body                    | Meaning                                                   |
+| ------------------------- | ----------------------- | --------------------------------------------------------- |
 | 200 OK                    | `{ "success": String }` | Recording marked as deleted, or it was already deleted    |
-| 400 Bad Request           | `{ "error": String }`   | `id` missing, empty, or not a string                      |
-| 401 Unauthorized          | `{ "error": String }`   | Secret missing or wrong, or `RECORDING_EXPIRED_SECRET` unset |
-| 404 Not Found             | `{ "error": String }`   | No recording with that `id`                               |
-| 415 Unsupported Media Type | `{ "error": String }`  | Request body is not JSON                                  |
-| 500 Internal Server Error | `{ "error": String }`   | Unexpected error; safe to retry                           |
+| 401 Unauthorized          | `{ "error": String }`   | Token missing, invalid or expired, or `RECORDING_EXPIRED_SECRET` unset |
+| 404 Not Found             | `{ "error": String }`   | No recording with that `record_id`                        |
+| 500 Internal Server Error | `{ "error": String }`   | Unexpected error; safe to retry with a fresh token        |
 
 #### Example cURL
 
 ```bash
-curl --header "Content-Type: application/json" --header "Authorization: Bearer <recording-expired-secret>" --request POST --data '{"id":"<record-id>"}' 'https://scalelite-hostname.com/scalelite/api/expiredRecording'
+curl --header "Authorization: Bearer <token>" --request POST 'https://scalelite-hostname.com/scalelite/api/expiredRecording'
+```
+
+For example, generating the token in Ruby with the `jwt` gem:
+```ruby
+JWT.encode({ record_id: '<record-id>', exp: Time.now.to_i + 300 }, ENV.fetch('RECORDING_EXPIRED_SECRET'), 'HS512')
 ```

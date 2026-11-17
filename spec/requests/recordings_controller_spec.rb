@@ -6,7 +6,6 @@ RSpec.describe Api::RecordingsController do
   include ApiHelper
 
   let(:secret) { 'expired-recording-test-secret' }
-  let(:auth_headers) { { 'Authorization' => "Bearer #{secret}" } }
   let!(:recording) { create(:recording_with_metadata, :published) }
 
   before do
@@ -14,13 +13,22 @@ RSpec.describe Api::RecordingsController do
     create(:playback_format, recording: recording)
   end
 
-  def post_expired(params: { id: recording.record_id }, headers: auth_headers)
-    post scalelite_api_expired_recording_url, params: params, headers: headers, as: :json
+  def token_for(record_id = recording.record_id, exp: 5.minutes.from_now.to_i, key: secret, algorithm: 'HS512', **extra)
+    payload = { record_id: record_id, exp: exp }.merge(extra).compact
+    JWT.encode(payload, key, algorithm)
+  end
+
+  def bearer(token)
+    { 'Authorization' => "Bearer #{token}" }
+  end
+
+  def post_expired(headers: bearer(token_for), params: nil)
+    post scalelite_api_expired_recording_url, params: params, headers: headers, as: (params.nil? ? nil : :json)
   end
 
   describe 'POST #expired_recording' do
-    context 'with a valid secret' do
-      it 'marks an existing recording as deleted and removes its metadata and playback formats' do
+    context 'with a valid token' do
+      it 'marks the recording named in the token as deleted and removes its metadata and playback formats' do
         post_expired
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body).to have_key('success')
@@ -32,7 +40,7 @@ RSpec.describe Api::RecordingsController do
       end
 
       it 'accepts the Bearer scheme case-insensitively' do
-        post_expired(headers: { 'Authorization' => "bearer #{secret}" })
+        post_expired(headers: { 'Authorization' => "bearer #{token_for}" })
         expect(response).to have_http_status(:ok)
         expect(recording.reload.state).to eq('deleted')
       end
@@ -48,85 +56,75 @@ RSpec.describe Api::RecordingsController do
       end
 
       it 'returns not found for an unknown recording id' do
-        post_expired(params: { id: 'unknown-record-id' })
+        post_expired(headers: bearer(token_for('unknown-record-id')))
         expect(response).to have_http_status(:not_found)
         expect(response.parsed_body).to have_key('error')
       end
 
-      it 'returns bad request when the id is missing' do
-        post_expired(params: {})
-        expect(response).to have_http_status(:bad_request)
+      it 'ignores an id in the request body and acts only on the recording named in the token' do
+        other = create(:recording_with_metadata, :published)
+        post_expired(params: { id: other.record_id })
+        expect(response).to have_http_status(:ok)
+        expect(recording.reload.state).to eq('deleted')
+        expect(other.reload.state).to eq('published')
       end
 
-      it 'returns bad request when the id is blank' do
-        post_expired(params: { id: '' })
-        expect(response).to have_http_status(:bad_request)
-      end
-
-      it 'returns bad request when the id is not a string' do
-        post_expired(params: { id: [recording.record_id] })
-        expect(response).to have_http_status(:bad_request)
-        expect(recording.reload.state).to eq('published')
-      end
-
-      it 'returns unsupported media type as JSON for a non-JSON body' do
-        post scalelite_api_expired_recording_url, params: { id: recording.record_id }, headers: auth_headers
-        expect(response).to have_http_status(:unsupported_media_type)
-        expect(response.media_type).to eq('application/json')
-        expect(recording.reload.state).to eq('published')
-      end
-
-      it 'returns internal server error without logging the secret when deletion fails' do
+      it 'returns internal server error without logging the token when deletion fails' do
+        token = token_for
         allow_any_instance_of(Recording).to receive(:mark_delete!).and_raise(StandardError, 'boom')
         allow(Rails.logger).to receive(:error).and_call_original
 
-        post_expired
+        post_expired(headers: bearer(token))
         expect(response).to have_http_status(:internal_server_error)
-        expect(Rails.logger).to have_received(:error).with(satisfy { |msg| msg.to_s.exclude?(secret) }).at_least(:once)
-        expect(Rails.logger).not_to have_received(:error).with(satisfy { |msg| msg.to_s.include?(secret) })
+        expect(Rails.logger).to have_received(:error).at_least(:once)
+        expect(Rails.logger).not_to have_received(:error).with(satisfy { |msg| msg.to_s.include?(token) || msg.to_s.include?(secret) })
       end
     end
 
-    context 'with a missing, malformed or wrong secret' do
+    context 'with a missing, invalid or expired token' do
       {
-        'no Authorization header' => nil,
-        'a wrong token' => 'Bearer wrong-secret',
-        'a token that differs only in length' => 'Bearer expired-recording-test-secretX',
-        'the Token scheme' => 'Token expired-recording-test-secret',
-        'the Basic scheme' => "Basic #{Base64.strict_encode64('user:expired-recording-test-secret')}",
-        'trailing options after the token' => 'Bearer expired-recording-test-secret,extra=1',
-        'two spaces after the scheme' => 'Bearer  expired-recording-test-secret',
-        'an empty token' => 'Bearer ',
-      }.each do |description, header|
+        'no Authorization header' => -> { {} },
+        'the raw secret as the bearer value' => -> { bearer(secret) },
+        'an expired token' => -> { bearer(token_for(exp: 1.minute.ago.to_i)) },
+        'a token signed with the wrong secret' => -> { bearer(token_for(key: 'wrong-secret')) },
+        'a token without exp' => -> { bearer(token_for(exp: nil)) },
+        'a token without record_id' => -> { bearer(token_for(nil)) },
+        'a token with a non-string record_id' => -> { bearer(token_for([recording.record_id])) },
+        'a token signed with a different algorithm' => -> { bearer(token_for(algorithm: 'HS256')) },
+        'an unsigned token (alg none)' => -> { bearer(token_for(key: nil, algorithm: 'none')) },
+        'the Token scheme' => -> { { 'Authorization' => "Token #{token_for}" } },
+        'the Basic scheme' => -> { { 'Authorization' => "Basic #{Base64.strict_encode64("user:#{secret}")}" } },
+        'trailing options after the token' => -> { { 'Authorization' => "Bearer #{token_for},extra=1" } },
+        'two spaces after the scheme' => -> { { 'Authorization' => "Bearer  #{token_for}" } },
+        'an empty token' => -> { { 'Authorization' => 'Bearer ' } },
+      }.each do |description, headers|
         it "returns unauthorized for #{description} and leaves the recording unchanged" do
-          post_expired(headers: header.nil? ? {} : { 'Authorization' => header })
+          post_expired(headers: instance_exec(&headers))
           expect(response).to have_http_status(:unauthorized)
           expect(recording.reload.state).to eq('published')
         end
       end
 
-      it 'returns unauthorized for a valid loadbalancer checksum without a bearer token' do
+      it 'returns unauthorized for a valid loadbalancer checksum without a token' do
         allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['lb-secret'])
         url = URI(scalelite_api_expired_recording_url)
         url.query = "checksum=#{Digest::SHA256.hexdigest('expiredRecordinglb-secret')}"
 
-        post url.to_s, params: { id: recording.record_id }, as: :json
+        post url.to_s
         expect(response).to have_http_status(:unauthorized)
         expect(recording.reload.state).to eq('published')
       end
     end
 
     context 'when the secret is not configured' do
-      attempted_headers = ['Bearer anything', 'Bearer ', nil].freeze
-
       [nil, ''].each do |configured|
-        it "returns unauthorized for any token when the secret is #{configured.inspect}" do
+        it "returns unauthorized when the secret is #{configured.inspect}" do
           allow(Rails.configuration.x).to receive(:recording_expired_secret).and_return(configured)
 
-          attempted_headers.each do |header|
-            post_expired(headers: header.nil? ? {} : { 'Authorization' => header })
-            expect(response).to have_http_status(:unauthorized)
-          end
+          post_expired(headers: bearer(token_for(key: 'anything')))
+          expect(response).to have_http_status(:unauthorized)
+          post_expired(headers: {})
+          expect(response).to have_http_status(:unauthorized)
           expect(recording.reload.state).to eq('published')
         end
       end
@@ -138,7 +136,7 @@ RSpec.describe Api::RecordingsController do
       allow(Rails.configuration.x).to receive(:loadbalancer_secrets).and_return(['lb-secret'])
       create(:server)
 
-      get scalelite_api_get_servers_url, headers: auth_headers
+      get scalelite_api_get_servers_url, headers: bearer(token_for)
       expect(response.body).to include('checksumError')
       expect(response.body).not_to include('"url"')
     end

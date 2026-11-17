@@ -8,39 +8,21 @@ module Api
 
     # [REVIEW REQUIRED] Authentication: this controller does not use the loadbalancer checksum. Its
     # caller (a storage-expiry forwarder) holds only RECORDING_EXPIRED_SECRET, so the checksum is
-    # replaced here, and only here, by verify_recording_expired_secret, which runs first and fails
-    # closed.
+    # replaced here, and only here, by verify_recording_expired_token, which fails closed.
     skip_before_action :verify_loadbalancer_checksum
-    prepend_before_action :verify_recording_expired_secret
-
-    # The base class raises UnsupportedContentType, which ApplicationController renders as BBB XML
-    # with status 200. The caller treats 200 as success, so return a real error status instead.
-    rescue_from BBBErrors::UnsupportedContentType do
-      render json: { error: 'Content-Type must be application/json' }, status: :unsupported_media_type
-    end
+    before_action :verify_recording_expired_token
 
     # Mark a recording as deleted after its storage expired
     # POST /scalelite/api/expiredRecording
     #
     # Required header:
-    # Authorization: Bearer <RECORDING_EXPIRED_SECRET>
+    # Authorization: Bearer <JWT signed with RECORDING_EXPIRED_SECRET (HS512), claims record_id and exp>
     #
-    # Expected params (JSON body):
-    # { "id": String }  # record ID of the recording
-    #
-    # Responses:
-    # 200 { "success": String }  marked as deleted, or already deleted
-    # 400 { "error": String }    id missing, blank or not a string
-    # 401 { "error": String }    secret missing, wrong, or not configured
-    # 404 { "error": String }    no recording with that id
-    # 415 { "error": String }    body is not JSON
-    # 500 { "error": String }    unexpected error
+    # Successful response:
+    # { "success": String }
     def expired_recording
-      record_id = params[:id]
-      return render json: { error: 'id must be a non-empty string' }, status: :bad_request unless record_id.is_a?(String) && record_id.present?
-
-      recording = Recording.find_by(record_id:)
-      return render json: { error: "Couldn't find recording id=#{record_id}" }, status: :not_found if recording.nil?
+      recording = Recording.find_by(record_id: @record_id)
+      return render json: { error: "Couldn't find recording id=#{@record_id}" }, status: :not_found if recording.nil?
 
       # Lock so concurrent events for the same recording don't both delete it
       recording.with_lock do
@@ -51,20 +33,31 @@ module Api
       end
       render json: { success: "Recording id=#{recording.record_id} was marked as deleted" }, status: :ok
     rescue StandardError => e
-      logger.error("Failed to mark recording #{record_id.inspect} as deleted: #{e.class}: #{e.message}")
-      render json: { error: "Couldn't mark recording id=#{record_id} as deleted" }, status: :internal_server_error
+      logger.error("Failed to mark recording #{@record_id.inspect} as deleted: #{e.class}: #{e.message}")
+      render json: { error: "Couldn't mark recording id=#{@record_id} as deleted" }, status: :internal_server_error
     end
 
     private
 
-    # [REVIEW REQUIRED] Authentication for expiredRecording. Fails closed: a blank or unset
-    # RECORDING_EXPIRED_SECRET rejects every request. The token is compared in constant time and is
-    # never logged.
-    def verify_recording_expired_secret
+    # [REVIEW REQUIRED] Authentication for expiredRecording. The caller signs a short-lived JWT naming
+    # the recording, so the secret itself is never sent. Fails closed: a blank or unset
+    # RECORDING_EXPIRED_SECRET, or any token that is missing, unsigned, signed with another key or
+    # algorithm, expired, or lacks a string record_id, is rejected. The token is never logged.
+    def verify_recording_expired_token
       secret = Rails.configuration.x.recording_expired_secret
       token = request.authorization.to_s[BEARER_TOKEN_PATTERN, 1]
-      return if secret.present? && token.present? && ActiveSupport::SecurityUtils.secure_compare(token, secret)
+      return render_unauthorized if secret.blank? || token.blank?
 
+      payload, = JWT.decode(token, secret, true, algorithm: 'HS512', required_claims: %w[exp record_id])
+      record_id = payload['record_id']
+      return render_unauthorized unless record_id.is_a?(String) && record_id.present?
+
+      @record_id = record_id
+    rescue JWT::DecodeError
+      render_unauthorized
+    end
+
+    def render_unauthorized
       render json: { error: 'Unauthorized' }, status: :unauthorized
     end
   end
