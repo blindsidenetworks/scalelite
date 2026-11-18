@@ -77,6 +77,39 @@ These variables are used by the service startup scripts in the Docker images, bu
 * `FSAPI_MAX_DURATION`: Maximum duration for voice calls handled by the freeswitch dialplan integration in minutes. Defaults to `MAX_MEETING_DURATION` if that is set, otherwise no limit. You probably want to set a limit here to ensure you do not have excess expenses due to people not hanging up calls.
 * `RECORDING_EXPIRED_SECRET`: Shared secret used to sign the short-lived JWT that authenticates `POST /scalelite/api/expiredRecording` (see `docs/api-README.md`). The caller signs the token with this secret; the secret itself is never sent. That endpoint does not use the `LOADBALANCER_SECRET` checksum; this secret grants access to it only. If unset or empty, the endpoint refuses every request. Use a long random value that is different from `LOADBALANCER_SECRET`, and keep it in your secrets store rather than in plain configuration files.
 * `API_MATE_URL`: The URL of an API Mate instance, e.g. `https://bigbluebutton.org/api-mate/`. If set, the `rake tenants` and `rake servers` tasks include a ready-to-use API Mate link for each tenant or server, pre-filled with its API URL and secret. Defaults to not set, which hides the links.
+* S3 and CloudFront: see [Storing Recordings in S3](#storing-recordings-in-s3).
+
+### Storing Recordings in S3
+
+By default, imported recordings are stored on the local filesystem (`RECORDING_PUBLISH_DIR`) and served by the nginx image. Scalelite can instead upload them to an S3 bucket and serve them through CloudFront.
+
+When S3 storage is on, the recording importer uploads each playback format to the bucket and then deletes its local copy. Playback page requests are redirected to CloudFront, with short-lived signed cookies that allow access to that one recording. `deleteRecordings` deletes the recording's objects from the bucket.
+
+Objects are stored under `published/<format>/<record id>/` or `unpublished/<format>/<record id>/`, depending on whether the recording was published when it was imported. With `S3_RECORDING_TENANT_PREFIX` set, the path starts with the tenant's name, e.g. `tenant1/published/presentation/<record id>/`.
+
+#### Environment variables
+
+Set these on the `scalelite-api` and `scalelite-recording-importer` services. To turn on `S3_RECORDING` or `S3_RECORDING_TENANT_PREFIX`, set it to `true`; to keep it off, leave it unset.
+
+* `S3_RECORDING`: Store imported recordings in S3 instead of the local filesystem. Defaults to not set. Requires `S3_BUCKET_NAME`, `CLOUDFRONT_URL` and AWS credentials.
+* `S3_BUCKET_NAME`: The name of the bucket recordings are stored in. Required when `S3_RECORDING` is set.
+* `S3_RECORDING_TENANT_PREFIX`: Store each tenant's recordings under a prefix named after the tenant. Recordings that are not linked to a tenant keep the old path. Defaults to not set. On an existing deployment, copy the recordings already in S3 with `rake recordings:migrate_to_tenant_prefix` **before** setting this. See [Move S3 Recordings into Per-Tenant Prefixes](rake-README.md#move-s3-recordings-into-per-tenant-prefixes).
+* `CLOUDFRONT_URL`: The URL of the CloudFront distribution in front of the bucket, without a trailing slash, e.g. `https://recordings.example.com`. Playback page requests are redirected to it.
+* `CF_KEY_PAIR_ID`: The ID of the CloudFront public key (or key pair) used to sign the playback cookies. Required when `CLOUDFRONT_URL` is set.
+* `CF_PRIVATE_KEY_B64`: The matching private key, PEM-encoded and then base64-encoded, e.g. `base64 -w0 private_key.pem`. Required when `CLOUDFRONT_URL` is set. Keep it in your secrets store.
+
+Scalelite does not read AWS credentials itself. The AWS SDK finds them in the usual places: `AWS_REGION` with `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, or an IAM role attached to the instance or task. Set `AWS_REGION` to the bucket's region. The credentials need these permissions on the bucket:
+
+* `s3:PutObject` (recording import)
+* `s3:ListBucket` and `s3:DeleteObject` (`deleteRecordings`, and the migration task with `delete_source`)
+* `s3:GetObject` (the migration task, which copies objects)
+
+#### CloudFront setup
+
+* Restrict viewer access on the distribution to the trusted key group that contains the key in `CF_KEY_PAIR_ID`, so recordings can only be fetched with a signed cookie. Keep the bucket private, with CloudFront as its only reader (origin access control).
+* The signed cookies are set on Scalelite's parent domain (for `sl.example.com` or `tenant1.sl.example.com`, that is `.example.com`). Serve the distribution from a name under that same domain, e.g. `recordings.example.com`, so the browser sends the cookies to it.
+* The cookies are `Secure` and `SameSite=None`, so serve both Scalelite and CloudFront over HTTPS.
+* Each cookie is valid for 5 minutes and only for the recording being opened.
 
 ### Configure your Front-End to use Scalelite
 
