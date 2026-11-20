@@ -9,7 +9,8 @@ MAXAGE=4
 # Delete raw files after 4 days
 RAW_MAXAGE=4
 
-LOGFILE=/var/log/bigbluebutton/bbb-sender-cleanup.log
+RECORDING_DIR=${RECORDING_DIR:-/var/bigbluebutton/recording}
+LOGFILE=${LOGFILE:-/var/log/bigbluebutton/bbb-sender-cleanup.log}
 
 shopt -s nullglob
 
@@ -19,24 +20,35 @@ echo "$(date --rfc-3339=seconds) Deleting sent recordings older than ${MAXAGE} d
 
 # Iterate through the list of recordings for which sender publishing has
 # completed
-for donefile in /var/bigbluebutton/recording/status/published/*-sender.done ; do
+for donefile in "${RECORDING_DIR}"/status/published/*-sender.done; do
+        if ! grep -qF 'Scalelite-Transfer-Complete: true' "${donefile}"; then
+                continue
+        fi
+
         MTIME=$(stat -c %Y "${donefile}")
         # Check the age of the recording
-        if [ $(( ( $NOW - $MTIME ) / 86400 )) -gt $MAXAGE ]; then
+        if [ $((($NOW - $MTIME) / 86400)) -gt $MAXAGE ]; then
                 MEETING_ID=$(basename "${donefile}")
                 MEETING_ID=${MEETING_ID%-sender.done}
-                echo "${MEETING_ID}" >> "${LOGFILE}"
+                echo "${MEETING_ID}" >>"${LOGFILE}"
 
-                bbb-record --delete "${MEETING_ID}" >> "${LOGFILE}"
+                bbb-record --delete "${MEETING_ID}" >>"${LOGFILE}"
         fi
 done
 
-echo "$(date --rfc-3339=seconds) Deleting raw files older than ${RAW_MAXAGE}"
-for eventsfile in /var/bigbluebutton/recording/raw/*/events.xml ; do
+echo "$(date --rfc-3339=seconds) Deleting raw files older than ${RAW_MAXAGE} days" >>"${LOGFILE}"
+for eventsfile in "${RECORDING_DIR}"/raw/*/events.xml; do
+        RAW_DIR="${eventsfile%/*}"
+        MEETING_ID=$(basename "${RAW_DIR}")
+        SENDER_DONE="${RECORDING_DIR}/status/published/${MEETING_ID}-sender.done"
+
+        if [ ! -f "${SENDER_DONE}" ] ||
+                ! grep -qF 'Scalelite-Transfer-Complete: true' "${SENDER_DONE}"; then
+                continue
+        fi
+
         MTIME=$(stat -c %Y "${eventsfile}")
-        if [ $(( ( $NOW - $MTIME ) / 86400 )) -gt $RAW_MAXAGE ]; then
-                RAW_DIR="${eventsfile%/*}"
+        if [ $((($NOW - $MTIME) / 86400)) -gt $RAW_MAXAGE ]; then
                 rm -rv "${RAW_DIR}" >>"${LOGFILE}" 2>&1
         fi
 done
-
