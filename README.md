@@ -122,6 +122,13 @@ For the administrative rake tasks, see [rake tasks](docs/rake-README.md)
 
 For the administrative api, see [api](docs/api-README.md)
 
+## Recording Directories per Tenant
+
+A tenant can be given a directory of its own for its recordings, for example on another volume, instead of
+the one directory all recordings are kept in. The feature is disabled by default, and a tenant that was not
+given a directory keeps its recordings where they always were; see
+[recording directories](docs/recording-directories.md).
+
 ## Getting Help
 
 For commercial help with setup and deployment of Scalelite, contact us at [Blindside Networks](https://blindsidenetworks.com/contact).

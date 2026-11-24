@@ -2326,6 +2326,92 @@ RSpec.describe BigBlueButtonApiController, :redis do
         expect(response_xml.at_xpath('/response/messageKey').text).to eq('notFound')
       end
     end
+
+    context 'with recording files' do
+      let(:base) { File.realpath(Dir.mktmpdir) }
+      let(:publish_dir) { File.join(base, 'published') }
+      let(:unpublish_dir) { File.join(base, 'unpublished') }
+      # The directory the tenant was given; only used while RECORDING_DIR_PER_TENANT is set
+      let(:own_dir) { File.join(base, 'tenant1-volume') }
+      let(:tenant) { create(:tenant, name: 'tenant1', recording_dir: own_dir) }
+      let(:recording) { create(:recording, :published) }
+      let(:record_id) { recording.record_id }
+      # The path upstream gives a published format, which is what the web server is asked for
+      let(:address) { File.join(publish_dir, 'presentation', record_id) }
+
+      before do
+        FileUtils.mkdir_p([publish_dir, unpublish_dir, own_dir])
+        allow(Rails.configuration.x).to receive_messages(recording_publish_dir: publish_dir, recording_unpublish_dir: unpublish_dir,
+                                                         recording_dir_per_tenant: false)
+        create(:playback_format, recording: recording, format: 'presentation')
+        create(:metadatum, recording: recording, key: 'tenant-id', value: tenant.id)
+      end
+
+      after do
+        FileUtils.rm_rf(base)
+      end
+
+      def publish(value)
+        params = encode_bbb_params('publishRecordings', { recordID: record_id, publish: value }.to_query)
+        get bigbluebutton_api_publish_recordings_url, params: params
+        Nokogiri::XML(response.body).at_xpath('/response/returncode').text
+      end
+
+      it 'moves the files between the publish and the unpublish directory' do
+        FileUtils.mkdir_p(address)
+
+        expect(publish('false')).to eq 'SUCCESS'
+        expect(File.directory?(File.join(unpublish_dir, 'presentation', record_id))).to be true
+        expect(File.exist?(address)).to be false
+
+        expect(publish('true')).to eq 'SUCCESS'
+        expect(File.directory?(address)).to be true
+        expect(File.symlink?(address)).to be false
+        expect(Dir.children(publish_dir)).to eq ['presentation']
+        expect(Dir.children(own_dir)).to be_empty
+      end
+
+      it 'fails and leaves the recording as it was when it has no files' do
+        expect(publish('false')).to eq 'FAILED'
+        expect(recording.reload.published).to be true
+      end
+
+      context 'with RECORDING_DIR_PER_TENANT' do
+        before do
+          allow(Rails.configuration.x).to receive(:recording_dir_per_tenant).and_return(true)
+        end
+
+        it 'moves the files between the directories of the tenant, and links them while they are published' do
+          # Where the recording was kept before the tenant was given its directory
+          FileUtils.mkdir_p(address)
+
+          expect(publish('false')).to eq 'SUCCESS'
+          expect(File.directory?(File.join(own_dir, 'unpublished', 'presentation', record_id))).to be true
+          expect(File.exist?(address)).to be false
+          expect(File.symlink?(address)).to be false
+
+          expect(publish('true')).to eq 'SUCCESS'
+          expect(File.directory?(File.join(own_dir, 'published', 'presentation', record_id))).to be true
+          expect(File.readlink(address)).to eq File.join(own_dir, 'published', 'presentation', record_id)
+          expect(recording.reload.published).to be true
+        end
+
+        it 'keeps the files of a tenant that was not given a directory where all recordings are kept' do
+          tenant.recording_dir = nil
+          tenant.save!
+          FileUtils.mkdir_p(address)
+
+          expect(publish('false')).to eq 'SUCCESS'
+          expect(File.directory?(File.join(unpublish_dir, 'presentation', record_id))).to be true
+
+          expect(publish('true')).to eq 'SUCCESS'
+          expect(File.directory?(address)).to be true
+          expect(File.symlink?(address)).to be false
+          expect(Dir.children(publish_dir)).to eq ['presentation']
+          expect(Dir.children(unpublish_dir)).to eq ['presentation']
+        end
+      end
+    end
   end
 
   describe '#update_recordings' do
@@ -2750,6 +2836,61 @@ RSpec.describe BigBlueButtonApiController, :redis do
         response_xml = Nokogiri::XML(response.body)
         expect(response_xml.at_xpath('/response/returncode').text).to eq('FAILED')
         expect(response_xml.at_xpath('/response/messageKey').text).to eq('notFound')
+      end
+    end
+
+    context 'with recording files' do
+      let(:base) { File.realpath(Dir.mktmpdir) }
+      let(:publish_dir) { File.join(base, 'published') }
+      let(:unpublish_dir) { File.join(base, 'unpublished') }
+      # The directory the tenant was given; only used while RECORDING_DIR_PER_TENANT is set
+      let(:own_dir) { File.join(base, 'tenant1-volume') }
+      let(:tenant) { create(:tenant, name: 'tenant1', recording_dir: own_dir) }
+      let(:recording) { create(:recording, :published) }
+      let(:record_id) { recording.record_id }
+      # The path upstream gives a published format, which is what the web server is asked for
+      let(:address) { File.join(publish_dir, 'presentation', record_id) }
+
+      before do
+        FileUtils.mkdir_p([publish_dir, unpublish_dir, own_dir])
+        allow(Rails.configuration.x).to receive_messages(recording_publish_dir: publish_dir, recording_unpublish_dir: unpublish_dir,
+                                                         recording_dir_per_tenant: false)
+        create(:playback_format, recording: recording, format: 'presentation')
+        create(:metadatum, recording: recording, key: 'tenant-id', value: tenant.id)
+      end
+
+      after do
+        FileUtils.rm_rf(base)
+      end
+
+      def delete_recording
+        get bigbluebutton_api_delete_recordings_url, params: encode_bbb_params('deleteRecordings', "recordID=#{record_id}")
+        Nokogiri::XML(response.body).at_xpath('/response/returncode').text
+      end
+
+      it 'removes the files of the recording, the unpublished ones included' do
+        FileUtils.mkdir_p(address)
+        unpublished = File.join(unpublish_dir, 'video', record_id)
+        FileUtils.mkdir_p(unpublished)
+        other = File.join(publish_dir, 'presentation', 'another-record-id')
+        FileUtils.mkdir_p(other)
+
+        expect(delete_recording).to eq 'SUCCESS'
+        expect(File.exist?(address)).to be false
+        expect(File.exist?(unpublished)).to be false
+        expect(File.directory?(other)).to be true
+        expect(recording.reload.state).to eq 'deleted'
+      end
+
+      it 'removes the files in the directory of a tenant and the link to them' do
+        allow(Rails.configuration.x).to receive(:recording_dir_per_tenant).and_return(true)
+        files = File.join(own_dir, 'published', 'presentation', record_id)
+        FileUtils.mkdir_p([files, File.dirname(address)])
+        File.symlink(files, address)
+
+        expect(delete_recording).to eq 'SUCCESS'
+        expect(File.exist?(files)).to be false
+        expect(File.symlink?(address)).to be false
       end
     end
   end
