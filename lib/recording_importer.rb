@@ -59,20 +59,17 @@ class RecordingImporter
 
               FileUtils.rm_rf(directory)
             else
-              publish_format_dir = "#{Rails.configuration.x.recording_publish_dir}/#{playback_format.format}"
-              unpublish_format_dir = "#{Rails.configuration.x.recording_unpublish_dir}/#{playback_format.format}"
-
-              format_dir = published_status ? publish_format_dir : unpublish_format_dir
-
-              FileUtils.rm_rf("#{publish_format_dir}/#{recording.record_id}")
-              FileUtils.rm_rf("#{unpublish_format_dir}/#{recording.record_id}")
-
-              FileUtils.mkdir_p(format_dir)
-              FileUtils.mv(directory, format_dir, force: true)
+              # Into the publish or unpublish directory, or into the directory the tenant was given where
+              # RECORDING_DIR_PER_TENANT is set. See docs/recording-directories.md.
+              RecordingDirectoryService.new(recording).import(directory, playback_format.format, published: published_status)
             end
           end
         rescue ActiveRecord::StatementInvalid
           # Let the connection-retry handler below deal with dropped DB connections
+          raise
+        rescue RecordingDirectoryService::Unavailable
+          # The directory of the tenant is not there or cannot be linked to, which a mount puts right. Skipping
+          # the format would delete the tar with it, so the import fails as a whole and is tried again.
           raise
         rescue StandardError => e
           # Isolate per-format failures

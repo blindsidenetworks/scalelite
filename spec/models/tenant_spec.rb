@@ -55,6 +55,35 @@ RSpec.describe Tenant, :redis do
     end
   end
 
+  describe 'recording directory' do
+    it 'has none by default' do
+      expect(described_class.find(create(:tenant).id).recording_dir).to be_nil
+    end
+
+    it 'stores the directory a tenant keeps its recordings in, and takes it away again' do
+      tenant = create(:tenant, recording_dir: '/mnt/recordings/tenant1')
+      expect(described_class.find(tenant.id).recording_dir).to eq '/mnt/recordings/tenant1'
+
+      stored = described_class.find(tenant.id)
+      stored.recording_dir = nil
+      stored.save!
+
+      expect(described_class.find(tenant.id).recording_dir).to be_nil
+    end
+
+    it 'reads a directory as an operator types it' do
+      expect(described_class.parse_recording_dir('/mnt/recordings/tenant-1.a_b/')).to eq '/mnt/recordings/tenant-1.a_b'
+      expect(described_class.parse_recording_dir('')).to be_nil
+      expect(described_class.parse_recording_dir(nil)).to be_nil
+    end
+
+    ['relative/path', '/', '/mnt/../etc', '/mnt/./x', '/mnt/with space', '/mnt/a;b', "/mnt/a\n/b", '//mnt'].each do |dir|
+      it "refuses #{dir.inspect}" do
+        expect { described_class.parse_recording_dir(dir) }.to raise_error(ArgumentError, /absolute path/)
+      end
+    end
+  end
+
   describe '.secrets_array' do
     context 'with single secret' do
       let(:secret) { Faker::Crypto.sha512 }

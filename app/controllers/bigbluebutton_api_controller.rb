@@ -425,32 +425,11 @@ class BigBlueButtonApiController < ApplicationController
       rec.with_lock do
         logger.debug("Setting published=#{publish} for recording: #{rec.record_id}")
 
-        target_dir = publish ? Rails.configuration.x.recording_publish_dir : Rails.configuration.x.recording_unpublish_dir
-        current_dir = publish ? Rails.configuration.x.recording_unpublish_dir : Rails.configuration.x.recording_publish_dir
-
+        # Between the publish and the unpublish directory, or between the two inside the directory the tenant
+        # was given where RECORDING_DIR_PER_TENANT is set. See docs/recording-directories.md.
+        directories = RecordingDirectoryService.new(rec)
         rec.playback_formats.each do |playback|
-          recording_path = File.join(current_dir, playback.format, rec.record_id)
-
-          in_current = Dir.glob(recording_path).present?
-          in_target = Dir.glob(File.join(target_dir, playback.format, rec.record_id)).present?
-
-          # Next playback if already in correct place
-          next if !in_current && in_target
-
-          # If no recording files exists in either directory, raise not found
-          raise StandardError, 'Recording has no recording files' if !in_current && !in_target
-
-          # If recording files are in both directories
-          if in_current && in_target
-            Rails.logger.info("Recording #{rec.record_id} files found in both directories. Removing #{recording_path}")
-            FileUtils.rm_r(recording_path)
-            next
-          end
-
-          # Recording files are in current_dir and not in target_dir
-          format_dir = File.join(target_dir, playback.format)
-          FileUtils.mkdir_p(format_dir)
-          FileUtils.mv(recording_path, format_dir)
+          directories.place(playback.format, published: publish)
         end
         state = publish ? 'published' : 'unpublished'
         rec.update!(published: publish, publish_updated: true, state: state)
@@ -531,8 +510,9 @@ class BigBlueButtonApiController < ApplicationController
             s3_client.delete_objects(bucket: bucket, delete: { objects: objects.map { |o| { key: o.key } } })
           end
         else
-          # TODO: check the unpublished dir when it is implemented
-          FileUtils.rm_r(Dir.glob(File.join(Rails.configuration.x.recording_publish_dir, '/*/', rec.record_id)))
+          # Every format, wherever its files are: published or not, in the shared directories or in the
+          # directory of a tenant. See docs/recording-directories.md.
+          RecordingDirectoryService.new(rec).delete
         end
         rec.mark_delete!
       rescue StandardError => e

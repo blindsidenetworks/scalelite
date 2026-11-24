@@ -96,6 +96,11 @@ module Scalelite
       ENV.fetch('RECORDING_UNPUBLISH_DIR', '/var/bigbluebutton/unpublished')
     )
 
+    # Keep the recordings of a tenant that was given a directory with rake tenants:recording_dir in that
+    # directory, see docs/recording-directories.md. Off by default. On or off, the recordings of a tenant
+    # without such a directory go where they always went.
+    config.x.recording_dir_per_tenant = ENV.fetch('RECORDING_DIR_PER_TENANT', 'false').casecmp?('true')
+
     # Minimum user count of a meeting, used for calculating server load. Defaults to 15.
     config.x.load_min_user_count = ENV.fetch('LOAD_MIN_USER_COUNT', 15).to_i
 

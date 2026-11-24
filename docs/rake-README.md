@@ -474,6 +474,8 @@ id: 4f3e4bb8-2a4e-41a6-9af8-0678c651777f
         secrets: secret2:secret2a:secret2b
 ```
 
+A tenant that was given a directory of its own for its recordings with `tenants:recording_dir` has a `recording dir` line as well, marked as not in use while `RECORDING_DIR_PER_TENANT` is not set. A tenant without one has no such line: its recordings are where all recordings are. See [Recording Directories](recording-directories.md).
+
 ### Add Tenant
 ```sh
 ./bin/rake tenants:add[id,secrets]
@@ -491,6 +493,15 @@ When you run this command, Scalelite will print out the ID of the newly created 
 You can update an existing tenants name or secrets using this rake command.
 
 When you run this command, Scalelite will print out the ID of the updated tenant, followed by `OK` if the operation was successful.
+
+### Set the Recording Directory of a Tenant
+```sh
+./bin/rake tenants:recording_dir[id,dir]
+```
+
+Gives a tenant a directory of its own for its recordings, for example on another volume, in place of the publish and unpublish directories all recordings are kept in; an empty `dir` takes it away again. The directory is only used while `RECORDING_DIR_PER_TENANT` is set, and a tenant that was not given one keeps its recordings where they always were. It has to be an absolute path made of letters, digits, `.`, `_` and `-`, and it has to exist, writable for the containers and mounted under the same path in the API container, the recording importer and the web server container: Scalelite never creates it. The task refuses a directory that is not a writable directory in the container it is run in, and says whether it does not exist there (which is what a path as only the host has it comes to, so give the path as the containers see it), is not a directory, or cannot be written to by the user of the container. For a directory outside the publish directory it says that the web server container has to see `<dir>/published` as well: that container usually has the publish directory alone, so a directory next to `published` on the same volume is not enough, and Scalelite cannot check it.
+
+Published recordings the tenant already has are not moved by this task; run `rake recordings:relocate` afterwards. When the tenant had another directory before, the task moves the unpublished recordings in it to where they belong now and prints every move: no link leads to them, so nothing else would find them there. It removes nothing, and names whatever it leaves where it is, with what to do about it. See [The directory of a tenant](recording-directories.md#the-directory-of-a-tenant), which has a worked example for a second volume.
 
 ### Update Tenant xAPI 
 
@@ -534,6 +545,28 @@ Warning: Removing a tenant with data still in the database may cause some incons
 ```
 
 If you are switching over from single-tenancy to multitenancy, the existing recordings will have to be transferred to the new tenant. The above task updates the recordings' metadata with the tenant id.
+
+### Relocate Recordings
+```sh
+./bin/rake recordings:relocate[tenantId]
+```
+
+Moves every recording to the directory it belongs in under the settings of the moment. Run it after a tenant was given a directory with `tenants:recording_dir`, to move the recordings it already has into it; and after `RECORDING_DIR_PER_TENANT` was switched off, to move them back. With a `tenantId` it only goes through the recordings of that tenant. While `RECORDING_DIR_PER_TENANT` is off it starts with a `NOTE` that the directories of the tenants concerned are not used, which is also how a setting that was forgotten shows.
+
+It asks before it moves anything: it says how many playback formats it would move, from which directory into which, and waits for `y`. Any other answer, or none because there is no terminal, moves nothing and ends the task with a non-zero status, so answering `n` is the way to only look at what would happen. A script sends the answer with `echo y | docker exec -i scalelite-api ./bin/rake recordings:relocate`. Before the question it names every directory outside the publish directory that recordings would be moved into: the container that serves the recordings has to see it under the same path, or those recordings answer 404.
+
+```
+214 playback formats will be moved and 0 linked again.
+        214 from /var/bigbluebutton/published to /mnt/data1/tenant1/published
+WARNING: the web server container must see these directories under the same path, or the recordings answer 404:
+        /mnt/data1/tenant1/published
+Continue? [y/N]
+y
+/var/bigbluebutton/published/presentation/<record id> -> /mnt/data1/tenant1/published/presentation/<record id>
+214 playback formats moved, 0 linked again, 1038 already in place, 0 not found, 0 in more than one place, 0 failed
+```
+
+Run it in a container that has the recordings, which the API container does. It can be run while Scalelite is in use and as often as needed, and it never deletes anything: a format that lies in more than one place is left alone and listed. Recordings keep playing while it runs; the one that is being moved is not found for the instant between the move and its new link. What each number means is described in [Moving recordings that are there already](recording-directories.md#moving-recordings-that-are-there-already).
 
 ## Rake Tasks for Tenant Settings Management
 If you have enabled multitenancy for your Scalelite deployment, you gain the ability to customize the parameters passed into the `create` and `join` calls on a per-tenant basis. This functionality empowers you to tailor the user experience according to the specific needs and preferences of each tenant.

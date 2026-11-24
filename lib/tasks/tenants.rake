@@ -19,6 +19,8 @@ task tenants: :environment do |_t, _args|
       if api_mate_url.present?
         puts("\tapi_mate: #{api_mate_url}?server=https://#{tenant.name}.#{host_name}/bigbluebutton/api/&secret=#{tenant.secrets_array[0]}")
       end
+      recording_dir = tenant_recording_dir_line(tenant)
+      puts("\trecording dir: #{recording_dir}") if recording_dir.present?
       puts("\tlrs_endpoint: #{tenant.lrs_endpoint}") if tenant.lrs_endpoint.present?
       puts("\tlrs_username: #{tenant.lrs_username}") if tenant.lrs_username.present?
       puts("\tlrs_password: #{tenant.lrs_password}") if tenant.lrs_password.present?
@@ -31,6 +33,106 @@ task tenants: :environment do |_t, _args|
   end
 
   puts "Total number of tenants: #{tenants.size}"
+end
+
+# The directory a tenant was given for its recordings, as one line. See docs/recording-directories.md.
+#
+# @param [Tenant] tenant
+# @return [String, nil] nil for a tenant without one, whose recordings are where all recordings are, so that
+#   it is listed as it always was.
+def tenant_recording_dir_line(tenant)
+  return nil if tenant.recording_dir.blank?
+  return tenant.recording_dir if RecordingDirectoryService.enabled?
+
+  "#{tenant.recording_dir} (not in use, RECORDING_DIR_PER_TENANT is off)"
+end
+
+# Why a directory cannot be given to a tenant, as the container the task runs in sees it. Scalelite never
+# creates the directory, and with one that is not there the recordings of the tenant are no longer imported.
+#
+# @param [String] dir
+# @return [String, nil] what is wrong with it, nil for a directory that can be used.
+def recording_dir_problem(dir)
+  if !File.exist?(dir)
+    # The usual reason is a path as the host has it: the task runs in a container, which has the recordings
+    # under a path of its own. Or a volume that is not mounted into this container.
+    "#{dir} does not exist inside this container. Scalelite does not create it: create it on the host, on a volume " \
+      'the containers have, and give the path as the containers see it. This one has the recordings below ' \
+      "#{File.dirname(RecordingDirectoryService.shared_roots.first)}."
+  elsif !File.directory?(dir)
+    "#{dir} exists inside this container, but is not a directory."
+  elsif !File.writable?(dir)
+    "#{dir} is not writable for the user this task runs as (UID #{Process.uid}). Hand it to that user on the host, " \
+      "as in: chown #{Process.uid} <directory>"
+  end
+end
+
+# Move the unpublished recordings out of the directory a tenant had before, to where they belong now. A
+# published recording there is found through its link whatever directory that leads to, and is moved by
+# rake recordings:relocate. An unpublished one has no link: left in a directory the tenant no longer has,
+# nothing would find it again, neither to publish it nor to delete it. See docs/recording-directories.md.
+#
+# Nothing is removed. What cannot be moved is left where it is and named, with what to do about it.
+#
+# @param [Tenant] tenant with the directory it has from now on, saved.
+# @param [String] previous the directory it had before.
+def move_unpublished_out(tenant, previous)
+  source_root = File.join(previous, 'unpublished')
+  target_root = RecordingDirectoryService.roots(tenant).last
+
+  unless File.directory?(previous)
+    warn("WARNING: #{previous}, the directory the tenant had before, is not there, so its unpublished recordings " \
+         "could not be moved. Once it is mounted again, move #{source_root}/<format>/<record id> to " \
+         "#{target_root}/<format>/<record id> by hand: nothing else finds them, neither to publish nor to delete them.")
+    return
+  end
+  return unless File.directory?(source_root)
+
+  # A directory Scalelite looks in anyway loses nothing, and holds the recordings of everybody else besides
+  known = RecordingDirectoryService.shared_roots + Array(RecordingDirectoryService.tenant_roots(tenant))
+  return if known.any? { |root| File.identical?(root, source_root) }
+
+  moved = 0
+  left = 0
+  Dir.glob(File.join(source_root, '*', '*')).each do |source|
+    next unless File.directory?(source)
+
+    format = File.basename(File.dirname(source))
+    record_id = File.basename(source)
+    recording = Recording.includes(:metadata).find_by(record_id: record_id)
+    reason = if recording.nil?
+               'is not known to Scalelite and was left where it is'
+             elsif recording.state == 'deleted'
+               'belongs to a recording that was deleted in Scalelite and was left where it is: remove it by hand'
+             elsif recording.metadata.find { |metadatum| metadatum.key == 'tenant-id' }&.value != tenant.id
+               "is not a recording of tenant #{tenant.name} and was left where it is"
+             end
+    if reason
+      left += 1
+      warn("WARNING: #{source} #{reason}")
+      next
+    end
+
+    # Locked like publishRecordings locks it, so that a recording is not moved by both at once
+    status, dirs = recording.with_lock do
+      RecordingDirectoryService.new(recording, tenant: tenant).adopt(source, format)
+    end
+    case status
+    when :moved
+      moved += 1
+      puts("#{dirs.first} -> #{dirs.last}")
+    when :scattered
+      left += 1
+      warn("WARNING: #{source} was left where it is: the recording has its #{format} files in " \
+           "#{dirs.drop(1).join(', ')} as well, and nothing can tell which copy is the good one")
+    end
+  rescue StandardError => e
+    left += 1
+    warn("ERROR: #{source} could not be moved: #{e.message}. Move it to #{target_root}/#{format}/#{record_id} by hand.")
+  end
+
+  puts("#{moved} unpublished playback formats moved out of #{source_root}") if moved.positive?
+  warn("WARNING: #{left} unpublished playback formats are left in #{source_root}, see above") if left.positive?
 end
 
 namespace :tenants do
@@ -71,6 +173,53 @@ namespace :tenants do
 
     puts('OK')
     puts("Updated Tenant id: #{tenant.id}")
+  end
+
+  desc 'Give a Tenant a directory of its own for its recordings'
+  task :recording_dir, [:id, :dir] => :environment do |_t, args|
+    check_multitenancy
+
+    if args[:id].blank?
+      warn('Error: id is required to set the recording directory of a Tenant')
+      exit(1)
+    end
+
+    tenant = Tenant.find(args[:id])
+    previous = tenant.recording_dir
+    # An empty value takes the directory away again, back to where all recordings are kept
+    begin
+      dir = Tenant.parse_recording_dir(args[:dir])
+    rescue ArgumentError => e
+      warn("ERROR: #{e.message}")
+      exit(1)
+    end
+
+    problem = recording_dir_problem(dir) if dir.present?
+    if problem
+      warn("ERROR: #{problem}")
+      exit(1)
+    end
+
+    # What is moved and what is left is printed on both outputs, and read in the order it happened
+    $stdout.sync = true
+    # Saved before anything is moved: a recording moved into a directory the tenant then did not get would be
+    # the one that is lost
+    tenant.recording_dir = dir
+    tenant.save!
+
+    puts('OK')
+    puts("recording dir: #{tenant_recording_dir_line(tenant) || 'none'}")
+
+    if dir.present? && !"#{dir}/".start_with?("#{RecordingDirectoryService.shared_roots.first}/")
+      # Whether the web server sees the directory cannot be found out from here, and a recording it does not
+      # see answers 404. It usually has the publish directory alone, so a directory next to it is not enough.
+      puts("The web server container needs #{dir}/published under the same path, or playback answers 404.")
+    end
+    move_unpublished_out(tenant, previous) if previous.present? && previous != dir
+    puts("Move existing recordings with: rake recordings:relocate[#{tenant.id}]")
+  rescue ApplicationRedisRecord::RecordNotFound
+    warn("ERROR: No tenant found with id: #{args[:id]}")
+    exit(1)
   end
 
   desc 'Update an existing Tenants LRS credentials with basic authentication'
